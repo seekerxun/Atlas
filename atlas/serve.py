@@ -6,6 +6,8 @@
   GET  /文件/<路径>       读一个仓库里的文件（缩略图、原文预览）
   POST /布局             存卡片位置
   POST /认领             把资产或工具挂到某个条目的 frontmatter 上
+  POST /路线             按固定模板重写一条路线的 yml
+  GET  /候选             画布上选文档用的候选列表
 """
 from __future__ import annotations
 import json, mimetypes, os, threading, webbrowser
@@ -14,6 +16,7 @@ from pathlib import Path
 from urllib.parse import unquote, urlparse
 
 import edit
+import miniyaml as y
 from lint import 校验, 体检数
 from model import ATLAS
 from scan import 建索引
@@ -56,6 +59,8 @@ def 打包(根: Path) -> dict:
         "项目": idx.cfg.名称, "主分组": idx.cfg.主分组,
         "条目": [n.to_dict() for n in idx.条目.values()],
         "路线": [{"名称": r.名称, "路径": r.路径, "说明": r.说明, "入口": r.入口,
+                 "文件名": r.路径.split("/")[-1],
+                 "mtime": (根 / r.路径).stat().st_mtime,
                  "步骤": [s.__dict__ for s in r.步骤]} for r in idx.路线],
         "工具": idx.工具, "资产": idx.资产, "数据表": idx.数据,
         "未归类": idx.未归类, "未认领资产": 未认领资产, "孤儿工具": 孤儿工具,
@@ -93,6 +98,12 @@ class 处理器(BaseHTTPRequestHandler):
             except Exception as e:
                 self._json({"错误": f"{type(e).__name__}: {e}"}, 500)
             return
+        if 路径 == "/候选":
+            idx = 建索引(self.根)
+            self._json([{"路径": n.路径[:-3], "标题": n.标题, "类型": n.类型,
+                         "库": n.库, "行数": n.行数, "摘要": n.摘要}
+                        for n in sorted(idx.条目.values(), key=lambda x: x.路径)])
+            return
         if 路径.startswith("/文件/"):
             rel = 路径[len("/文件/"):]
             p = (self.根 / rel).resolve()
@@ -126,6 +137,23 @@ class 处理器(BaseHTTPRequestHandler):
                 分类 = 体.get("分类") or (None if 字段 == "工具" else "未分类")
                 r = edit.认领(条目, 字段, 分类, 文件)
                 self._json({"好": True, "说明": r})
+            elif 路径 == "/路线":
+                名 = str(体["文件名"])
+                if "/" in 名 or "\\" in 名 or not 名.endswith(".yml"):
+                    raise RuntimeError("文件名不合法")
+                p = self.根 / "路线" / 名
+                mt = p.stat().st_mtime if (p.exists() and 体.get("mtime")) else None
+                if mt is not None and abs(mt - float(体["mtime"])) > 1e-6:
+                    raise RuntimeError(f"{名} 在这期间被改过了，已中止。刷新后再试。")
+                edit.写路线(p, 体["路线"])
+                self._json({"好": True, "mtime": p.stat().st_mtime})
+            elif 路径 == "/删路线":
+                名 = str(体["文件名"])
+                p = self.根 / "路线" / 名
+                if "/" in 名 or not 名.endswith(".yml") or not p.exists():
+                    raise RuntimeError("文件名不合法")
+                p.unlink()
+                self._json({"好": True})
             else:
                 self._json({"错误": "没这个接口"}, 404)
         except Exception as e:

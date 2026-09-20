@@ -98,3 +98,63 @@ def 认领(路径: Path, 字段: str, 分类: str | None, 值: str, 演习=False
     if not 演习:
         写(路径, fm, 正文, mt)
     return f"{字段}{'.' + 分类 if 分类 else ''} += {值}"
+
+
+# ---------------------------------------------------------------- 路线写回
+def _yaml串(s: str) -> str:
+    s = str(s)
+    if s == "" or s[0] in "[{#&*!|>%@`'\"-" or ": " in s or s.endswith(":") or s.strip() != s:
+        return '"' + s.replace('"', '\\"') + '"'
+    return s
+
+
+def 序列化路线(r: dict, 头注释: str = "") -> str:
+    """按固定模板重写，不做 YAML 往返——往返会丢注释、打乱顺序。"""
+    行 = []
+    if 头注释:
+        行.append(头注释.rstrip())
+    行.append(f"route: {_yaml串(r.get('route') or '')}")
+    if r.get("desc"):
+        行.append(f"desc: {_yaml串(r['desc'])}")
+    if r.get("entry"):
+        行.append("entry: true")
+    行.append("")
+    行.append("steps:")
+    for s in r.get("steps") or []:
+        行.append(f"  - id: {_yaml串(s.get('id') or '')}")
+        行.append(f"    title: {_yaml串(s.get('title') or s.get('id') or '')}")
+        if s.get("note"):
+            行.append(f"    note: {_yaml串(s['note'])}")
+        if s.get("docs"):
+            行.append("    docs:")
+            行 += [f"      - {_yaml串(d)}" for d in s["docs"]]
+        for k in ("tools", "outputs", "next"):
+            if s.get(k):
+                行.append(f"    {k}: [" + ", ".join(_yaml串(x) for x in s[k]) + "]")
+        行.append("")
+    return "\n".join(行).rstrip() + "\n"
+
+
+def 取头注释(路径: Path) -> str:
+    if not 路径.exists():
+        return ""
+    出 = []
+    for ln in 路径.read_text(encoding="utf-8").split("\n"):
+        if ln.startswith("#"):
+            出.append(ln)
+        elif ln.strip() == "":
+            if 出:
+                break
+        else:
+            break
+    return "\n".join(出)
+
+
+def 写路线(路径: Path, r: dict, 原mtime: float | None = None):
+    if 原mtime is not None and 路径.exists():
+        if abs(路径.stat().st_mtime - 原mtime) > 1e-6:
+            raise RuntimeError(f"{路径.name} 在这期间被改过了，已中止。刷新后再试。")
+    内容 = 序列化路线(r, 取头注释(路径))
+    临时 = 路径.with_suffix(路径.suffix + ".tmp")
+    临时.write_text(内容, encoding="utf-8")
+    临时.replace(路径)

@@ -90,6 +90,37 @@ body.中 .盒>.头 b{font-size:calc(14px / var(--缩,1))}
 .步 li{list-style:none;font-size:11.5px;color:var(--字2);padding:1px 0;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .步 .点{display:inline-block;width:6px;height:6px;border-radius:2px;margin-right:5px}
+.步 .柄{position:absolute;right:-7px;top:50%;transform:translateY(-50%);width:14px;height:14px;
+  border-radius:50%;background:var(--面2);border:2px solid var(--主);cursor:crosshair;opacity:0;
+  transition:opacity .12s}
+.步:hover .柄,.步.选 .柄{opacity:1}
+.步 .柄:hover{background:var(--主)}
+.步 .删{position:absolute;right:8px;top:8px;font-size:12px;color:var(--字3);opacity:0}
+.步:hover .删{opacity:1}
+.步 .删:hover{color:var(--错)}
+.步.靶{border-color:var(--好);box-shadow:0 0 0 2px var(--好)}
+#线 path.边{pointer-events:stroke;cursor:pointer}
+#线 path.边击{pointer-events:stroke;stroke:transparent;stroke-width:14;cursor:pointer;fill:none}
+#线 path.边:hover{stroke:var(--错)}
+.编辑条{position:absolute;display:flex;gap:6px;align-items:center;font-size:11.5px;
+  color:var(--字3);white-space:nowrap}
+.编辑条 button{padding:3px 9px;border:1px solid var(--线);border-radius:7px;background:var(--面)}
+.编辑条 button:hover{border-color:var(--主);color:var(--字)}
+#挑{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:80;display:none;
+  align-items:center;justify-content:center}
+#挑.开{display:flex}
+#挑 .框{width:560px;max-height:70vh;background:var(--面);border:1px solid var(--线);
+  border-radius:14px;display:flex;flex-direction:column;overflow:hidden}
+#挑 .框 input{margin:12px;padding:8px 11px;border-radius:8px;border:1px solid var(--线);
+  background:var(--底);color:var(--字);outline:none}
+#挑 .单{overflow:auto;padding:0 8px 12px}
+#挑 .单 div{padding:7px 10px;border-radius:7px;cursor:pointer;font-size:12.5px}
+#挑 .单 div:hover{background:var(--面2)}
+#挑 .单 small{color:var(--字3)}
+.编辑框{width:100%;background:var(--底);border:1px solid var(--线);border-radius:7px;
+  color:var(--字);padding:6px 9px;font:inherit;font-size:12px;margin-bottom:6px}
+.行 .叉{margin-left:auto;color:var(--字3);padding:0 4px}
+.行 .叉:hover{color:var(--错)}
 
 #屉{position:absolute;right:0;top:46px;bottom:0;width:330px;background:var(--面);
   border-left:1px solid var(--线);overflow:auto;padding:14px;display:none;z-index:20}
@@ -133,6 +164,8 @@ body.屉开 #角{right:344px}
   <div id="名">Atlas</div>
   <div id="签"></div>
   <span class="丸" id="体检"></span>
+  <button id="新路线" style="display:none;padding:4px 10px;border:1px solid var(--线);
+    border-radius:7px;font-size:12px;color:var(--字2)">＋ 新路线</button>
   <div id="搜"><input placeholder="搜条目 / 工具 / 资产   （/）"><div id="搜果"></div></div>
   <button id="亮" title="亮/暗">◐</button>
   <button id="刷" title="重新扫描">↻</button>
@@ -149,12 +182,13 @@ body.屉开 #角{right:344px}
 <div id="屉"></div>
 <div id="角"><span id="缩"></span><button id="回">回到全局</button></div>
 <div id="提示"></div>
+<div id="挑"><div class="框"><input placeholder="搜文档…"><div class="单"></div></div></div>
 
 <script>
 const $ = s => document.querySelector(s);
 const 转义 = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const 图后缀 = /\.(png|jpg|jpeg|webp|gif|svg)$/i;
-let 数据 = null, 视图 = '内容', 选中 = null, 布局 = {};
+let 数据 = null, 视图 = '内容', 选中 = null, 布局 = {}, 选中步 = null;
 let 缩 = 0.55, 位 = {x: 60, y: 60};
 const 按路径 = {}, 按编号 = {}, 按名 = {};
 
@@ -192,6 +226,7 @@ function 解析(目标){
 // ---------------------------------------------------------------- 视图切换
 const 视图们 = ['路线', '策划', '内容', '创意', '资产'];
 function 画签(){
+  const b = $('#新路线'); if (b) b.style.display = 视图 === '路线' ? '' : 'none';
   $('#签').innerHTML = 视图们.map(v =>
     `<button data-v="${v}" class="${v === 视图 ? '开' : ''}">${v}</button>`).join('');
   $('#签').querySelectorAll('button').forEach(b => b.onclick = () => {
@@ -321,49 +356,258 @@ function 画路线(){
   let 基y = 60;
   (数据.路线 || []).forEach(r => {
     const 位置 = 算路线布局(r, 基y);
+    const 顶 = 位置.length ? Math.min(...位置.map(p => p.y)) : 基y;
+    const 左 = 位置.length ? Math.min(...位置.map(p => p.x)) : 40;
     基y = Math.max(...位置.map(p => p.y + p.h), 基y) + 90;
     w.insertAdjacentHTML('beforeend',
-      `<div class="类标" style="left:${位置[0] ? 位置[0].x : 40}px;top:${(位置[0] ? 位置[0].y : 40) - 26}px;
-        font-size:15px;color:var(--主)">${r.入口 ? '★ ' : ''}${转义(r.名称)}
-        <span style="color:var(--字3);font-weight:400">　${转义(r.说明 || '')}</span></div>`);
+      `<div class="类标" style="left:${左}px;top:${顶 - 58}px;font-size:15px;color:var(--主)">
+        ${r.入口 ? '★ ' : ''}${转义(r.名称)}
+        <span style="color:var(--字3);font-weight:400">　${转义(r.说明 || '')}</span></div>
+       <div class="编辑条" style="left:${左}px;top:${顶 - 32}px">
+        <button onclick="加步骤('${转义(r.名称)}')">+ 加一步</button>
+        <button onclick="改路线头('${转义(r.名称)}')">改名字/说明</button>
+        <button onclick="删路线('${转义(r.名称)}')" style="color:var(--错)">删掉这条路线</button>
+        <span>从右侧圆点拖到另一张卡 = 连线；点线 = 断开</span></div>`);
     r.步骤.forEach((s, i) => {
       const p = 位置[i]; if (!p) return;
-      const 条目们 = (s.docs || []).map(d => 按路径[d + '.md']);
-      const li = (s.docs || []).map((d, k) => {
-        const n = 条目们[k];
+      const li = (s.docs || []).map(d => {
+        const n = 按路径[d + '.md'];
         return `<li><span class="点" style="background:${n ? 色(n.类型) : 'var(--错)'}"></span>${
           转义(n ? (n.标题 || n.名称) : d + ' ⚠缺失')}</li>`;
       }).join('');
-      const 尾 = [...(s.tools || []).map(t => `<li>🔧 ${转义(t.split('/').pop())}</li>`),
+      const 尾 = [...(s.tools || []).map(x => `<li>🔧 ${转义(x.split('/').pop())}</li>`),
                  ...(s.outputs || []).map(o => `<li>📦 ${转义(o)}</li>`)].join('');
       w.insertAdjacentHTML('beforeend',
         `<div class="步" data-id="${p.id}" data-路线="${转义(r.名称)}" data-步="${转义(s.id)}"
           style="left:${p.x}px;top:${p.y}px">
+          <button class="删" title="删掉这一步">✕</button>
           <div class="序">步骤 ${i + 1}</div><h4>${转义(s.title)}</h4>
           ${s.note ? `<div class="提">${转义(s.note)}</div>` : ''}
-          <ul style="margin:0;padding:0">${li}${尾}</ul></div>`);
+          <ul style="margin:0;padding:0">${li}${尾}</ul>
+          <div class="柄" title="拖到另一张卡上连线"></div></div>`);
     });
-    // 连线
-    requestAnimationFrame(() => {
-      const svg = $('#线'); let d = svg.innerHTML;
-      r.步骤.forEach((s, i) => (s.next || []).forEach(nx => {
-        const j = r.步骤.findIndex(x => x.id === nx); if (j < 0) return;
-        const a = w.querySelector(`[data-id="${CSS.escape(位置[i].id)}"]`);
-        const b = w.querySelector(`[data-id="${CSS.escape(位置[j].id)}"]`);
-        if (!a || !b) return;
-        const x1 = 位置[i].x + 250, y1 = 位置[i].y + a.offsetHeight / 2;
-        const x2 = 位置[j].x, y2 = 位置[j].y + b.offsetHeight / 2, mx = (x1 + x2) / 2;
-        d += `<path d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}" fill="none"
-              stroke="var(--线)" stroke-width="2"/><circle cx="${x2}" cy="${y2}" r="3.5" fill="var(--主)"/>`;
-      }));
-      svg.innerHTML = d;
-    });
+    requestAnimationFrame(() => 画边(r, 位置));
   });
-  w.querySelectorAll('.步').forEach(e => e.onclick = ev => {
-    if (e._拖过) { e._拖过 = false; return; }
-    ev.stopPropagation(); 选步骤(e.dataset.路线, e.dataset.步);
+  w.querySelectorAll('.步').forEach(e => {
+    e.onclick = ev => {
+      if (ev.target.closest('.柄')) return;
+      if (ev.target.closest('.删')) { ev.stopPropagation(); 删步骤(e.dataset.路线, e.dataset.步); return; }
+      if (e._拖过) { e._拖过 = false; return; }
+      ev.stopPropagation(); 选步骤(e.dataset.路线, e.dataset.步);
+    };
+    e.querySelector('.柄').addEventListener('pointerdown', ev => 起连线(ev, e));
   });
   装拖动('.步', 'data-id');
+}
+
+function 画边(r, 位置){
+  const w = $('#世界'), svg = $('#线');
+  let d = svg.innerHTML;
+  r.步骤.forEach((s, i) => (s.next || []).forEach(nx => {
+    const j = r.步骤.findIndex(x => x.id === nx); if (j < 0) return;
+    const a = w.querySelector(`[data-id="${CSS.escape(位置[i].id)}"]`);
+    const b = w.querySelector(`[data-id="${CSS.escape(位置[j].id)}"]`);
+    if (!a || !b) return;
+    const x1 = 位置[i].x + 250, y1 = 位置[i].y + a.offsetHeight / 2;
+    const x2 = 位置[j].x, y2 = 位置[j].y + b.offsetHeight / 2, mx = (x1 + x2) / 2;
+    const 形 = `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`;
+    const 键 = `${r.名称}|${s.id}|${nx}`;
+    d += `<path class="边击" d="${形}" data-边="${转义(键)}"/>
+          <path class="边" d="${形}" fill="none" stroke="var(--线)" stroke-width="2"
+                data-边="${转义(键)}"><title>点一下断开这条线</title></path>
+          <circle cx="${x2}" cy="${y2}" r="3.5" fill="var(--主)"/>`;
+  }));
+  svg.innerHTML = d;
+  svg.querySelectorAll('[data-边]').forEach(e => e.onclick = ev => {
+    ev.stopPropagation();
+    const [路线名, 从, 到] = e.dataset.边.split('|');
+    断线(路线名, 从, 到);
+  });
+}
+
+// ---------------------------------------------------------------- 路线编辑
+async function 新建路线(){
+  const 名 = prompt('新路线叫什么？（就写你最常干的那件事）'); if (!名) return;
+  const 文件名 = 名.trim() + '.yml';
+  if ((数据.路线 || []).some(r => r.文件名 === 文件名)) { 提示('已经有这条路线了'); return; }
+  const 说 = prompt('一句话说明（可留空）', '') || '';
+  const res = await fetch('/路线', {method: 'POST', body: JSON.stringify(
+    {文件名, 路线: {route: 名.trim(), desc: 说.trim(),
+                  steps: [{id: '第一步', title: '第一步', docs: [], next: []}]}})});
+  const j = await res.json();
+  if (j.错误) { 提示('建不了：' + j.错误); return; }
+  提示('建好了 ' + 文件名);
+  await 取数();
+}
+
+function 找路线(名){ return (数据.路线 || []).find(r => r.名称 === 名); }
+
+async function 存路线(r, 说明){
+  const 体 = {文件名: r.文件名, mtime: r.mtime,
+             路线: {route: r.名称, desc: r.说明, entry: r.入口,
+                   steps: r.步骤.map(s => ({id: s.id, title: s.title, note: s.note,
+                                            docs: s.docs, tools: s.tools,
+                                            outputs: s.outputs, next: s.next}))}};
+  const res = await fetch('/路线', {method: 'POST', body: JSON.stringify(体)});
+  const j = await res.json();
+  if (j.错误) { 提示('写回失败：' + j.错误); return false; }
+  r.mtime = j.mtime;
+  提示(说明 || '已写回 ' + r.文件名);
+  const 记 = 选中步;
+  await 取数();
+  // 写回后重开抽屉，否则显示的还是改之前的内容
+  if (记 && 找路线(记.路线)?.步骤.some(s => s.id === 记.步)) 选步骤(记.路线, 记.步);
+  else { $('#屉').classList.remove('开'); document.body.classList.remove('屉开'); 选中步 = null; }
+  return true;
+}
+
+function 起连线(ev, 卡){
+  ev.stopPropagation(); ev.preventDefault();
+  const 路线名 = 卡.dataset.路线, 从 = 卡.dataset.步;
+  const svg = $('#线');
+  const x1 = parseFloat(卡.style.left) + 250, y1 = parseFloat(卡.style.top) + 卡.offsetHeight / 2;
+  const 临 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  临.setAttribute('stroke', 'var(--好)'); 临.setAttribute('stroke-width', '2');
+  临.setAttribute('fill', 'none'); 临.setAttribute('stroke-dasharray', '5 4');
+  svg.appendChild(临);
+  document.querySelectorAll(`.步[data-路线="${CSS.escape(路线名)}"]`).forEach(e => {
+    if (e !== 卡) e.classList.add('可放');
+  });
+  const 台框 = $('#台').getBoundingClientRect();
+  const 动 = m => {
+    const x2 = (m.clientX - 台框.left - 位.x) / 缩, y2 = (m.clientY - 台框.top - 位.y) / 缩;
+    const mx = (x1 + x2) / 2;
+    临.setAttribute('d', `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`);
+    document.querySelectorAll('.步').forEach(e => e.classList.remove('靶'));
+    const 下 = document.elementFromPoint(m.clientX, m.clientY)?.closest('.步');
+    if (下 && 下 !== 卡 && 下.dataset.路线 === 路线名) 下.classList.add('靶');
+  };
+  const 停 = async m => {
+    window.removeEventListener('pointermove', 动); window.removeEventListener('pointerup', 停);
+    临.remove();
+    document.querySelectorAll('.步').forEach(e => e.classList.remove('可放', '靶'));
+    const 下 = document.elementFromPoint(m.clientX, m.clientY)?.closest('.步');
+    if (!下 || 下 === 卡 || 下.dataset.路线 !== 路线名) return;
+    await 连线(路线名, 从, 下.dataset.步);
+  };
+  window.addEventListener('pointermove', 动); window.addEventListener('pointerup', 停);
+}
+
+async function 连线(路线名, 从, 到){
+  const r = 找路线(路线名); if (!r) return;
+  const s = r.步骤.find(x => x.id === 从); if (!s) return;
+  s.next = s.next || [];
+  if (s.next.includes(到)) { 提示('已经连过了'); return; }
+  if (成环(r, 从, 到)) { 提示('这样会成环，路线必须是有向无环的'); return; }
+  s.next.push(到);
+  await 存路线(r, `连上：${从} → ${到}`);
+}
+
+async function 断线(路线名, 从, 到){
+  const r = 找路线(路线名); if (!r) return;
+  const s = r.步骤.find(x => x.id === 从); if (!s) return;
+  s.next = (s.next || []).filter(x => x !== 到);
+  await 存路线(r, `断开：${从} → ${到}`);
+}
+
+function 成环(r, 从, 到){
+  // 从「到」出发能不能走回「从」
+  const 表 = {}; r.步骤.forEach(s => 表[s.id] = s.next || []);
+  const 栈 = [到], 见 = new Set();
+  while (栈.length) {
+    const x = 栈.pop();
+    if (x === 从) return true;
+    if (见.has(x)) continue;
+    见.add(x);
+    (表[x] || []).forEach(y => 栈.push(y));
+  }
+  return false;
+}
+
+async function 加步骤(路线名){
+  const r = 找路线(路线名); if (!r) return;
+  const 标题 = prompt('这一步叫什么？', '新步骤'); if (!标题) return;
+  let id = 标题.trim(), i = 2;
+  while (r.步骤.some(s => s.id === id)) id = 标题.trim() + i++;
+  r.步骤.push({id, title: 标题.trim(), note: '', docs: [], tools: [], outputs: [], next: []});
+  选中步 = {路线: 路线名, 步: id};
+  await 存路线(r, '加了一步：' + 标题);
+}
+
+async function 删步骤(路线名, 步id){
+  const r = 找路线(路线名); if (!r) return;
+  if (!confirm(`删掉「${步id}」这一步？指向它的线也会一起断开。`)) return;
+  r.步骤 = r.步骤.filter(s => s.id !== 步id);
+  r.步骤.forEach(s => s.next = (s.next || []).filter(x => x !== 步id));
+  await 存路线(r, '删了：' + 步id);
+}
+
+async function 改路线头(路线名){
+  const r = 找路线(路线名); if (!r) return;
+  const 名 = prompt('路线名字', r.名称); if (名 === null) return;
+  const 说 = prompt('一句话说明', r.说明 || ''); if (说 === null) return;
+  r.名称 = 名.trim() || r.名称; r.说明 = 说.trim();
+  await 存路线(r, '改好了');
+}
+
+async function 删路线(路线名){
+  const r = 找路线(路线名); if (!r) return;
+  if (!confirm(`删掉整条「${路线名}」？文件 ${r.文件名} 会被删除，这一步不可撤销。`)) return;
+  const res = await fetch('/删路线', {method: 'POST', body: JSON.stringify({文件名: r.文件名})});
+  const j = await res.json();
+  if (j.错误) { 提示('删不掉：' + j.错误); return; }
+  提示('删了 ' + r.文件名);
+  选中步 = null; $('#屉').classList.remove('开'); document.body.classList.remove('屉开');
+  await 取数();
+}
+
+async function 改步骤字段(路线名, 步id, 字段, 提示文){
+  const r = 找路线(路线名); if (!r) return;
+  const s = r.步骤.find(x => x.id === 步id); if (!s) return;
+  const v = prompt(提示文, s[字段] || ''); if (v === null) return;
+  s[字段] = v.trim();
+  await 存路线(r, '改好了');
+}
+
+async function 删步骤项(路线名, 步id, 字段, 值){
+  const r = 找路线(路线名); if (!r) return;
+  const s = r.步骤.find(x => x.id === 步id); if (!s) return;
+  s[字段] = (s[字段] || []).filter(x => x !== 值);
+  await 存路线(r, '移掉了 ' + 值);
+}
+
+async function 加步骤项(路线名, 步id, 字段){
+  const r = 找路线(路线名); if (!r) return;
+  const s = r.步骤.find(x => x.id === 步id); if (!s) return;
+  if (字段 === 'docs') {
+    const 选 = await 挑文档(); if (!选) return;
+    s.docs = s.docs || []; if (s.docs.includes(选)) { 提示('已经有了'); return; }
+    s.docs.push(选);
+  } else {
+    const v = prompt(字段 === 'tools' ? '工具路径（仓库相对）' : '产出 glob'); if (!v) return;
+    s[字段] = s[字段] || []; s[字段].push(v.trim());
+  }
+  await 存路线(r, '加好了');
+}
+
+let 候选缓存 = null;
+function 挑文档(){
+  return new Promise(async 完 => {
+    if (!候选缓存) 候选缓存 = await (await fetch('/候选')).json();
+    const 盒 = $('#挑'), 输 = 盒.querySelector('input'), 单 = 盒.querySelector('.单');
+    const 画单 = q => {
+      const 命 = 候选缓存.filter(c =>
+        !q || (c.路径 + ' ' + c.标题 + ' ' + c.类型).toLowerCase().includes(q)).slice(0, 80);
+      单.innerHTML = 命.map((c, i) => `<div data-i="${i}"><b>${转义(c.标题)}</b>
+        <small> · ${转义(c.类型)} · ${转义(c.路径)} · ${c.行数}行</small></div>`).join('')
+        || '<div><small>没找到</small></div>';
+      单.querySelectorAll('div[data-i]').forEach(d => d.onclick = () => 收(命[+d.dataset.i].路径));
+    };
+    const 收 = v => { 盒.classList.remove('开'); 输.oninput = null; 完(v); };
+    输.value = ''; 画单(''); 盒.classList.add('开'); 输.focus();
+    输.oninput = () => 画单(输.value.trim().toLowerCase());
+    盒.onclick = e => { if (e.target === 盒) 收(null); };
+  });
 }
 
 // ---------------------------------------------------------------- 选中与抽屉
@@ -452,23 +696,51 @@ function 开抽屉(n){
 }
 
 function 选步骤(路线名, 步id){
-  const r = (数据.路线 || []).find(x => x.名称 === 路线名); if (!r) return;
+  const r = 找路线(路线名); if (!r) return;
   const s = r.步骤.find(x => x.id === 步id); if (!s) return;
+  选中步 = {路线: 路线名, 步: 步id};
   document.querySelectorAll('.步').forEach(e => e.classList.toggle('选',
     e.dataset.路线 === 路线名 && e.dataset.步 === 步id));
+  const q = x => String(x).replace(/'/g, "\\'");
+  const 项 = (字段, 值, 文, 尾, 色条) =>
+    `<div class="行"><span class="点" style="display:inline-block;width:7px;height:7px;
+      border-radius:2px;background:${色条 || 'var(--字3)'}"></span>
+      <span>${转义(文)}</span>${尾 ? `<span class="尾">${转义(尾)}</span>` : ''}
+      <button class="叉" title="从这一步移掉"
+        onclick="删步骤项('${q(路线名)}','${q(步id)}','${字段}','${q(值)}')">✕</button></div>`;
   const 文档 = (s.docs || []).map(d => {
     const n = 按路径[d + '.md'];
-    return n ? 行(n.标题 || n.名称, `${n.行数}行 · ${n.类型}`, `跳('${n.路径.replace(/'/g, "\\'")}')`, 色(n.类型))
-             : 行(d + ' ⚠不存在', '', '', 'var(--错)');
-  }).join('') || '<div class="尾">—</div>';
+    return 项('docs', d, n ? (n.标题 || n.名称) : d + ' ⚠不存在',
+             n ? `${n.行数}行 · ${n.类型}` : '', n ? 色(n.类型) : 'var(--错)');
+  }).join('') || '<div class="尾" style="padding:4px 8px">还没挂文档</div>';
   const 行数 = (s.docs || []).reduce((a, d) => a + ((按路径[d + '.md'] || {}).行数 || 0), 0);
+  const 后续 = (s.next || []).map(x => {
+    const t2 = r.步骤.find(y => y.id === x);
+    return `<div class="行"><span>${转义(t2 ? t2.title : x)}</span>
+      <button class="叉" title="断开"
+        onclick="断线('${q(路线名)}','${q(步id)}','${q(x)}')">✕</button></div>`;
+  }).join('') || '<div class="尾" style="padding:4px 8px">这是末步</div>';
   $('#屉').innerHTML = `
-    <h3>${转义(s.title)}</h3><div class="路">${转义(路线名)} / ${转义(s.id)}</div>
-    ${s.note ? `<div style="color:var(--警);margin-bottom:10px">${转义(s.note)}</div>` : ''}
+    <h3>${转义(s.title)}</h3>
+    <div class="路">${转义(路线名)} / ${转义(s.id)}　<span style="color:var(--主);cursor:pointer"
+      onclick="改步骤字段('${q(路线名)}','${q(步id)}','title','这一步叫什么？')">改标题</span></div>
+    <div style="color:var(--警);margin-bottom:8px;cursor:pointer"
+      onclick="改步骤字段('${q(路线名)}','${q(步id)}','note','给 AI 的一句话护栏（留空则去掉）')">
+      ${s.note ? 转义(s.note) : '＋ 加一句给 AI 的护栏'}</div>
     <h5>要读的文档（${(s.docs || []).length} 篇 / 约 ${行数} 行）</h5>${文档}
-    ${(s.tools || []).length ? '<h5>工具</h5>' + s.tools.map(t => 行('🔧 ' + t, '', `抄('${t}')`)).join('') : ''}
-    ${(s.outputs || []).length ? '<h5>产出到</h5>' + s.outputs.map(o => 行('📦 ' + o)).join('') : ''}
-    <h5>给 AI 的命令</h5>${行('atlas 路线 ' + 路线名, '', `抄('atlas 路线 ${路线名}')`)}`;
+    <div class="行" onclick="加步骤项('${q(路线名)}','${q(步id)}','docs')">＋ 挂一篇文档</div>
+    <h5>工具</h5>
+    ${(s.tools || []).map(x => 项('tools', x, '🔧 ' + x)).join('')}
+    <div class="行" onclick="加步骤项('${q(路线名)}','${q(步id)}','tools')">＋ 加工具</div>
+    <h5>产出到</h5>
+    ${(s.outputs || []).map(x => 项('outputs', x, '📦 ' + x)).join('')}
+    <div class="行" onclick="加步骤项('${q(路线名)}','${q(步id)}','outputs')">＋ 加产出</div>
+    <h5>下一步</h5>${后续}
+    <h5>给 AI 的命令</h5>
+    <div class="行" onclick="抄('atlas 路线 ${q(路线名)}')">atlas 路线 ${转义(路线名)}</div>
+    <h5>危险</h5>
+    <div class="行" style="color:var(--错)"
+      onclick="删步骤('${q(路线名)}','${q(步id)}')">删掉这一步</div>`;
   $('#屉').classList.add('开'); document.body.classList.add('屉开');
 }
 
@@ -517,7 +789,7 @@ let 拖 = null;
 台.addEventListener('pointerup', () => { 拖 = null; 台.classList.remove('拖'); });
 台.addEventListener('click', e => {
   if (e.target.closest('.卡,.步')) return;
-  选中 = null; $('#线').innerHTML = 视图 === '路线' ? $('#线').innerHTML : '';
+  选中 = null; 选中步 = null; $('#线').innerHTML = 视图 === '路线' ? $('#线').innerHTML : '';
   document.querySelectorAll('.卡').forEach(c => c.classList.remove('选', '邻', '暗'));
   $('#屉').classList.remove('开'); document.body.classList.remove('屉开');
   if (视图 === '路线') 画();
@@ -633,6 +905,7 @@ $('#亮').onclick = () => {
 };
 try { if (localStorage.getItem('atlas亮')) document.documentElement.setAttribute('data-亮', '1'); } catch (e) {}
 $('#刷').onclick = () => 取数().then(() => 提示('已重新扫描'));
+$('#新路线').onclick = 新建路线;
 
 取数();
 </script>
