@@ -7,7 +7,12 @@
   POST /布局             存卡片位置
   POST /认领             把资产或工具挂到某个条目的 frontmatter 上
   POST /路线             按固定模板重写一条路线的 yml
+  POST /删路线           删掉一条路线的 yml
+  POST /还原             把某个文件写回指定内容（撤销/重做就靠它）
   GET  /候选             画布上选文档用的候选列表
+
+每个会写盘的接口都返回改之前的全文，画布把它压进撤销栈；撤销就是把那份全文写回去。
+写回前一律比对 mtime：对不上说明别人动过，中止，绝不覆盖。
 """
 from __future__ import annotations
 import json, mimetypes, os, threading, webbrowser
@@ -68,6 +73,33 @@ def 打包(根: Path) -> dict:
         "发现": [f.__dict__ for f in 结果], "体检": 体检数(idx, 结果),
         "统计": idx.统计(), "布局": 读布局(根),
     }
+
+
+def 读文本(p: Path):
+    return p.read_text(encoding="utf-8") if p.exists() else None
+
+
+def 写文本(p: Path, 内容):
+    """内容为 None 表示删掉这个文件。返回写完后的 mtime（删掉则为 None）。"""
+    if 内容 is None:
+        if p.exists():
+            p.unlink()
+        return None
+    p.parent.mkdir(parents=True, exist_ok=True)
+    临时 = p.with_suffix(p.suffix + ".tmp")
+    临时.write_text(内容, encoding="utf-8")
+    临时.replace(p)
+    return p.stat().st_mtime
+
+
+def 核对(p: Path, 期望):
+    if 期望 is None:
+        return
+    现在 = p.stat().st_mtime if p.exists() else None
+    if 现在 is None and 期望 is None:
+        return
+    if 现在 is None or abs(现在 - float(期望)) > 1e-6:
+        raise RuntimeError(f"{p.name} 在这期间被别人改过了，已中止——撤销会盖掉那些改动。刷新后再看。")
 
 
 class 处理器(BaseHTTPRequestHandler):
@@ -135,8 +167,11 @@ class 处理器(BaseHTTPRequestHandler):
                 字段 = 体.get("字段") or ("工具" if Path(文件).suffix.lower() in
                                         {".py", ".js", ".ts", ".sh", ".html"} else "资产")
                 分类 = 体.get("分类") or (None if 字段 == "工具" else "未分类")
+                旧 = 读文本(条目)
                 r = edit.认领(条目, 字段, 分类, 文件)
-                self._json({"好": True, "说明": r})
+                self._json({"好": True, "说明": r, "撤销": {
+                    "路径": 体["条目"], "旧内容": 旧, "新内容": 读文本(条目),
+                    "mtime": 条目.stat().st_mtime}})
             elif 路径 == "/路线":
                 名 = str(体["文件名"])
                 if "/" in 名 or "\\" in 名 or not 名.endswith(".yml"):
@@ -145,15 +180,31 @@ class 处理器(BaseHTTPRequestHandler):
                 mt = p.stat().st_mtime if (p.exists() and 体.get("mtime")) else None
                 if mt is not None and abs(mt - float(体["mtime"])) > 1e-6:
                     raise RuntimeError(f"{名} 在这期间被改过了，已中止。刷新后再试。")
+                旧 = 读文本(p)
                 edit.写路线(p, 体["路线"])
-                self._json({"好": True, "mtime": p.stat().st_mtime})
+                self._json({"好": True, "mtime": p.stat().st_mtime, "撤销": {
+                    "路径": f"路线/{名}", "旧内容": 旧, "新内容": 读文本(p),
+                    "mtime": p.stat().st_mtime}})
             elif 路径 == "/删路线":
                 名 = str(体["文件名"])
                 p = self.根 / "路线" / 名
                 if "/" in 名 or not 名.endswith(".yml") or not p.exists():
                     raise RuntimeError("文件名不合法")
+                旧 = 读文本(p)
                 p.unlink()
-                self._json({"好": True})
+                self._json({"好": True, "撤销": {
+                    "路径": f"路线/{名}", "旧内容": 旧, "新内容": None, "mtime": None}})
+            elif 路径 == "/还原":
+                rel = str(体["路径"]).replace("\\", "/")
+                p = (self.根 / rel).resolve()
+                if not str(p).startswith(str(self.根.resolve())):
+                    raise RuntimeError("路径越界")
+                if p.suffix not in (".md", ".yml"):
+                    raise RuntimeError("只还原 .md 和 .yml")
+                核对(p, 体.get("期望mtime"))
+                旧 = 读文本(p)
+                新mtime = 写文本(p, 体.get("内容"))
+                self._json({"好": True, "mtime": 新mtime, "被替换的": 旧})
             else:
                 self._json({"错误": "没这个接口"}, 404)
         except Exception as e:

@@ -151,6 +151,8 @@ pre.原{background:var(--底);border:1px solid var(--线);border-radius:8px;padd
   font-size:11.5px;color:var(--字3);z-index:25;transition:right .15s}
 body.屉开 #角{right:344px}
 #角 button{padding:4px 9px;border:1px solid var(--线);border-radius:7px;background:var(--面)}
+#角 button:disabled{opacity:.35;cursor:default}
+#角 button:not(:disabled):hover{border-color:var(--主);color:var(--字)}
 #提示{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--字);
   color:var(--底);padding:7px 15px;border-radius:8px;font-size:12.5px;opacity:0;
   transition:.2s;pointer-events:none;z-index:99}
@@ -179,7 +181,10 @@ body.屉开 #角{right:344px}
 </div>
 
 <div id="屉"></div>
-<div id="角"><span id="缩"></span><button id="回">回到全局</button></div>
+<div id="角"><span id="缩"></span>
+  <button id="撤销" disabled title="撤销 ⌘Z">↶</button>
+  <button id="重做" disabled title="重做 ⇧⌘Z">↷</button>
+  <button id="回">回到全局</button></div>
 <div id="提示"></div>
 <div id="挑"><div class="框"><input placeholder="搜文档…"><div class="单"></div></div></div>
 
@@ -422,6 +427,65 @@ function 画边(r, 位置){
   });
 }
 
+// ---------------------------------------------------------------- 撤销 / 重做
+// 每一笔记的是「文件改之前的全文」和「改之后的全文」。撤销就是把前者写回去，
+// 重做就是再写后者。路线、认领、迁移全走这一套，不用给每种操作写逆操作。
+const 撤销栈 = [], 重做栈 = [], 栈上限 = 60;
+
+function 记一笔(说明, 快照){
+  if (!快照) return;
+  撤销栈.push({说明, ...快照});
+  if (撤销栈.length > 栈上限) 撤销栈.shift();
+  重做栈.length = 0;
+  刷新撤销按钮();
+}
+
+function 记布局(说明, 旧, 新){
+  撤销栈.push({说明, 类型: '布局', 旧内容: 旧, 新内容: 新});
+  if (撤销栈.length > 栈上限) 撤销栈.shift();
+  重做栈.length = 0;
+  刷新撤销按钮();
+}
+
+function 刷新撤销按钮(){
+  const a = $('#撤销'), b = $('#重做');
+  a.disabled = !撤销栈.length; b.disabled = !重做栈.length;
+  a.title = 撤销栈.length ? `撤销「${撤销栈.at(-1).说明}」 ⌘Z` : '没什么可撤销的';
+  b.title = 重做栈.length ? `重做「${重做栈.at(-1).说明}」 ⇧⌘Z` : '没什么可重做的';
+}
+
+async function 走一步(笔, 目标内容, 动词){
+  if (笔.类型 === '布局'){
+    布局 = JSON.parse(JSON.stringify(目标内容 || {}));
+    await fetch('/布局', {method: 'POST', body: JSON.stringify(布局)});
+    提示(`已${动词}：${笔.说明}`);
+    画();
+    return true;
+  }
+  const res = await fetch('/还原', {method: 'POST', body: JSON.stringify(
+    {路径: 笔.路径, 内容: 目标内容, 期望mtime: 笔.mtime})});
+  const j = await res.json();
+  if (j.错误) { 提示(`${动词}不了：${j.错误}`); return false; }
+  笔.mtime = j.mtime;
+  提示(`已${动词}：${笔.说明}`);
+  await 取数();
+  return true;
+}
+
+async function 撤销(){
+  const 笔 = 撤销栈.at(-1); if (!笔) return;
+  if (await 走一步(笔, 笔.旧内容, '撤销')){
+    撤销栈.pop(); 重做栈.push(笔); 刷新撤销按钮();
+  }
+}
+
+async function 重做(){
+  const 笔 = 重做栈.at(-1); if (!笔) return;
+  if (await 走一步(笔, 笔.新内容, '重做')){
+    重做栈.pop(); 撤销栈.push(笔); 刷新撤销按钮();
+  }
+}
+
 // ---------------------------------------------------------------- 路线编辑
 async function 新建路线(){
   const 名 = prompt('新路线叫什么？（就写你最常干的那件事）'); if (!名) return;
@@ -433,6 +497,7 @@ async function 新建路线(){
                   steps: [{id: '第一步', title: '第一步', docs: [], next: []}]}})});
   const j = await res.json();
   if (j.错误) { 提示('建不了：' + j.错误); return; }
+  记一笔('新建路线 ' + 名.trim(), j.撤销);
   提示('建好了 ' + 文件名);
   await 取数();
 }
@@ -449,6 +514,7 @@ async function 存路线(r, 说明){
   const j = await res.json();
   if (j.错误) { 提示('写回失败：' + j.错误); return false; }
   r.mtime = j.mtime;
+  记一笔(说明 || '改了 ' + r.文件名, j.撤销);
   提示(说明 || '已写回 ' + r.文件名);
   const 记 = 选中步;
   await 取数();
@@ -553,6 +619,7 @@ async function 删路线(路线名){
   const res = await fetch('/删路线', {method: 'POST', body: JSON.stringify({文件名: r.文件名})});
   const j = await res.json();
   if (j.错误) { 提示('删不掉：' + j.错误); return; }
+  记一笔('删掉路线 ' + 路线名, j.撤销);
   提示('删了 ' + r.文件名);
   选中步 = null; $('#屉').classList.remove('开'); document.body.classList.remove('屉开');
   await 取数();
@@ -807,6 +874,7 @@ function 装拖动(选择器, 属性){
       const id = e.getAttribute(属性);
       const 起 = {x: ev.clientX, y: ev.clientY,
                  ox: parseFloat(e.style.left), oy: parseFloat(e.style.top)};
+      const 布局快照 = JSON.parse(JSON.stringify(布局));
       e.setPointerCapture(ev.pointerId);
       const 动 = m => {
         const dx = (m.clientX - 起.x) / 缩, dy = (m.clientY - 起.y) / 缩;
@@ -817,6 +885,8 @@ function 装拖动(选择器, 属性){
         e.removeEventListener('pointermove', 动); e.removeEventListener('pointerup', 停);
         if (e._拖过) {
           布局[id] = {x: parseFloat(e.style.left), y: parseFloat(e.style.top)};
+          记布局('挪了 ' + id.split(':').pop(), 布局快照,
+                JSON.parse(JSON.stringify(布局)));
           存布局();
           if (视图 === '路线') 画();
         }
@@ -856,6 +926,7 @@ document.addEventListener('drop', async e => {
     {条目: 卡.dataset.路径, 文件, 分类})});
   const j = await r.json();
   if (j.错误) { 提示('认领失败：' + j.错误); return; }
+  记一笔('认领 ' + 文件.split('/').pop(), j.撤销);
   提示('已认领：' + j.说明);
   await 取数();
 });
@@ -885,6 +956,12 @@ const 搜框 = $('#搜 input'), 搜果 = $('#搜果');
   });
 };
 document.addEventListener('keydown', e => {
+  const 在输入 = /^(INPUT|TEXTAREA)$/.test(document.activeElement?.tagName || '')
+                || document.activeElement?.isContentEditable;
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z' && !在输入){
+    e.preventDefault(); e.shiftKey ? 重做() : 撤销(); return;
+  }
+  if (在输入) return;
   if (e.key === '/' && document.activeElement !== 搜框) { e.preventDefault(); 搜框.focus(); }
   if (e.key === 'Escape') { 搜果.style.display = 'none'; 搜框.blur();
     $('#屉').classList.remove('开'); document.body.classList.remove('屉开'); }
@@ -903,6 +980,8 @@ $('#亮').onclick = () => {
 try { if (localStorage.getItem('atlas亮')) document.documentElement.setAttribute('data-亮', '1'); } catch (e) {}
 $('#刷').onclick = () => 取数().then(() => 提示('已重新扫描'));
 $('#新路线').onclick = 新建路线;
+$('#撤销').onclick = 撤销;
+$('#重做').onclick = 重做;
 
 取数();
 </script>
