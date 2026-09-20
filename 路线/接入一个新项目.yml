@@ -42,4 +42,4 @@ steps:
     title: 体检并装钩子
     note: 先看未归类文件、孤儿工具、缺 frontmatter 这三个数
     tools: [atlas]
-    docs: [规范/词表]
+    docs: [规范/元数据规范]

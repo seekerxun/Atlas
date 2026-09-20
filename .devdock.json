@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "name": "图谱 Atlas",
+  "detail": "项目知识导航：规范、模板、atlas 工具和画布本体",
+  "symbolName": "point.3.connected.trianglepath.dotted",
+  "targets": [
+    {
+      "name": "Atlas 自身画布",
+      "detail": "Atlas 拿自己当项目跑一遍，只绑 127.0.0.1",
+      "kind": "webPreview",
+      "port": 7392,
+      "url": "http://127.0.0.1:7392",
+      "startCommand": {
+        "executable": "/opt/homebrew/bin/python3",
+        "arguments": [
+          "/Users/seekerxun/Documents/LifeSpace/Atlas/atlas/atlas.py",
+          "serve",
+          "--端口",
+          "7392",
+          "--不开浏览器"
+        ],
+        "workingDirectory": "."
+      }
+    }
+  ]
+}

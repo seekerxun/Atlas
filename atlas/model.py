@@ -95,6 +95,7 @@ class 配置:
         self.机制名来源 = d.get("机制名来源") or {}
         self.忽略 = set(d.get("忽略") or []) | {".git", ".atlas", "node_modules", "__pycache__"}
         self.入口路线 = d.get("入口路线")
+        self.代码目录 = [str(x).strip("/") for x in (d.get("代码目录") or [])]
 
         w = y.parse(词表路径.read_text(encoding="utf-8"))
         self.库表 = w.get("库") or {}

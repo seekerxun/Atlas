@@ -144,8 +144,11 @@ def 校验(idx: 索引) -> list[发现]:
                 if nx not in ids:
                     加(发现("错误", "E08", f"{r.路径}#{st.id}", f"next → `{nx}` 不存在"))
 
-    # 孤儿工具 / 放错位置
+    # 孤儿工具 / 放错位置。代码目录是产品本身，不按"工具"要求
+    代码 = tuple(d + "/" for d in cfg.代码目录)
     for t in idx.工具:
+        if 代码 and t.startswith(代码):
+            continue
         认领 = [k for k in 被声明工具 if t == k or t.startswith(k.rstrip("/") + "/")]
         if not 认领:
             加(发现("警告", "W02", t, "孤儿工具：没有任何文档或路线声明使用它",
