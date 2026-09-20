@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Atlas 画布</title>
+<style>
+:root{
+  --底:#0f1115; --面:#171a21; --面2:#1e2230; --线:#2b3140;
+  --字:#e6e8ef; --字2:#99a1b3; --字3:#69718a;
+  --主:#5b9cf8; --好:#3fb950; --警:#d29922; --错:#f85149;
+  --k-总览:#8b8ff5; --k-世界观:#6f8df8; --k-系统:#5b9cf8; --k-数值:#d2a022;
+  --k-机制:#3fb0a8; --k-规范:#7f8da3; --k-流程:#4fb3d9;
+  --k-世界:#e0729a; --k-NPC:#b07ee8; --k-势力:#e88f5a; --k-技能:#6ac97a;
+  --k-道具:#c9a227; --k-副本:#e0655a; --k-剧情:#9d7ee8; --k-异常物:#d64ba0;
+  --k-谱痕:#4fb3d9; --k-力量体系:#3fb0a8; --k-创意:#7f8da3; --k-数据表:#a0a828;
+}
+:root[data-亮]{
+  --底:#f5f6f8; --面:#fff; --面2:#eef0f4; --线:#dde1e8;
+  --字:#1a1d24; --字2:#5a6171; --字3:#8b92a3;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden}
+body{background:var(--底);color:var(--字);
+  font:13px/1.55 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+
+#顶{display:flex;align-items:center;gap:12px;height:46px;padding:0 14px;
+  background:var(--面);border-bottom:1px solid var(--线);position:relative;z-index:30}
+#名{font-weight:650}
+#签{display:flex;gap:2px;background:var(--面2);padding:3px;border-radius:8px}
+#签 button{padding:4px 13px;border-radius:6px;color:var(--字2);font-size:12.5px}
+#签 button.开{background:var(--面);color:var(--字);font-weight:600;
+  box-shadow:0 1px 4px rgba(0,0,0,.3)}
+#搜{margin-left:auto;position:relative;width:250px}
+#搜 input{width:100%;padding:6px 10px;border-radius:7px;border:1px solid var(--线);
+  background:var(--底);color:var(--字);outline:none;font-size:12.5px}
+#搜 input:focus{border-color:var(--主)}
+#搜果{position:absolute;top:34px;left:0;right:0;background:var(--面);
+  border:1px solid var(--线);border-radius:8px;max-height:60vh;overflow:auto;display:none;z-index:50}
+#搜果 div{padding:7px 10px;cursor:pointer;border-bottom:1px solid var(--线);font-size:12.5px}
+#搜果 div:hover{background:var(--面2)}
+.丸{padding:3px 9px;border-radius:99px;font-size:11.5px;font-weight:600;white-space:nowrap}
+
+#台{position:absolute;inset:46px 0 0 0;overflow:hidden;cursor:grab}
+#台.拖{cursor:grabbing}
+#世界{position:absolute;transform-origin:0 0;will-change:transform}
+#线{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
+
+.盒{position:absolute;border:1px solid var(--线);border-radius:14px;
+  background:color-mix(in srgb,var(--面) 55%,transparent);padding:34px 14px 14px}
+.盒>.头{position:absolute;top:8px;left:14px;right:14px;display:flex;align-items:baseline;gap:8px}
+.盒>.头 b{font-size:14px}
+.盒>.头 span{font-size:11.5px;color:var(--字3)}
+.类标{position:absolute;font-size:11px;color:var(--字3);font-weight:600;
+  letter-spacing:.04em;white-space:nowrap}
+
+.卡{position:absolute;background:var(--面);border:1px solid var(--线);border-radius:10px;
+  padding:9px 10px;cursor:pointer;overflow:hidden;transition:border-color .1s,box-shadow .1s}
+.卡:hover{border-color:var(--主)}
+.卡.选{border-color:var(--主);box-shadow:0 0 0 2px var(--主)}
+.卡.邻{border-color:var(--好)}
+.卡.暗{opacity:.25}
+.卡 .条{position:absolute;left:0;top:0;bottom:0;width:3px}
+.卡 h4{margin:0;font-size:12.5px;font-weight:600;padding-left:7px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.卡 .要{padding-left:7px;font-size:11px;color:var(--字2);margin-top:3px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.卡 .脚{padding-left:7px;margin-top:6px;display:flex;gap:5px;flex-wrap:wrap}
+.小丸{font-size:10px;padding:1px 6px;border-radius:99px;background:var(--面2);color:var(--字3)}
+.小丸.草案{color:var(--警)} .小丸.图{color:#f0a0c0} .小丸.引{color:var(--主)}
+.图条{padding-left:7px;display:flex;gap:4px;margin-top:6px}
+.图条 img{width:30px;height:30px;object-fit:cover;border-radius:4px;background:var(--面2)}
+
+/* 语义缩放：远景只认容器，卡片退成色块；容器名反向补偿缩放保持可读 */
+body.远 .卡 .要,body.远 .卡 .脚,body.远 .卡 .图条,body.远 .类标,body.远 .卡 h4{display:none}
+body.远 .卡{background:color-mix(in srgb,var(--面) 70%,transparent)}
+body.远 .卡 .条{width:100%;opacity:.5}
+body.中 .卡 .脚{display:none}
+body.远 .盒>.头 b{font-size:calc(15px / var(--缩,1))}
+body.远 .盒>.头 span{font-size:calc(11px / var(--缩,1))}
+body.中 .盒>.头 b{font-size:calc(14px / var(--缩,1))}
+
+.步{position:absolute;background:var(--面);border:1px solid var(--线);border-radius:12px;
+  padding:11px 12px;width:250px;cursor:grab}
+.步.选{border-color:var(--主);box-shadow:0 0 0 2px var(--主)}
+.步 .序{font-size:10px;color:var(--字3);font-weight:700;letter-spacing:.09em}
+.步 h4{margin:2px 0 7px;font-size:13.5px}
+.步 .提{font-size:11px;color:var(--警);margin:-4px 0 7px}
+.步 li{list-style:none;font-size:11.5px;color:var(--字2);padding:1px 0;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.步 .点{display:inline-block;width:6px;height:6px;border-radius:2px;margin-right:5px}
+
+#屉{position:absolute;right:0;top:46px;bottom:0;width:330px;background:var(--面);
+  border-left:1px solid var(--线);overflow:auto;padding:14px;display:none;z-index:20}
+#屉.开{display:block}
+#屉 h3{margin:0 0 2px;font-size:15px}
+#屉 .路{font-size:11px;color:var(--字3);word-break:break-all;margin-bottom:10px;
+  font-family:ui-monospace,Menlo,monospace}
+#屉 h5{margin:14px 0 6px;font-size:11px;color:var(--字3);letter-spacing:.06em}
+.行{display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:7px;
+  background:var(--面2);margin-bottom:4px;font-size:12px;cursor:pointer}
+.行:hover{background:var(--线)}
+.行 .尾{margin-left:auto;color:var(--字3);font-size:10.5px}
+#屉 img.预{width:100%;border-radius:8px;margin-bottom:6px;background:var(--面2)}
+pre.原{background:var(--底);border:1px solid var(--线);border-radius:8px;padding:10px;
+  font-size:11px;max-height:300px;overflow:auto;white-space:pre-wrap;color:var(--字2)}
+
+#未{position:absolute;left:12px;bottom:12px;width:296px;background:var(--面);
+  border:1px solid var(--线);border-radius:12px;z-index:20;max-height:46vh;display:flex;flex-direction:column}
+#未 .头{padding:9px 12px;display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12.5px}
+#未 .体{overflow:auto;padding:0 8px 8px;display:none}
+#未.开 .体{display:block}
+#未 .项{padding:5px 8px;border-radius:6px;font-size:11.5px;color:var(--字2);
+  cursor:grab;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#未 .项:hover{background:var(--面2);color:var(--字)}
+#未 .组{font-size:10.5px;color:var(--字3);padding:7px 8px 3px;font-weight:600}
+.卡.可放,.步.可放{outline:2px dashed var(--好);outline-offset:2px}
+
+#角{position:absolute;right:14px;bottom:12px;display:flex;gap:8px;align-items:center;
+  font-size:11.5px;color:var(--字3);z-index:25;transition:right .15s}
+body.屉开 #角{right:344px}
+#角 button{padding:4px 9px;border:1px solid var(--线);border-radius:7px;background:var(--面)}
+#提示{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--字);
+  color:var(--底);padding:7px 15px;border-radius:8px;font-size:12.5px;opacity:0;
+  transition:.2s;pointer-events:none;z-index:99}
+#提示.开{opacity:1}
+.空{color:var(--字3);padding:60px;text-align:center}
+</style>
+</head>
+<body>
+<div id="顶">
+  <div id="名">Atlas</div>
+  <div id="签"></div>
+  <span class="丸" id="体检"></span>
+  <div id="搜"><input placeholder="搜条目 / 工具 / 资产   （/）"><div id="搜果"></div></div>
+  <button id="亮" title="亮/暗">◐</button>
+  <button id="刷" title="重新扫描">↻</button>
+</div>
+
+<div id="台"><div id="世界"><svg id="线"></svg></div></div>
+
+<div id="未">
+  <div class="头"><b>未认领</b><span id="未数"></span>
+    <span style="margin-left:auto;color:var(--字3)">▾</span></div>
+  <div class="体" id="未体"></div>
+</div>
+
+<div id="屉"></div>
+<div id="角"><span id="缩"></span><button id="回">回到全局</button></div>
+<div id="提示"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const 转义 = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const 图后缀 = /\.(png|jpg|jpeg|webp|gif|svg)$/i;
+let 数据 = null, 视图 = '内容', 选中 = null, 布局 = {};
+let 缩 = 0.55, 位 = {x: 60, y: 60};
+const 按路径 = {}, 按编号 = {}, 按名 = {};
+
+function 提示(s){ const t = $('#提示'); t.textContent = s; t.classList.add('开');
+  clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('开'), 1600); }
+const 色 = k => `var(--k-${k}, var(--字3))`;
+
+// ---------------------------------------------------------------- 取数
+async function 取数(){
+  const r = await fetch('/数据');
+  数据 = await r.json();
+  if (数据.错误) { document.body.innerHTML = '<div class="空">' + 转义(数据.错误) + '</div>'; return; }
+  布局 = 数据.布局 || {};
+  $('#名').textContent = 数据.项目;
+  for (const k in 按路径) delete 按路径[k];
+  数据.条目.forEach(n => {
+    按路径[n.路径] = n;
+    if (n.编号) 按编号[n.编号] ??= n;
+    const stem = n.路径.split('/').pop().replace(/\.md$/, '');
+    按名[stem] ??= n;
+  });
+  const t = 数据.体检;
+  const 签 = $('#体检');
+  签.textContent = t.错误 ? `${t.错误} 错误` : (t.警告 ? `${t.警告} 警告` : '零问题');
+  签.style.background = t.错误 ? 'rgba(248,81,73,.16)' : t.警告 ? 'rgba(210,153,34,.16)' : 'rgba(63,185,80,.16)';
+  签.style.color = t.错误 ? 'var(--错)' : t.警告 ? 'var(--警)' : 'var(--好)';
+  画签(); 画未认领(); 画();
+}
+
+function 解析(目标){
+  目标 = String(目标 || '').trim(); if (!目标) return null;
+  return 按编号[目标.split(' ')[0]] || 按名[目标] || 按路径[目标 + '.md'] || null;
+}
+
+// ---------------------------------------------------------------- 视图切换
+const 视图们 = ['路线', '策划', '内容', '创意', '资产'];
+function 画签(){
+  $('#签').innerHTML = 视图们.map(v =>
+    `<button data-v="${v}" class="${v === 视图 ? '开' : ''}">${v}</button>`).join('');
+  $('#签').querySelectorAll('button').forEach(b => b.onclick = () => {
+    视图 = b.dataset.v; 选中 = null;
+    $('#屉').classList.remove('开'); document.body.classList.remove('屉开');
+    缩 = 0.55; 位 = {x: 60, y: 60}; 画签(); 画();
+  });
+}
+
+// ---------------------------------------------------------------- 布局计算
+const 卡宽 = 190, 卡高 = 74, 隙 = 12, 盒隙 = 40;
+
+function 分组数据(){
+  const 库 = 视图;
+  const ns = 数据.条目.filter(n => n.库 === 库);
+  const 盒 = {};
+  ns.forEach(n => (盒[n.分组 || '（未分组）'] ??= []).push(n));
+  return 盒;
+}
+
+function 算库布局(){
+  const 盒 = 分组数据(), 结果 = [];
+  let x = 40, y = 40, 行高 = 0;
+  const 限宽 = 2400;
+  Object.keys(盒).sort((a, b) => 盒[b].length - 盒[a].length).forEach(名 => {
+    const ns = 盒[名].slice().sort((a, b) =>
+      (a.类型 + a.标题).localeCompare(b.类型 + b.标题, 'zh'));
+    const 类组 = {}; ns.forEach(n => (类组[n.类型 || '?'] ??= []).push(n));
+    const 列 = Math.min(4, Math.max(2, Math.ceil(Math.sqrt(ns.length))));
+    let 内y = 0; const 卡们 = [];
+    Object.keys(类组).forEach(类 => {
+      卡们.push({类标: 类, x: 0, y: 内y}); 内y += 18;
+      类组[类].forEach((n, i) => {
+        const c = i % 列, r = (i / 列) | 0;
+        卡们.push({节: n, x: c * (卡宽 + 隙), y: 内y + r * (卡高 + 隙)});
+      });
+      内y += Math.ceil(类组[类].length / 列) * (卡高 + 隙) + 10;
+    });
+    const w = 列 * (卡宽 + 隙) - 隙 + 28, h = 内y + 40;
+    if (x + w > 限宽 && x > 40) { x = 40; y += 行高 + 盒隙; 行高 = 0; }
+    const id = `盒:${视图}:${名}`;
+    const p = 布局[id] || {x, y};
+    结果.push({id, 名, 数: ns.length, x: p.x, y: p.y, w, h, 卡们});
+    x += w + 盒隙; 行高 = Math.max(行高, h);
+  });
+  return 结果;
+}
+
+function 算路线布局(r, 基y){
+  const 步 = r.步骤, 位序 = {}; 步.forEach((s, i) => 位序[s.id] = i);
+  const 入度 = 步.map(() => 0);
+  步.forEach(s => (s.next || []).forEach(n => { if (位序[n] != null) 入度[位序[n]]++; }));
+  const 深 = 步.map(() => 0);
+  let 队 = 步.map((_, i) => i).filter(i => 入度[i] === 0), 守 = 0;
+  while (队.length && 守++ < 9999) {
+    const i = 队.shift();
+    (步[i].next || []).forEach(n => {
+      const j = 位序[n]; if (j == null) return;
+      if (深[j] < 深[i] + 1) { 深[j] = 深[i] + 1; 队.push(j); }
+    });
+  }
+  const 列 = {}; 步.forEach((s, i) => (列[深[i]] ??= []).push(i));
+  const 位置 = [];
+  Object.keys(列).map(Number).sort((a, b) => a - b).forEach(d => {
+    let y = 40;
+    列[d].forEach(i => {
+      const 高 = 78 + ((步[i].docs || []).length + (步[i].tools || []).length +
+                      (步[i].outputs || []).length) * 18 + (步[i].note ? 20 : 0);
+      const id = `步:${r.名称}:${步[i].id}`;
+      const p = 布局[id] || {x: 40 + d * 310, y: 基y + y};
+      位置[i] = {id, x: p.x, y: p.y, h: 高};
+      y += 高 + 26;
+    });
+  });
+  return 位置;
+}
+
+// ---------------------------------------------------------------- 画
+function 画(){
+  const w = $('#世界');
+  w.querySelectorAll('.盒,.卡,.步,.类标,.空').forEach(e => e.remove());
+  $('#线').innerHTML = '';
+  if (视图 === '路线') 画路线(); else 画库();
+  应用变换();
+}
+
+function 卡html(n){
+  const 图 = (n.资产展开 || []).filter(a => 图后缀.test(a)).slice(0, 3);
+  return `<div class="条" style="background:${色(n.类型)}"></div>
+    <h4>${转义(n.标题 || n.名称)}</h4>
+    ${n.摘要 ? `<div class="要">${转义(n.摘要)}</div>` : ''}
+    ${图.length ? `<div class="图条">${图.map(a =>
+      `<img loading="lazy" src="/文件/${encodeURI(a)}">`).join('')}</div>` : ''}
+    <div class="脚">
+      <span class="小丸 ${n.状态 === '草案' ? '草案' : ''}">${转义(n.状态)}</span>
+      ${(n.被引用 || []).length ? `<span class="小丸 引">被引 ${n.被引用.length}</span>` : ''}
+      ${(n.资产展开 || []).length ? `<span class="小丸 图">${n.资产展开.length} 图</span>` : ''}
+      ${(n.路线 || []).length ? `<span class="小丸">${转义(n.路线[0])}</span>` : ''}
+    </div>`;
+}
+
+function 画库(){
+  const w = $('#世界'), 盒们 = 算库布局();
+  if (!盒们.length) {
+    w.insertAdjacentHTML('beforeend', `<div class="空" style="position:absolute;left:40px;top:40px">
+      ${视图}库还是空的。</div>`);
+    return;
+  }
+  盒们.forEach(b => {
+    const 内 = b.卡们.map(c => c.类标
+      ? `<div class="类标" style="left:${c.x + 14}px;top:${c.y + 34}px;color:${色(c.类标)}">● ${转义(c.类标)}</div>`
+      : `<div class="卡" data-路径="${转义(c.节.路径)}"
+           style="left:${c.x + 14}px;top:${c.y + 34}px;width:${卡宽}px;min-height:${卡高}px">
+           ${卡html(c.节)}</div>`).join('');
+    w.insertAdjacentHTML('beforeend',
+      `<div class="盒" data-id="${b.id}" style="left:${b.x}px;top:${b.y}px;width:${b.w}px;height:${b.h}px">
+        <div class="头"><b>${转义(b.名)}</b><span>${b.数} 条</span></div>${内}</div>`);
+  });
+  w.querySelectorAll('.卡').forEach(e => e.onclick = ev => {
+    ev.stopPropagation(); 选条目(e.dataset.路径);
+  });
+  装拖动('.盒', 'data-id');
+}
+
+function 画路线(){
+  const w = $('#世界');
+  let 基y = 60;
+  (数据.路线 || []).forEach(r => {
+    const 位置 = 算路线布局(r, 基y);
+    基y = Math.max(...位置.map(p => p.y + p.h), 基y) + 90;
+    w.insertAdjacentHTML('beforeend',
+      `<div class="类标" style="left:${位置[0] ? 位置[0].x : 40}px;top:${(位置[0] ? 位置[0].y : 40) - 26}px;
+        font-size:15px;color:var(--主)">${r.入口 ? '★ ' : ''}${转义(r.名称)}
+        <span style="color:var(--字3);font-weight:400">　${转义(r.说明 || '')}</span></div>`);
+    r.步骤.forEach((s, i) => {
+      const p = 位置[i]; if (!p) return;
+      const 条目们 = (s.docs || []).map(d => 按路径[d + '.md']);
+      const li = (s.docs || []).map((d, k) => {
+        const n = 条目们[k];
+        return `<li><span class="点" style="background:${n ? 色(n.类型) : 'var(--错)'}"></span>${
+          转义(n ? (n.标题 || n.名称) : d + ' ⚠缺失')}</li>`;
+      }).join('');
+      const 尾 = [...(s.tools || []).map(t => `<li>🔧 ${转义(t.split('/').pop())}</li>`),
+                 ...(s.outputs || []).map(o => `<li>📦 ${转义(o)}</li>`)].join('');
+      w.insertAdjacentHTML('beforeend',
+        `<div class="步" data-id="${p.id}" data-路线="${转义(r.名称)}" data-步="${转义(s.id)}"
+          style="left:${p.x}px;top:${p.y}px">
+          <div class="序">步骤 ${i + 1}</div><h4>${转义(s.title)}</h4>
+          ${s.note ? `<div class="提">${转义(s.note)}</div>` : ''}
+          <ul style="margin:0;padding:0">${li}${尾}</ul></div>`);
+    });
+    // 连线
+    requestAnimationFrame(() => {
+      const svg = $('#线'); let d = svg.innerHTML;
+      r.步骤.forEach((s, i) => (s.next || []).forEach(nx => {
+        const j = r.步骤.findIndex(x => x.id === nx); if (j < 0) return;
+        const a = w.querySelector(`[data-id="${CSS.escape(位置[i].id)}"]`);
+        const b = w.querySelector(`[data-id="${CSS.escape(位置[j].id)}"]`);
+        if (!a || !b) return;
+        const x1 = 位置[i].x + 250, y1 = 位置[i].y + a.offsetHeight / 2;
+        const x2 = 位置[j].x, y2 = 位置[j].y + b.offsetHeight / 2, mx = (x1 + x2) / 2;
+        d += `<path d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}" fill="none"
+              stroke="var(--线)" stroke-width="2"/><circle cx="${x2}" cy="${y2}" r="3.5" fill="var(--主)"/>`;
+      }));
+      svg.innerHTML = d;
+    });
+  });
+  w.querySelectorAll('.步').forEach(e => e.onclick = ev => {
+    if (e._拖过) { e._拖过 = false; return; }
+    ev.stopPropagation(); 选步骤(e.dataset.路线, e.dataset.步);
+  });
+  装拖动('.步', 'data-id');
+}
+
+// ---------------------------------------------------------------- 选中与抽屉
+function 一跳(n){
+  const s = new Set([n.路径]);
+  Object.values(n.关联 || {}).flat().forEach(t => { const x = 解析(t); if (x) s.add(x.路径); });
+  (n.被引用 || []).forEach(p => s.add(p));
+  (n.软引用 || []).forEach(t => { const x = 解析(t); if (x) s.add(x.路径); });
+  return s;
+}
+
+function 选条目(路径){
+  const n = 按路径[路径]; if (!n) return;
+  选中 = 路径;
+  const 近 = 一跳(n);
+  document.querySelectorAll('.卡').forEach(c => {
+    const p = c.dataset.路径;
+    c.classList.toggle('选', p === 路径);
+    c.classList.toggle('邻', p !== 路径 && 近.has(p));
+    c.classList.toggle('暗', !近.has(p));
+  });
+  连一跳(路径, 近);
+  开抽屉(n);
+}
+
+function 连一跳(路径, 近){
+  const svg = $('#线'), w = $('#世界');
+  const 取盒 = p => {
+    const e = w.querySelector(`.卡[data-路径="${CSS.escape(p)}"]`); if (!e) return null;
+    const 盒 = e.closest('.盒');
+    return {x: parseFloat(盒.style.left) + e.offsetLeft + e.offsetWidth / 2,
+            y: parseFloat(盒.style.top) + e.offsetTop + e.offsetHeight / 2};
+  };
+  const a = 取盒(路径); if (!a) { svg.innerHTML = ''; return; }
+  let d = '';
+  近.forEach(p => {
+    if (p === 路径) return;
+    const b = 取盒(p); if (!b) return;
+    d += `<path d="M${a.x},${a.y} L${b.x},${b.y}" stroke="var(--好)" stroke-width="1.5"
+          opacity=".55" fill="none"/>`;
+  });
+  svg.innerHTML = d;
+}
+
+function 行(文, 尾, 点击, 色条){
+  return `<div class="行" ${点击 ? `onclick="${点击}"` : ''}>
+    ${色条 ? `<span class="点" style="display:inline-block;width:7px;height:7px;border-radius:2px;background:${色条}"></span>` : ''}
+    <span>${转义(文)}</span>${尾 ? `<span class="尾">${转义(尾)}</span>` : ''}</div>`;
+}
+
+function 开抽屉(n){
+  const 关联 = Object.entries(n.关联 || {}).map(([k, v]) =>
+    `<h5>${转义(k)}</h5>` + (Array.isArray(v) ? v : [v]).map(t => {
+      const x = 解析(t);
+      return 行(x ? (x.标题 || x.名称) : t + ' ⚠找不到', x ? x.类型 : '',
+               x ? `跳('${x.路径.replace(/'/g, "\\'")}')` : '', x ? 色(x.类型) : 'var(--错)');
+    }).join('')).join('');
+  const 被引 = (n.被引用 || []).map(p => {
+    const x = 按路径[p];
+    return 行(x ? (x.标题 || x.名称) : p, x ? x.类型 : '', `跳('${p.replace(/'/g, "\\'")}')`,
+             x ? 色(x.类型) : '');
+  }).join('');
+  const 图 = (n.资产展开 || []).filter(a => 图后缀.test(a));
+  $('#屉').innerHTML = `
+    <h3>${转义(n.标题 || n.名称)}</h3>
+    <div class="路">${转义(n.路径)}</div>
+    ${n.摘要 ? `<div style="color:var(--字2);margin-bottom:10px">${转义(n.摘要)}</div>` : ''}
+    <div class="行" onclick="抄('${n.路径.replace(/'/g, "\\'")}')">📋 复制路径</div>
+    <h5>属性</h5>
+    ${行(n.类型, `${n.状态} · ${n.分组 || '—'} · ${n.行数}行`, '', 色(n.类型))}
+    ${n.位阶 != null ? 行('位阶 ' + n.位阶, '') : ''}
+    ${(n.标签 || []).length ? `<div style="margin-top:6px">${(n.标签 || []).map(t =>
+      `<span class="小丸">${转义(t)}</span>`).join(' ')}</div>` : ''}
+    ${(n.机制 || []).length ? '<h5>调用机制</h5>' + n.机制.map(m => 行(m, '机制目录')).join('') : ''}
+    ${关联}
+    ${被引 ? '<h5>被谁引用</h5>' + 被引 : ''}
+    ${(n.工具 || []).length ? '<h5>工具</h5>' + n.工具.map(t => 行(t, '', `抄('${t}')`)).join('') : ''}
+    ${图.length ? '<h5>资产 (' + 图.length + ')</h5>' + 图.map(a =>
+      `<img class="预" src="/文件/${encodeURI(a)}" title="${转义(a)}">`).join('') : ''}
+    ${(n.路线 || []).length ? '<h5>出现在路线</h5>' + n.路线.map(r => 行(r, '', `去路线('${r}')`)).join('') : ''}
+    <h5>正文</h5><pre class="原" id="原">读取中…</pre>`;
+  $('#屉').classList.add('开'); document.body.classList.add('屉开');
+  fetch('/文件/' + encodeURI(n.路径)).then(r => r.text()).then(t => {
+    const p = $('#原'); if (p) p.textContent = t.replace(/^---[\s\S]*?\n---\n/, '').slice(0, 4000);
+  });
+}
+
+function 选步骤(路线名, 步id){
+  const r = (数据.路线 || []).find(x => x.名称 === 路线名); if (!r) return;
+  const s = r.步骤.find(x => x.id === 步id); if (!s) return;
+  document.querySelectorAll('.步').forEach(e => e.classList.toggle('选',
+    e.dataset.路线 === 路线名 && e.dataset.步 === 步id));
+  const 文档 = (s.docs || []).map(d => {
+    const n = 按路径[d + '.md'];
+    return n ? 行(n.标题 || n.名称, `${n.行数}行 · ${n.类型}`, `跳('${n.路径.replace(/'/g, "\\'")}')`, 色(n.类型))
+             : 行(d + ' ⚠不存在', '', '', 'var(--错)');
+  }).join('') || '<div class="尾">—</div>';
+  const 行数 = (s.docs || []).reduce((a, d) => a + ((按路径[d + '.md'] || {}).行数 || 0), 0);
+  $('#屉').innerHTML = `
+    <h3>${转义(s.title)}</h3><div class="路">${转义(路线名)} / ${转义(s.id)}</div>
+    ${s.note ? `<div style="color:var(--警);margin-bottom:10px">${转义(s.note)}</div>` : ''}
+    <h5>要读的文档（${(s.docs || []).length} 篇 / 约 ${行数} 行）</h5>${文档}
+    ${(s.tools || []).length ? '<h5>工具</h5>' + s.tools.map(t => 行('🔧 ' + t, '', `抄('${t}')`)).join('') : ''}
+    ${(s.outputs || []).length ? '<h5>产出到</h5>' + s.outputs.map(o => 行('📦 ' + o)).join('') : ''}
+    <h5>给 AI 的命令</h5>${行('atlas 路线 ' + 路线名, '', `抄('atlas 路线 ${路线名}')`)}`;
+  $('#屉').classList.add('开'); document.body.classList.add('屉开');
+}
+
+function 跳(路径){
+  const n = 按路径[路径]; if (!n) return;
+  if (n.库 && n.库 !== 视图) { 视图 = n.库; 画签(); 画(); }
+  setTimeout(() => { 选条目(路径); 聚焦(路径); }, 30);
+}
+function 去路线(名){ 视图 = '路线'; 画签(); 画(); 提示('路线：' + 名); }
+function 抄(t){ navigator.clipboard?.writeText(t); 提示('已复制 ' + t); }
+
+function 聚焦(路径){
+  const e = $('#世界').querySelector(`.卡[data-路径="${CSS.escape(路径)}"]`); if (!e) return;
+  const 盒 = e.closest('.盒');
+  const x = parseFloat(盒.style.left) + e.offsetLeft, y = parseFloat(盒.style.top) + e.offsetTop;
+  缩 = Math.max(缩, 0.9);
+  位 = {x: innerWidth / 2 - (x + 卡宽 / 2) * 缩, y: innerHeight / 2 - (y + 40) * 缩};
+  应用变换();
+}
+
+// ---------------------------------------------------------------- 变换
+function 应用变换(){
+  $('#世界').style.transform = `translate(${位.x}px,${位.y}px) scale(${缩})`;
+  document.documentElement.style.setProperty('--缩', 缩);
+  document.body.classList.toggle('远', 缩 < 0.38);
+  document.body.classList.toggle('中', 缩 >= 0.38 && 缩 < 0.8);
+  $('#缩').textContent = Math.round(缩 * 100) + '%';
+}
+const 台 = $('#台');
+台.addEventListener('wheel', e => {
+  e.preventDefault();
+  const k = Math.exp(-e.deltaY * 0.0016), 新 = Math.min(2.4, Math.max(0.12, 缩 * k));
+  const r = 台.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+  位.x = mx - (mx - 位.x) * (新 / 缩); 位.y = my - (my - 位.y) * (新 / 缩);
+  缩 = 新; 应用变换();
+}, {passive: false});
+let 拖 = null;
+台.addEventListener('pointerdown', e => {
+  if (e.target.closest('.卡,.步,.盒')) return;
+  拖 = {x: e.clientX - 位.x, y: e.clientY - 位.y}; 台.classList.add('拖');
+  台.setPointerCapture(e.pointerId);
+});
+台.addEventListener('pointermove', e => {
+  if (!拖) return; 位 = {x: e.clientX - 拖.x, y: e.clientY - 拖.y}; 应用变换();
+});
+台.addEventListener('pointerup', () => { 拖 = null; 台.classList.remove('拖'); });
+台.addEventListener('click', e => {
+  if (e.target.closest('.卡,.步')) return;
+  选中 = null; $('#线').innerHTML = 视图 === '路线' ? $('#线').innerHTML : '';
+  document.querySelectorAll('.卡').forEach(c => c.classList.remove('选', '邻', '暗'));
+  $('#屉').classList.remove('开'); document.body.classList.remove('屉开');
+  if (视图 === '路线') 画();
+});
+$('#回').onclick = () => { 缩 = 0.4; 位 = {x: 60, y: 60}; 应用变换(); };
+
+// ---------------------------------------------------------------- 拖动卡片存布局
+let 存计时 = null;
+function 存布局(){
+  clearTimeout(存计时);
+  存计时 = setTimeout(() => fetch('/布局', {method: 'POST', body: JSON.stringify(布局)}), 400);
+}
+function 装拖动(选择器, 属性){
+  $('#世界').querySelectorAll(选择器).forEach(e => {
+    e.addEventListener('pointerdown', ev => {
+      if (ev.target.closest('.卡') && 选择器 === '.盒') return;
+      ev.stopPropagation();
+      const id = e.getAttribute(属性);
+      const 起 = {x: ev.clientX, y: ev.clientY,
+                 ox: parseFloat(e.style.left), oy: parseFloat(e.style.top)};
+      e.setPointerCapture(ev.pointerId);
+      const 动 = m => {
+        const dx = (m.clientX - 起.x) / 缩, dy = (m.clientY - 起.y) / 缩;
+        if (Math.abs(dx) + Math.abs(dy) > 3) e._拖过 = true;
+        e.style.left = (起.ox + dx) + 'px'; e.style.top = (起.oy + dy) + 'px';
+      };
+      const 停 = () => {
+        e.removeEventListener('pointermove', 动); e.removeEventListener('pointerup', 停);
+        if (e._拖过) {
+          布局[id] = {x: parseFloat(e.style.left), y: parseFloat(e.style.top)};
+          存布局();
+          if (视图 === '路线') 画();
+        }
+      };
+      e.addEventListener('pointermove', 动); e.addEventListener('pointerup', 停);
+    });
+  });
+}
+
+// ---------------------------------------------------------------- 未认领抽屉
+function 画未认领(){
+  const 组 = [['未认领资产', 数据.未认领资产], ['孤儿工具', 数据.孤儿工具],
+             ['未归类文件', 数据.未归类], ['产出（未挑）', 数据.产出]];
+  const 总 = 组.reduce((a, [, v]) => a + (v || []).length, 0);
+  $('#未数').textContent = 总 ? `${总} 件` : '空了';
+  $('#未数').style.color = 总 ? 'var(--警)' : 'var(--好)';
+  $('#未体').innerHTML = 组.filter(([, v]) => (v || []).length).map(([k, v]) =>
+    `<div class="组">${k} · ${v.length}</div>` + v.map(p =>
+      `<div class="项" draggable="true" data-文件="${转义(p)}" title="${转义(p)}">${转义(p)}</div>`).join('')
+  ).join('') || '<div class="组">都挂上了</div>';
+  $('#未体').querySelectorAll('.项').forEach(e => {
+    e.ondragstart = ev => {
+      ev.dataTransfer.setData('text/plain', e.dataset.文件);
+      document.querySelectorAll('.卡').forEach(c => c.classList.add('可放'));
+    };
+    e.ondragend = () => document.querySelectorAll('.卡').forEach(c => c.classList.remove('可放'));
+  });
+}
+$('#未 .头').onclick = () => $('#未').classList.toggle('开');
+document.addEventListener('dragover', e => { if (e.target.closest('.卡')) e.preventDefault(); });
+document.addEventListener('drop', async e => {
+  const 卡 = e.target.closest('.卡'); if (!卡) return;
+  e.preventDefault();
+  const 文件 = e.dataTransfer.getData('text/plain'); if (!文件) return;
+  const 分类 = 图后缀.test(文件) ? (prompt('挂成哪一类？（人设 / 场景 / 图标 …）', '未分类') || '未分类') : null;
+  const r = await fetch('/认领', {method: 'POST', body: JSON.stringify(
+    {条目: 卡.dataset.路径, 文件, 分类})});
+  const j = await r.json();
+  if (j.错误) { 提示('认领失败：' + j.错误); return; }
+  提示('已认领：' + j.说明);
+  await 取数();
+});
+
+// ---------------------------------------------------------------- 搜索
+const 搜框 = $('#搜 input'), 搜果 = $('#搜果');
+搜框.oninput = () => {
+  const q = 搜框.value.trim().toLowerCase();
+  if (!q) { 搜果.style.display = 'none'; return; }
+  const 命中 = [];
+  数据.条目.forEach(n => {
+    if (`${n.路径} ${n.编号} ${n.名称} ${n.类型} ${n.摘要} ${(n.标签 || []).join(' ')}`
+        .toLowerCase().includes(q))
+      命中.push({文: n.标题 || n.名称, 副: `${n.类型} · ${n.路径}`, 走: () => 跳(n.路径)});
+  });
+  数据.资产.forEach(a => { if (a.toLowerCase().includes(q))
+    命中.push({文: a.split('/').pop(), 副: '资产 · ' + a, 走: () => 抄(a)}); });
+  数据.工具.forEach(t => { if (t.toLowerCase().includes(q))
+    命中.push({文: t.split('/').pop(), 副: '工具 · ' + t, 走: () => 抄(t)}); });
+  const 前 = 命中.slice(0, 30);
+  搜果.innerHTML = 前.map((h, i) => `<div data-i="${i}"><b>${转义(h.文)}</b>
+    <span style="color:var(--字3);font-size:11px"> · ${转义(h.副)}</span></div>`).join('')
+    || '<div style="color:var(--字3)">没找到</div>';
+  搜果.style.display = 'block';
+  搜果.querySelectorAll('div[data-i]').forEach(d => d.onclick = () => {
+    前[+d.dataset.i].走(); 搜果.style.display = 'none'; 搜框.value = '';
+  });
+};
+document.addEventListener('keydown', e => {
+  if (e.key === '/' && document.activeElement !== 搜框) { e.preventDefault(); 搜框.focus(); }
+  if (e.key === 'Escape') { 搜果.style.display = 'none'; 搜框.blur();
+    $('#屉').classList.remove('开'); document.body.classList.remove('屉开'); }
+  if (e.key >= '1' && e.key <= '5' && document.activeElement !== 搜框) {
+    视图 = 视图们[+e.key - 1]; 画签(); 画();
+  }
+});
+document.addEventListener('click', e => { if (!$('#搜').contains(e.target)) 搜果.style.display = 'none'; });
+
+$('#亮').onclick = () => {
+  const 亮 = document.documentElement.hasAttribute('data-亮');
+  if (亮) document.documentElement.removeAttribute('data-亮');
+  else document.documentElement.setAttribute('data-亮', '1');
+  try { localStorage.setItem('atlas亮', 亮 ? '' : '1'); } catch (e) {}
+};
+try { if (localStorage.getItem('atlas亮')) document.documentElement.setAttribute('data-亮', '1'); } catch (e) {}
+$('#刷').onclick = () => 取数().then(() => 提示('已重新扫描'));
+
+取数();
+</script>
+</body>
+</html>

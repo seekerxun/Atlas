@@ -10,6 +10,7 @@
   atlas 认领 <文件> <条目> [--分类 人设]
   atlas 新建 <模板> <路径>
   atlas 钩子                装 git pre-commit
+  atlas serve [--端口 7391] [--不开浏览器]   起本地画布
 """
 from __future__ import annotations
 import json, os, shutil, sys
@@ -284,6 +285,12 @@ def 命令_新建(args):
     print(f"  已登记进 {reg.name}")
 
 
+# ---------------------------------------------------------------- serve
+def 命令_serve(args):
+    import serve as S
+    S.起服务(根目录(), int(args.端口 or 7391), not args.不开浏览器)
+
+
 # ---------------------------------------------------------------- 钩子
 钩子内容 = """#!/bin/sh
 # atlas pre-commit
@@ -326,16 +333,20 @@ def main():
     q.add_argument("--分类"); q.add_argument("--演习", action="store_true")
     q = sub.add_parser("新建"); q.add_argument("模板"); q.add_argument("路径")
     sub.add_parser("钩子")
+    q = sub.add_parser("serve")
+    q.add_argument("--端口", default=7391); q.add_argument("--不开浏览器", action="store_true")
 
     args = ap.parse_args()
     if not args.命令:
         ap.print_help()
         return
-    for k in ("只看错误", "列表", "演习", "名字", "分类", "筛选", "加字段", "改名"):
+    for k in ("只看错误", "列表", "演习", "名字", "分类", "筛选", "加字段", "改名",
+              "端口", "不开浏览器"):
         if not hasattr(args, k):
             setattr(args, k, None)
     {"扫描": 命令_扫描, "检查": 命令_检查, "路线": 命令_路线, "找": 命令_找,
-     "迁移": 命令_迁移, "认领": 命令_认领, "新建": 命令_新建, "钩子": 命令_钩子}[args.命令](args)
+     "迁移": 命令_迁移, "认领": 命令_认领, "新建": 命令_新建, "钩子": 命令_钩子,
+     "serve": 命令_serve}[args.命令](args)
 
 
 if __name__ == "__main__":
