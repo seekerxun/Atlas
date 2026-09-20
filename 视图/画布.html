@@ -42,7 +42,8 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 #搜果 div:hover{background:var(--面2)}
 .丸{padding:3px 9px;border-radius:99px;font-size:11.5px;font-weight:600;white-space:nowrap}
 
-#台{position:absolute;inset:46px 0 0 0;overflow:hidden;cursor:grab}
+#台{position:absolute;inset:46px 0 0 0;overflow:hidden;cursor:grab;
+  user-select:none;-webkit-user-select:none}
 #台.拖{cursor:grabbing}
 #世界{position:absolute;transform-origin:0 0;will-change:transform}
 #线{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
@@ -95,9 +96,6 @@ body.中 .盒>.头 b{font-size:calc(14px / var(--缩,1))}
   transition:opacity .12s}
 .步:hover .柄,.步.选 .柄{opacity:1}
 .步 .柄:hover{background:var(--主)}
-.步 .删{position:absolute;right:8px;top:8px;font-size:12px;color:var(--字3);opacity:0}
-.步:hover .删{opacity:1}
-.步 .删:hover{color:var(--错)}
 .步.靶{border-color:var(--好);box-shadow:0 0 0 2px var(--好)}
 #线 path.边{pointer-events:stroke;cursor:pointer}
 #线 path.边击{pointer-events:stroke;stroke:transparent;stroke-width:14;cursor:pointer;fill:none}
@@ -122,6 +120,7 @@ body.中 .盒>.头 b{font-size:calc(14px / var(--缩,1))}
 .行 .叉{margin-left:auto;color:var(--字3);padding:0 4px}
 .行 .叉:hover{color:var(--错)}
 
+#屉,#挑,#未{user-select:text;-webkit-user-select:text}
 #屉{position:absolute;right:0;top:46px;bottom:0;width:330px;background:var(--面);
   border-left:1px solid var(--线);overflow:auto;padding:14px;display:none;z-index:20}
 #屉.开{display:block}
@@ -307,7 +306,7 @@ function 算路线布局(r, 基y){
 // ---------------------------------------------------------------- 画
 function 画(){
   const w = $('#世界');
-  w.querySelectorAll('.盒,.卡,.步,.类标,.空').forEach(e => e.remove());
+  w.querySelectorAll('.盒,.卡,.步,.类标,.编辑条,.空').forEach(e => e.remove());
   $('#线').innerHTML = '';
   if (视图 === '路线') 画路线(); else 画库();
   应用变换();
@@ -380,7 +379,6 @@ function 画路线(){
       w.insertAdjacentHTML('beforeend',
         `<div class="步" data-id="${p.id}" data-路线="${转义(r.名称)}" data-步="${转义(s.id)}"
           style="left:${p.x}px;top:${p.y}px">
-          <button class="删" title="删掉这一步">✕</button>
           <div class="序">步骤 ${i + 1}</div><h4>${转义(s.title)}</h4>
           ${s.note ? `<div class="提">${转义(s.note)}</div>` : ''}
           <ul style="margin:0;padding:0">${li}${尾}</ul>
@@ -391,7 +389,6 @@ function 画路线(){
   w.querySelectorAll('.步').forEach(e => {
     e.onclick = ev => {
       if (ev.target.closest('.柄')) return;
-      if (ev.target.closest('.删')) { ev.stopPropagation(); 删步骤(e.dataset.路线, e.dataset.步); return; }
       if (e._拖过) { e._拖过 = false; return; }
       ev.stopPropagation(); 选步骤(e.dataset.路线, e.dataset.步);
     };
