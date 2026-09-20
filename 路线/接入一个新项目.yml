@@ -1,0 +1,45 @@
+route: 接入一个新项目
+desc: 把一个项目纳入 Atlas 管理
+entry: true
+
+steps:
+  - id: 读规范
+    title: 读规范
+    note: 只读这三篇，别翻整个 规范/
+    docs:
+      - 规范/目录规范
+      - 规范/元数据规范
+      - 规范/路线规范
+    next: [建骨架]
+
+  - id: 建骨架
+    title: 建骨架
+    note: 从模板生成，不要手捏目录
+    tools: [atlas]
+    outputs: ["<项目>/项目.yml", "<项目>/AGENTS.md", "<项目>/{路线,策划,内容,创意,资产,产出,工具}/"]
+    next: [定维度]
+
+  - id: 定维度
+    title: 定主分组维度和类型词表
+    note: 这一步定错，几百个文件之后再改就是灾难
+    docs: [规范/目录规范]
+    outputs: ["<项目>/项目.yml"]
+    next: [写路线]
+
+  - id: 写路线
+    title: 写第一条路线
+    note: 先写你最常干的那件事，跑一次看清单对不对
+    docs: [规范/路线规范]
+    outputs: ["<项目>/路线/*.yml"]
+    next: [搬内容]
+
+  - id: 搬内容
+    title: 按路线搬内容
+    note: 按路线搬，不按目录搬。搬不动的说明它不值得留
+    next: [体检]
+
+  - id: 体检
+    title: 体检并装钩子
+    note: 先看未归类文件、孤儿工具、缺 frontmatter 这三个数
+    tools: [atlas]
+    docs: [规范/词表]

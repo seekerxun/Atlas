@@ -1,0 +1,72 @@
+# 路线是唯一需要手写的东西。改这里，不要让 AI 改。
+# 还没搬运过来的文档会在体检里报错 —— 那份报错就是你的搬家清单。
+route: 做一个新世界
+desc: 从一个点子到可进原型的世界
+entry: true
+
+steps:
+  - id: 立项
+    title: 世界立项
+    note: 只读这三篇，别翻 01/02 的其他文档
+    docs:
+      - 策划/规范/核心口径
+      - 策划/世界观/世界规则圣经
+      - 策划/系统/世界节点系统
+    next: [建卡]
+
+  - id: 建卡
+    title: 建世界总卡
+    note: 从 创意/ 搬过来，定位阶上限和主力量体系
+    docs:
+      - 内容/_模板/世界
+      - 内容/_公共/力量体系档案
+    outputs: ["内容/W-*/世界.md"]
+    next: [势力, NPC, 副本]
+
+  - id: 势力
+    title: 出势力
+    docs:
+      - 策划/系统/势力与关系系统
+      - 内容/_模板/势力
+    outputs: ["内容/W-*/势力/*.md"]
+    next: [剧情]
+
+  - id: NPC
+    title: 出 NPC
+    note: 数值走工作台，别手算
+    docs:
+      - 策划/系统/角色系统
+      - 策划/数值/角色属性
+      - 内容/_模板/NPC
+    tools: [工具/numeric-workbench]
+    outputs: ["内容/W-*/NPC/*.md"]
+    next: [剧情, 美术]
+
+  - id: 副本
+    title: 出副本
+    docs:
+      - 内容/_模板/副本
+    outputs: ["内容/W-*/副本/*.md"]
+    next: [美术]
+
+  - id: 剧情
+    title: 写剧情
+    docs:
+      - 内容/_模板/剧情
+    outputs: ["内容/W-*/剧情/*.md"]
+    next: [美术]
+
+  - id: 美术
+    title: 出美术需求
+    docs:
+      - 策划/规范/角色美术风格
+      - 策划/规范/多屏宽场景生成规范
+    outputs: ["资产/W-*/**"]
+    next: [自检]
+
+  - id: 自检
+    title: 自检入库
+    note: 机制名对不对、关系有没有断、图有没有挂上
+    docs:
+      - AGENTS
+    tools: [工具/atlas]

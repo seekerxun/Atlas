@@ -1,0 +1,9 @@
+# Atlas 管理的项目。只存路径，身份信息在各项目自己的 项目.yml 里。
+版本: 1
+
+项目:
+  - 路径: /Users/seekerxun/Documents/LifeSpace/Atlas
+    备注: Atlas 自己
+
+  # - 路径: /Users/seekerxun/Documents/LifeSpace/Fluxhaven
+  #   备注: 无常乐园，正在从旧仓库搬迁
