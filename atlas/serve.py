@@ -69,7 +69,7 @@ def 打包(根: Path) -> dict:
                  "步骤": [s.__dict__ for s in r.步骤]} for r in idx.路线],
         "工具": idx.工具, "资产": idx.资产, "数据表": idx.数据,
         "未归类": idx.未归类, "未认领资产": 未认领资产, "孤儿工具": 孤儿工具,
-        "产出": 产出, "机制名": sorted(idx.机制名),
+        "产出": 产出, "词表值": {k: sorted(v) for k, v in idx.词表值.items()},
         "发现": [f.__dict__ for f in 结果], "体检": 体检数(idx, 结果),
         "统计": idx.统计(), "布局": 读布局(根),
     }

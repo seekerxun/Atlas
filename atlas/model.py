@@ -91,8 +91,7 @@ class 配置:
         self.主分组 = d.get("主分组") or "分组"
         self.内容类型 = set(d.get("内容类型") or [])
         self.编号表 = d.get("编号") or {}
-        self.机制权威 = d.get("机制权威")
-        self.机制名来源 = d.get("机制名来源") or {}
+        self.受控词表 = [x for x in (d.get("受控词表") or []) if isinstance(x, dict)]
         self.忽略 = set(d.get("忽略") or []) | {".git", ".atlas", "node_modules", "__pycache__"}
         self.入口路线 = d.get("入口路线")
         self.代码目录 = [str(x).strip("/") for x in (d.get("代码目录") or [])]

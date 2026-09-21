@@ -23,7 +23,7 @@ class 索引:
         self.未归类: list[str] = []
         self.路线: list[路线] = []
         self.解析错误: list[tuple[str, str]] = []
-        self.机制名: set[str] = set()
+        self.词表值: dict[str, set[str]] = {}
 
     def 统计(self):
         return {
@@ -140,33 +140,36 @@ def 载入路线(cfg: 配置) -> tuple[list[路线], list[tuple[str, str]]]:
     return out, errs
 
 
-def 抽机制名(cfg: 配置) -> set[str]:
-    if not cfg.机制权威:
-        return set()
-    p = cfg.根 / str(cfg.机制权威)
-    if not p.exists():
-        return set()
-    段落 = str(cfg.机制名来源.get("段落") or "")
-    取法 = str(cfg.机制名来源.get("取法") or "表格首列")
-    名 = set()
-    在段 = not 段落
-    for ln in p.read_text(encoding="utf-8").split("\n"):
-        if 段落 and re.match(rf"^#{{2,3}}\s+{re.escape(段落)}", ln):
-            在段 = True
+def 抽词表(cfg: 配置) -> dict[str, set[str]]:
+    """把项目声明的每一份受控词表读成一个名字集合。"""
+    出: dict[str, set[str]] = {}
+    for 表 in cfg.受控词表:
+        名字 = str(表.get("名字") or "")
+        p = cfg.根 / str(表.get("文件") or "")
+        if not 名字 or not p.exists():
             continue
-        if 在段 and 段落 and ln.startswith("#"):
-            break
-        if not 在段:
-            continue
-        if 取法 == "表格首列" and ln.startswith("|"):
-            首 = ln.split("|")[1].strip()
-            if 首 and not set(首) <= set("-: ") and 首 != "机制名":
-                名.add(首)
-        elif 取法 == "标题":
-            m = re.match(r"^#{3}\s+(.+?)\s*$", ln)
-            if m:
-                名.add(m.group(1).strip())
-    return 名
+        段落 = str(表.get("段落") or "")
+        取法 = str(表.get("取法") or "表格首列")
+        值 = set()
+        在段 = not 段落
+        for ln in p.read_text(encoding="utf-8").split("\n"):
+            if 段落 and re.match(rf"^#{{2,3}}\s+{re.escape(段落)}", ln):
+                在段 = True
+                continue
+            if 在段 and 段落 and ln.startswith("#"):
+                break
+            if not 在段:
+                continue
+            if 取法 == "表格首列" and ln.startswith("|"):
+                首 = ln.split("|")[1].strip()
+                if 首 and not set(首) <= set("-: ") and 首 != f"{名字}名":
+                    值.add(首)
+            elif 取法 == "标题":
+                mm = re.match(r"^#{3}\s+(.+?)\s*$", ln)
+                if mm:
+                    值.add(mm.group(1).strip())
+        出[名字] = 值
+    return 出
 
 
 def 建索引(根: Path) -> 索引:
@@ -201,7 +204,7 @@ def 建索引(根: Path) -> 索引:
 
     idx.路线, 路线错 = 载入路线(cfg)
     idx.解析错误 += 路线错
-    idx.机制名 = 抽机制名(cfg)
+    idx.词表值 = 抽词表(cfg)
 
     # 资产展开 + 自动挂接
     所有资产 = set(idx.资产)

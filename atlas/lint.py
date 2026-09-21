@@ -57,10 +57,16 @@ def 校验(idx: 索引) -> list[发现]:
         for k in getattr(n, "_未知", []):
             加(发现("警告", "W12", s, f"未知字段 `{k}`", "实验性字段放 扩展: 下面"))
 
-        for 机 in n.机制:
-            if idx.机制名 and 机 not in idx.机制名:
-                加(发现("错误", "E05", s, f"机制名 `{机}` 不在机制目录里",
-                        "要新机制先去机制目录加最小占位条目"))
+        for 表 in cfg.受控词表:
+            名字 = str(表.get("名字") or "")
+            字段 = str(表.get("引用字段") or 名字)
+            名单 = idx.词表值.get(名字) or set()
+            if not 名单:
+                continue
+            for v in (getattr(n, 字段, None) or []):
+                if v not in 名单:
+                    加(发现("错误", "E05", s, f"{名字}名 `{v}` 不在 {表.get('文件')} 里",
+                            f"先去那份名单加一条占位，再回来引用"))
 
         总关联 = 0
         for 关系, 目标们 in (n.关联 or {}).items():
