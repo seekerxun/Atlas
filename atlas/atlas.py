@@ -9,6 +9,10 @@
   atlas 迁移 --改名 旧=新 [--演习]
   atlas 认领 <文件> <条目> [--分类 人设]
   atlas 新建 <模板> <路径>
+  atlas 改名 --类型 旧=新 [--演习]        类型值改名（副本 → 世界节点）
+  atlas 改名 --条目 <编号或名字>=新名      条目改名，连带修所有引用
+  atlas 改名 --词表 机制:旧=新             受控词表里的一个值改名
+  atlas 改名 --字段 旧=新                  自定义字段名改名
   atlas 钩子                装 git pre-commit
   atlas serve [--端口 7391] [--不开浏览器]   起本地画布
 """
@@ -286,6 +290,47 @@ def 命令_新建(args):
     print(f"  已登记进 {reg.name}")
 
 
+# ---------------------------------------------------------------- 改名
+def 命令_改名(args):
+    import rename
+    根 = 根目录()
+    idx = 建索引(根)
+    对 = args.类型 or args.条目 or args.字段 or args.词表
+    if not 对:
+        sys.exit("要么 --类型 旧=新，要么 --条目 / --词表 / --字段。见 atlas 改名 -h")
+    种类 = "类型" if args.类型 else "条目" if args.条目 else "字段" if args.字段 else "词表"
+    词表名 = ""
+    if 种类 == "词表":
+        词表名, _, 对 = 对.partition(":")
+        if not _:
+            sys.exit("词表改名写成 --词表 机制:旧=新")
+    旧, _, 新 = 对.partition("=")
+    if not _ or not 旧.strip() or not 新.strip():
+        sys.exit("写成 旧=新")
+    面 = rename.算(idx, 种类, 旧.strip(), 新.strip(), 词表名.strip())
+    if 面.错:
+        sys.exit(f"{C['红']}✗{C['_']} {面.错}")
+
+    print(f"{C['粗']}{面.种类}改名{C['_']}  {C['红']}{面.旧}{C['_']} → {C['绿']}{面.新}{C['_']}\n")
+    for g in 面.组们:
+        if not g.处们:
+            continue
+        标 = f"{C['淡']}只列不改{C['_']}" if g.只读 else ""
+        print(f"{C['粗']}{g.类}{C['_']}  {len(g.处们)} 处  {标}")
+        if g.提醒:
+            print(f"  {C['黄']}※ {g.提醒}{C['_']}")
+        for h in g.处们[:12]:
+            print(f"  {垫(h.位置, 46)}{C['淡']}{h.预览}{C['_']}")
+        if len(g.处们) > 12:
+            print(f"  {C['淡']}… 还有 {len(g.处们) - 12} 处{C['_']}")
+        print()
+    print("─" * 58)
+    print(f"工具会改 {C['绿']}{面.可改数}{C['_']} 处，"
+          f"只列不改 {C['黄']}{面.只读数}{C['_']} 处。")
+    if args.演习 or True:
+        print(f"{C['淡']}目前只做预演，还没接执行。{C['_']}")
+
+
 # ---------------------------------------------------------------- serve
 def 命令_serve(args):
     import serve as S
@@ -333,6 +378,10 @@ def main():
     q.add_argument("文件"); q.add_argument("条目")
     q.add_argument("--分类"); q.add_argument("--演习", action="store_true")
     q = sub.add_parser("新建"); q.add_argument("模板"); q.add_argument("路径")
+    q = sub.add_parser("改名")
+    q.add_argument("--类型"); q.add_argument("--条目")
+    q.add_argument("--词表"); q.add_argument("--字段")
+    q.add_argument("--演习", action="store_true")
     sub.add_parser("钩子")
     q = sub.add_parser("serve")
     q.add_argument("--端口", default=7391); q.add_argument("--不开浏览器", action="store_true")
@@ -342,12 +391,12 @@ def main():
         ap.print_help()
         return
     for k in ("只看错误", "列表", "演习", "名字", "分类", "筛选", "加字段", "改名",
-              "端口", "不开浏览器"):
+              "端口", "不开浏览器", "类型", "条目", "词表"):
         if not hasattr(args, k):
             setattr(args, k, None)
     {"扫描": 命令_扫描, "检查": 命令_检查, "路线": 命令_路线, "找": 命令_找,
      "迁移": 命令_迁移, "认领": 命令_认领, "新建": 命令_新建, "钩子": 命令_钩子,
-     "serve": 命令_serve}[args.命令](args)
+     "serve": 命令_serve, "改名": 命令_改名}[args.命令](args)
 
 
 if __name__ == "__main__":
