@@ -76,9 +76,8 @@ kbd{font-family:var(--等宽)}
 #导航{display:none}
 
 /* ———— 画布 ———— */
-#台{z-index:0;cursor:grab;background-image:radial-gradient(circle,#a99bff47 1px,transparent 1.6px);background-size:var(--网格尺,24px) var(--网格尺,24px);background-position:var(--网格x,0) var(--网格y,0)}
-#台:after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(180deg,#ffffff07 0 1px,transparent 1px 3px);transition:opacity .2s}
-body.霓虹阅读 #台:after{opacity:0}
+/* 点阵固定在屏幕上，不随平移缩放移动，也不叠扫描线，久看不花。 */
+#台{z-index:0;cursor:grab;background-image:radial-gradient(circle,#a99bff26 .7px,transparent 1.2px);background-size:22px 22px}
 #台.拖{cursor:grabbing}
 #世界{will-change:transform}
 #线{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}

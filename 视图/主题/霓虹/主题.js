@@ -32,14 +32,9 @@ function 色(k){
 
 let 读数 = null;
 
-// 画布上的点阵随平移缩放移动，读数显示视口左上角的世界坐标。
-function 同步网格(){
-  const {缩, 位} = api.读取状态(), 台 = $('#台');
-  if (!台 || !(缩 > 0)) return;
-  let 尺 = 24 * 缩; while (尺 < 14) 尺 *= 2; while (尺 > 48) 尺 /= 2;
-  台.style.setProperty('--网格尺', 尺 + 'px');
-  台.style.setProperty('--网格x', (位.x % 尺) + 'px');
-  台.style.setProperty('--网格y', (位.y % 尺) + 'px');
+// 读数显示视口左上角的世界坐标，随平移缩放更新。
+function 更新读数(){
+  const {缩, 位} = api.读取状态();
   if (!读数) return;
   const 数 = v => { const n = Math.round(v); return (n < 0 ? '-' : '') + String(Math.abs(n)).padStart(4, '0'); };
   读数.innerHTML = `<span>X <b>${数(-位.x / 缩)}</b></span><span>Y <b>${数(-位.y / 缩)}</b></span><span>Z <b>${缩.toFixed(2)}</b></span>`;
@@ -70,12 +65,11 @@ function 装配界面(){
     document.querySelectorAll('.卡,.步').forEach(停卡片动效);
     document.body.classList.remove('霓虹阅读','远','中');
     $('#阅读幕').classList.remove('开'); $('#阅读幕').removeAttribute('style');
-    ['--网格尺','--网格x','--网格y'].forEach(k => $('#台').style.removeProperty(k));
     $('#文件预览').style.removeProperty('--预览顶'); $('#文件预览').style.removeProperty('--预览高');
     读数 = null;
   });
   补流光();
-  同步网格();
+  更新读数();
 }
 
 function 定位文件预览(){
@@ -295,7 +289,7 @@ function 导航内容(视图们){
 function 缩放外观(缩){
   document.body.classList.toggle('远', 缩 < .55);
   document.body.classList.toggle('中', 缩 >= .55 && 缩 < .8);
-  同步网格();
+  更新读数();
 }
 
 return {
