@@ -18,28 +18,11 @@ body[data-启动中] > :not(#启动状态){visibility:hidden}
 #顶 > .品牌 > div{min-width:0}
 #顶 .品牌 #名{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #顶 > #搜{min-width:0;flex-shrink:1}
-@media(max-width:950px) and (min-width:701px){
-  html[data-theme="石墨"] #顶{grid-template-columns:minmax(100px,1fr) minmax(130px,210px) auto 36px}
-  html[data-theme="石墨"] #顶 > #主题控件{grid-row:1;grid-column:3}
-  html[data-theme="石墨"] #顶 > #刷{grid-row:1;grid-column:4}
-}
 @media(max-width:800px){
-  html[data-theme="晴伴"] #顶 > .品牌{flex:1 1 70px}
-  html[data-theme="晴伴"] #顶 > #搜{width:auto;flex:1.5 1 110px}
   #顶 > #主题控件{gap:4px;padding:7px 8px}
   #顶 > #主题控件 label{display:none}
   #顶 #主题选择{min-width:54px;max-width:70px}
 }
-@media(max-width:760px){
-  html[data-theme="邂逅"] #顶{grid-template-columns:minmax(48px,1fr) minmax(80px,1.3fr) auto 28px;column-gap:6px}
-  html[data-theme="邂逅"] #顶 > #主题控件{grid-row:1;grid-column:3}
-  html[data-theme="邂逅"] #顶 > #刷{grid-row:1;grid-column:4}
-}
 @media(max-width:700px){
-  html[data-theme="石墨"] #顶{grid-template-columns:minmax(48px,1fr) minmax(80px,1.3fr) auto 28px;column-gap:6px}
-  html[data-theme="石墨"] #顶 > #搜{grid-row:1;grid-column:2}
-  html[data-theme="石墨"] #顶 > #主题控件{grid-row:1;grid-column:3}
-  html[data-theme="石墨"] #顶 > #刷{grid-row:1;grid-column:4}
-  html[data-theme="晴伴"] #顶 > .品牌 svg{flex-shrink:0}
   #顶 > #主题控件{font-size:11px}
 }
