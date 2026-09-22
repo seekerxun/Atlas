@@ -30,9 +30,9 @@ const 已知类型 = new Set(['总览','世界观','系统','数值','机制','�
 
 function 色(k){
   const 名 = String(k || '总览');
-  const 候补 = ['技能','NPC','世界','力量体系','道具','势力','谱痕'];
+  const 候补色相 = [198, 335, 145, 45, 275, 18, 175, 225, 80, 310, 8, 250];
   let hash = 0; for (const c of 名) hash = (hash * 31 + c.codePointAt(0)) >>> 0;
-  return `var(--k-${已知类型.has(名) ? 名 : 候补[hash % 候补.length]})`;
+  return 已知类型.has(名) ? `var(--k-${名})` : `hsl(${候补色相[hash % 候补色相.length]} 78% 78%)`;
 }
 
 function 定位文件预览(){
@@ -201,7 +201,7 @@ function 定位展开(){
 
 function 阅读区域(){
   const stage=$('#台').getBoundingClientRect();
-  const 顶=stage.width <= 800 ? 170 : Math.max(120,$('#顶').getBoundingClientRect().bottom-stage.top+14);
+  const 顶=Math.max(stage.width <= 800 ? 234 : 146, $('#导航').getBoundingClientRect().bottom-stage.top+12);
   const 底=Math.max(16,stage.bottom-$('#角').getBoundingClientRect().top+12);
   return {顶,底,高:Math.max(120,stage.height-顶-底)};
 }

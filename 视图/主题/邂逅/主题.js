@@ -26,9 +26,9 @@ const 已知类型 = new Set(['总览','世界观','系统','数值','机制','�
 
 function 色(k){
   const 名 = String(k || '总览');
-  const 候补 = ['技能','NPC','世界','力量体系','道具','势力','谱痕'];
   let hash = 0; for (const c of 名) hash = (hash * 31 + c.codePointAt(0)) >>> 0;
-  return `var(--k-${已知类型.has(名) ? 名 : 候补[hash % 候补.length]})`;
+  // 未登记的项目类型也使用明亮色相，不退成深蓝灰。
+  return 已知类型.has(名) ? `var(--k-${名})` : `hsl(${(hash % 24) * 15} 76% 78%)`;
 }
 
 function 定位文件预览(){

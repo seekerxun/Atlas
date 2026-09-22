@@ -107,7 +107,7 @@ button:disabled{opacity:.35;cursor:default}
 .卡 .脚{margin-top:14px;display:flex;align-items:center;gap:8px;flex-wrap:nowrap;overflow:hidden}
 .小丸{font-size:10px;padding:2px 7px;border-radius:4px;background:var(--面2);color:var(--字2);white-space:nowrap}
 .小丸.草案{color:var(--警)}
-.小丸.引{color:var(--卡色,var(--主))}
+.小丸.引{color:var(--字2)}
 .卡 .小丸{background:color-mix(in srgb,var(--底) 62%,transparent);border:1px solid color-mix(in srgb,var(--卡色) 20%,transparent)}
 .小丸.图{color:var(--字2)}
 
@@ -162,14 +162,14 @@ body.远 .盒>.头 span{font-size:min(20px,calc(10px / var(--缩,1)));flex-shrin
 .详情头{display:flex;align-items:flex-start;gap:20px;padding:24px 28px 20px;border-bottom:1px solid var(--线);flex-shrink:0;background:linear-gradient(110deg,color-mix(in srgb,var(--卡色) 25%,var(--面)),color-mix(in srgb,var(--卡色) 6%,var(--面)));box-shadow:inset 0 3px 0 var(--卡色)}
 
 .详情头>div{min-width:0;flex:1}
-.详情眉>span:first-child{color:var(--卡色);font-weight:650}
+.详情眉>span:first-child{color:var(--字);background:var(--卡色);padding:2px 7px;border-radius:7px 2px 7px 2px;font-weight:650}
 .详情眉{display:flex;gap:10px;align-items:center;color:var(--字2);font-size:11px;margin-bottom:8px}
 
 #屉 h3{font-size:26px;line-height:1.35;font-weight:600;margin:0;overflow-wrap:anywhere}
 #屉 .路{font-size:11px;color:var(--字3);overflow-wrap:anywhere;margin-top:8px}
 
 .收起{flex-shrink:0;display:flex;gap:6px;align-items:center;border:1px solid var(--线);border-radius:7px;padding:5px 9px;font-size:12px;color:var(--字2)}
-.收起{border-color:color-mix(in srgb,var(--卡色) 45%,var(--线));color:var(--卡色)}
+.收起{border-color:color-mix(in srgb,var(--卡色) 45%,var(--线));color:var(--主)}
 .收起:hover{background:color-mix(in srgb,var(--卡色) 16%,var(--面))}
 .收起 kbd{font:10px inherit;color:var(--字3)}
 
@@ -180,7 +180,7 @@ body.远 .盒>.头 span{font-size:min(20px,calc(10px / var(--缩,1)));flex-shrin
 .详情格>*,.详情侧{min-width:0}
 .详情侧{border-left:1px solid var(--线);padding-left:22px}
 
-#屉 h5{margin:22px 0 10px;font-size:12px;font-weight:600;color:var(--卡色)}
+#屉 h5{margin:22px 0 10px;font-size:12px;font-weight:600;color:var(--字2)}
 #屉 h5:first-child{margin-top:0}
 
 .行{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:6px;background:var(--面2);margin-bottom:6px;font-size:12px;overflow-wrap:anywhere}
@@ -301,9 +301,9 @@ body.远 .盒>.头 span{font-size:min(20px,calc(10px / var(--缩,1)));flex-shrin
 [data-状态="错误"]{color:var(--错)}
 [data-状态="警告"]{color:var(--警)}
 [data-状态="正常"]{color:var(--好)}
-#体检[data-状态="错误"]{background:rgba(248,81,73,.16)}
-#体检[data-状态="警告"]{background:rgba(210,153,34,.16)}
-#体检[data-状态="正常"]{background:rgba(63,185,80,.16)}
+#体检[data-状态="错误"]{background:#ffedf0}
+#体检[data-状态="警告"]{background:#fff4d8}
+#体检[data-状态="正常"]{background:#e9f7ee}
 .路线标题{color:var(--主);font-size:20px}
 .行>.点{display:inline-block;width:7px;height:7px;border-radius:2px}
 .空位{position:absolute;left:40px;top:40px}
@@ -325,50 +325,56 @@ body.远 .盒>.头 span{font-size:min(20px,calc(10px / var(--缩,1)));flex-shrin
 @media(max-width:700px){#主题控件{left:12px;bottom:72px}}
 
 /* 邂逅的视觉系统：薄雾、白纸、莓紫书签。 */
-:root{color-scheme:light;--底:#fbf6f8;--面:#fffdfd;--面2:#f1e9ef;--线:#d5c5d0;--字:#352b39;--字2:#675669;--字3:#796678;--主:#703b62;--好:#527b67;--警:#91651f;--错:#ae3c56;--阴影:0 12px 36px #65425817;--点:#c4a9b841;--k-总览:#765777;--k-世界观:#775a99;--k-系统:#416b92;--k-数值:#936e2f;--k-机制:#527b67;--k-规范:#526a89;--k-流程:#547765;--k-世界:#775a99;--k-NPC:#9b4a78;--k-势力:#94704b;--k-技能:#3e7c76;--k-道具:#936e2f;--k-副本:#aa5766;--k-剧情:#81629c;--k-异常物:#9b4a78;--k-谱痕:#416b92;--k-力量体系:#527b67;--k-创意:#9b4a78;--k-数据表:#936e2f}
+:root{color-scheme:light;--底:#fff7fb;--面:#fffdfd;--面2:#f8edf4;--线:#d9c6d2;--字:#352b39;--字2:#675669;--字3:#796678;--主:#703b62;--好:#397a5b;--警:#91651f;--错:#ae3c56;--阴影:0 12px 36px #65425817;--点:#c4a9b841;
+ --k-总览:#ffafd2;--k-世界观:#c8afff;--k-系统:#91c9ff;--k-数值:#ffda75;
+ --k-机制:#afe28f;--k-规范:#ffc08c;--k-流程:#86e1cb;--k-世界:#b9acef;
+ --k-NPC:#ffafd2;--k-势力:#ffc48f;--k-技能:#84dedb;--k-道具:#f6df81;
+ --k-副本:#ffaea3;--k-剧情:#e0b2ef;--k-异常物:#f9a5e1;--k-谱痕:#9adef4;
+ --k-力量体系:#c8e889;--k-创意:#ffb8bf;--k-数据表:#e9df8f;
+}
 body{font-family:"Avenir Next","PingFang SC","Microsoft YaHei",sans-serif}
-#顶{position:fixed;top:18px;left:20px;right:24px;height:58px;display:flex;gap:12px;padding:0;background:none;border:0;pointer-events:none}
+#顶{position:fixed;top:18px;left:20px;right:24px;height:58px;display:flex;gap:12px;padding:0 12px;background:var(--面);border:1px solid #ead9e3;border-radius:18px 6px 18px 6px;pointer-events:none}
 #顶>*{pointer-events:auto}
-.品牌{min-width:178px;gap:11px;padding:6px 10px 6px 0;background:none}
+.品牌{min-width:0;max-width:300px;gap:11px;padding:6px 10px 6px 0;background:var(--面)}
 .品牌 svg{width:36px;height:36px;color:var(--主);filter:none;background:#f0e0e9;padding:7px;border-radius:16px 16px 4px 16px}
 .品牌 #名{font-size:20px;font-weight:600;letter-spacing:.04em}
 .品牌 small{color:var(--字3);font-size:10px}
 .品牌>div{min-width:0}
 .品牌 #名{display:block;min-width:0;max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#签{position:fixed;top:110px;left:20px;width:112px;display:flex;flex-direction:column;align-self:auto;gap:12px;padding:9px 0;background:none}
+#签{position:fixed;top:110px;left:20px;width:112px;display:flex;flex-direction:column;align-self:auto;gap:12px;padding:9px 0;background:var(--面);border:1px solid #ead9e3;border-radius:22px 6px 22px 6px;box-shadow:0 5px 18px #6542580c}
 #签 button{display:flex;align-items:center;gap:9px;min-width:0;width:112px;height:51px;padding:0 13px;border-radius:20px 6px 20px 6px;font-size:13px;text-align:left;color:var(--字2);transition:background .16s,color .16s}
-#签 button.开{background:var(--主);color:#fffdfd;text-shadow:none;font-weight:600;box-shadow:0 5px 12px #703b6219}
+#签 button.开{background:#f8c9df;color:#54293f;text-shadow:none;font-weight:600;box-shadow:0 5px 12px #703b6219}
 #签 button.开:after{display:none}
 #签 button:not(.开):hover{background:#eedfe8}
 .导航图标{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
 .导航计数{font-size:10px;font-variant-numeric:tabular-nums;margin-left:auto;opacity:.8}
 #签标{display:none}
 #搜{width:280px;margin-left:auto}
-#搜 input{height:42px;border-radius:22px;background:#fffdfdee;border:1px solid var(--线);padding-left:18px;font-size:12px;box-shadow:none}
+#搜 input{height:42px;border-radius:22px;background:var(--面);border:1px solid var(--线);padding-left:18px;font-size:12px;box-shadow:none}
 #搜 input:focus{border-color:var(--主)}
 #搜果{top:52px;border-radius:15px;background:var(--面)}
 #搜 kbd{top:11px;border:0}
 #体检{font-size:11px;white-space:nowrap;background:var(--面);border:1px solid var(--线);border-radius:15px;padding:5px 9px}
 #新路线{background:var(--面);border-radius:14px;padding:7px 12px;white-space:nowrap}
 #刷{height:38px;width:38px;background:var(--面);border:1px solid var(--线);border-radius:50%;flex-shrink:0}
-#导航{position:fixed;left:24px;right:auto;top:auto;bottom:156px;display:flex;flex-direction:column;align-items:flex-start;height:auto;padding:0;background:none;gap:0;max-width:110px}
+#导航{position:fixed;left:24px;right:auto;top:auto;bottom:156px;display:flex;flex-direction:column;align-items:flex-start;height:auto;padding:10px 12px;background:var(--面);border:1px solid #ead9e3;border-radius:16px 4px 16px 4px;gap:2px;width:112px;max-width:112px;overflow:hidden}
 #导航 strong{font:500 20px/1.5 "Songti SC","Noto Serif CJK SC",serif}
 #导航 strong:before{display:none}
-#视图数{font-size:10px}
+#视图数{font-size:10px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #导航 .帮助{display:none}
 #台{position:fixed;inset:0;background-color:var(--底);background-image:radial-gradient(var(--点) .65px,transparent .65px);background-size:28px 28px}
-.盒{padding:64px 22px 22px;background:#f4ebf0aa;border:1px solid #decfd9;border-radius:6px 28px 6px 28px;box-shadow:none}
+.盒{padding:64px 22px 22px;background:#fff0f7;border:1px solid #decfd9;border-radius:6px 28px 6px 28px;box-shadow:none}
 .盒>.头{top:19px}
 .盒>.头 b{font:600 22px/1.2 "Songti SC","Noto Serif CJK SC",serif;letter-spacing:.02em}
 .盒>.头 b:before{width:8px;height:15px;background:var(--主);border:0;border-radius:9px 2px 9px 2px;transform:rotate(25deg);box-shadow:none}
 .盒>.头 span{font-size:11px}
-.卡,.步{background:var(--面);border:1px solid color-mix(in srgb,var(--卡色) 26%,#e7dce2);border-radius:4px 18px 4px 18px;box-shadow:0 3px 0 #b7a1b010;transition:border-color .16s,box-shadow .16s}
+.卡,.步{background:color-mix(in srgb,var(--卡色) 18%,var(--面));border:1px solid color-mix(in srgb,var(--卡色) 68%,#d9c6d2);border-radius:4px 18px 4px 18px;box-shadow:0 3px 0 #b7a1b010;transition:border-color .16s,box-shadow .16s}
 .卡{padding:20px 24px}
 .卡:after,.步:after{display:none}
-.卡 .条{left:0;top:21px;bottom:auto;width:6px;height:28px;border-radius:0 10px 10px 0;box-shadow:none;opacity:.75}
+.卡 .条{left:0;top:21px;bottom:auto;width:7px;height:34px;border-radius:0 10px 10px 0;box-shadow:none;opacity:1}
 .卡 h4,.步 h4{font-family:"Songti SC","Noto Serif CJK SC",serif;font-size:23px;font-weight:600;line-height:1.4;letter-spacing:.015em}
 .卡 h4{margin:14px 0 10px}
-.卡 .类型签{font-size:10px;letter-spacing:.04em}
+.卡 .类型签{font-size:10px;line-height:16px;letter-spacing:.02em;padding:2px 7px;border-radius:7px 2px 7px 2px;background:var(--卡色);color:var(--字);font-weight:600;white-space:nowrap}
 .卡 .展开符{font-size:16px;color:var(--字3)}
 .卡 .要{font-size:12px;line-height:1.8;color:var(--字2)}
 .卡 .脚{margin-top:16px;gap:12px}
@@ -379,7 +385,7 @@ body{font-family:"Avenir Next","PingFang SC","Microsoft YaHei",sans-serif}
 .卡.暗{opacity:.3}
 .步{width:314px;padding:24px;min-height:170px;overflow:visible}
 .步 .序{display:flex;align-items:center;justify-content:space-between;font-size:10px;color:var(--字3);margin-bottom:12px}
-.步 .序号{color:var(--卡色);font:400 27px/1 "Songti SC",serif;opacity:.5}
+.步 .序号{color:#466958;background:var(--卡色);padding:3px 6px;border-radius:8px 2px 8px 2px;font:400 24px/1 "Songti SC",serif;opacity:1}
 .步 h4{margin:0 0 15px}
 .步 .提{font-size:12px;line-height:1.7;padding:8px 10px;background:#f3f5ef;border-radius:2px 10px 2px 10px;color:#58705d;margin-bottom:12px}
 .步 li{padding:4px 0;font-size:12px;line-height:21px}
@@ -435,7 +441,7 @@ body.远 .步:not(.展开):before{font-family:"Songti SC",serif;font-weight:500}
  .品牌{min-width:0;max-width:100%;overflow:hidden;padding:0;gap:7px}.品牌 svg{width:28px;height:28px;padding:5px;flex-shrink:0}.品牌 #名{font-size:16px}.品牌 small{font-size:9px}
  #搜{grid-column:2;grid-row:1;width:100%;min-width:0;margin:0}#搜 input{height:35px;padding:7px 10px;font-size:11px}#搜 kbd{display:none}#搜果{top:44px;max-width:calc(100vw - 24px)}
  #刷{grid-column:3;grid-row:1;width:30px;height:30px;font-size:18px}
- #签{position:static;grid-row:2;grid-column:1/-1;flex-direction:row;width:100%;padding:4px;gap:1px;background:#fffdfdf2;border:1px solid var(--线);border-radius:18px 4px 18px 4px}
+ #签{position:static;grid-row:2;grid-column:1/-1;flex-direction:row;width:100%;padding:4px;gap:1px;background:var(--面);border:1px solid var(--线);border-radius:18px 4px 18px 4px}
  #签 button{flex:1;width:auto;min-width:0;height:37px;padding:0 7px;justify-content:center;gap:4px;font-size:12px;border-radius:13px 3px 13px 3px}.导航图标{display:none}.导航计数{margin:0;font-size:9px}
  #新路线{position:fixed;left:12px;top:120px;font-size:10px;padding:5px 9px}
  #台{inset:0}#角{right:12px;bottom:16px;padding:4px;gap:0;border-radius:18px}#角 button{min-width:22px;padding:3px 5px;min-height:27px;font-size:11px}#角 #回{padding:3px 9px}#缩{min-width:31px;font-size:10px}.分隔{margin:0 2px;height:14px}
@@ -445,3 +451,17 @@ body.远 .步:not(.展开):before{font-family:"Songti SC",serif;font-weight:500}
  #文件预览{width:calc(100vw - 16px)}.文件预览头{padding:12px 16px}#文件预览正文{padding:16px}.检查头,.检查正文{padding:14px}.空{width:300px;padding:28px}
 }
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
+
+/* 固定信息拥有实色表面；任何画布平移和缩放都不能透出下层文字。 */
+.品牌 svg{flex-shrink:0}
+.品牌>div{flex:1;overflow:hidden}
+#导航 strong{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#签 button{flex-shrink:0}
+#主题控件{background:var(--面)}
+@media(max-width:759px){
+ #顶{padding:0 6px;background:var(--面)}
+ .品牌{background:var(--面);max-width:100%}
+ #签{background:var(--面)}
+}
+/* 核心行内类型色是浅色识别色；分类标题仍用深色文字。 */
+.类标:not(.路线标题){color:var(--字2)!important;background:#fff0f7;line-height:20px}
