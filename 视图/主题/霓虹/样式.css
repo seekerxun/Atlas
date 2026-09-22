@@ -445,6 +445,25 @@ body.霓虹阅读 .盒.聚起>.卡:not(.展开),body.霓虹阅读 .盒.聚起>.�
   #文件预览正文,.检查正文{padding:16px}
 }
 
+/* 页内询问框：替代浏览器 prompt / confirm。 */
+#询问{margin:auto;width:min(460px,calc(100vw - 32px));padding:0;color:var(--字);background:var(--深);border:1px solid color-mix(in srgb,var(--主) 55%,transparent);box-shadow:0 0 44px color-mix(in srgb,var(--主) 22%,transparent),0 30px 90px #000a}
+#询问[data-危险]{border-color:color-mix(in srgb,var(--错) 60%,transparent);box-shadow:0 0 44px color-mix(in srgb,var(--错) 22%,transparent),0 30px 90px #000a}
+#询问::backdrop{background:#04030ac7;backdrop-filter:blur(3px)}
+#询问[open]{animation:霓虹弹入 .22s ease-out}
+#询问表{display:flex;flex-direction:column;gap:14px;padding:22px 24px}
+#询问标题{margin:0;font-size:18px;font-weight:600}
+#询问说明{margin:0;font-size:13px;color:var(--字2)}
+#询问字段{display:flex;flex-direction:column;gap:12px}
+#询问字段:empty{display:none}
+.询问项{display:flex;flex-direction:column;gap:6px;font:11px var(--等宽);letter-spacing:.08em;color:var(--副)}
+.询问项 input{height:40px;padding:0 12px;border:1px solid color-mix(in srgb,var(--主) 40%,transparent);border-radius:0;background:var(--底);color:var(--字);font:14px var(--字体);letter-spacing:0}
+.询问项 input:focus{outline:none;border-color:var(--主);box-shadow:0 0 0 1px var(--主),0 0 16px color-mix(in srgb,var(--主) 35%,transparent)}
+.询问钮{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
+.询问钮 button{height:36px;padding:0 16px;border:1px solid var(--边);color:var(--字2);font-size:13px}
+#询问确定{color:var(--主);border-color:color-mix(in srgb,var(--主) 55%,transparent);background:color-mix(in srgb,var(--主) 12%,transparent)}
+#询问[data-危险] #询问确定{color:var(--错);border-color:color-mix(in srgb,var(--错) 55%,transparent);background:color-mix(in srgb,var(--错) 12%,transparent)}
+@keyframes 霓虹弹入{from{opacity:0;transform:scale(.96)}}
+
 @media(prefers-reduced-motion:reduce){
   *,*:before,*:after{transition:none!important;animation:none!important}
   #线 .霓虹流光{display:none}

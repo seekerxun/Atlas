@@ -430,6 +430,22 @@ button:focus-visible,a:focus-visible,[tabindex]:focus-visible,input:focus-visibl
  .详情格{grid-template-columns:1fr;gap:24px}.详情侧{border-left:0;border-top:1px solid #dce8ed;padding:20px 0 0}.详情头{padding:16px;gap:10px}#屉 h3{font-size:22px}.详情体{padding:18px}.收起{font-size:11px;padding:6px 9px}.收起 kbd{display:none}.详情眉>span:nth-child(2){display:none}.空{width:300px;padding:26px}
 }
 @media(max-width:420px){.品牌 #名{max-width:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.导航图标{display:none}#签 button{font-size:12px}#搜{width:100%}#角 button{min-width:20px;padding:2px 3px}#角 .分隔{margin:0 1px}#缩{min-width:28px}.品牌 svg{width:28px;height:28px}}
+/* 页内询问框：替代浏览器 prompt / confirm，外观沿用检查对话框。 */
+#询问{margin:auto;width:min(460px,calc(100vw - 32px));padding:0;background:var(--面);color:var(--字);border:1px solid var(--线);border-radius:22px;box-shadow:0 24px 90px #0008}
+#询问::backdrop{background:#aabfc966;backdrop-filter:blur(2px)}
+#询问表{display:flex;flex-direction:column;gap:14px;padding:20px 22px}
+#询问标题{margin:0;font-size:17px;line-height:1.4}
+#询问说明{margin:0;font-size:13px;color:var(--字2)}
+#询问字段{display:flex;flex-direction:column;gap:12px}
+#询问字段:empty{display:none}
+.询问项{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--字3)}
+.询问项 input{padding:9px 12px;border:1px solid var(--线);border-radius:8px;background:var(--底);color:var(--字);font:inherit;font-size:14px}
+.询问项 input:focus{outline:2px solid var(--主);outline-offset:1px}
+.询问钮{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
+.询问钮 button{padding:7px 14px;border:1px solid var(--线);border-radius:8px;color:var(--字2);font-size:13px}
+#询问确定{background:var(--主);border-color:var(--主);color:var(--底);font-weight:600}
+#询问[data-危险] #询问确定{background:var(--错);border-color:var(--错)}
+
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 .步骤标题编辑 form{display:flex;align-items:center;gap:8px;min-width:0;max-width:100%;flex:1}
 .步骤标题编辑 input{min-width:0;flex:1}

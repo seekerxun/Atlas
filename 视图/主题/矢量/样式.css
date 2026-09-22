@@ -1,7 +1,7 @@
 /* 矢量的全部外观、字号、尺寸、位置与响应式规则：大地色块、简洁几何形、弹性形状动画。
    深浅两用：默认浅色，html[data-外观="深"] 换一套同色相、提亮后的配色。 */
 :root{
-  color-scheme:light;
+  color-scheme:light;interpolate-size:allow-keywords;
   --底:#F1ECE4;--面:#FBF8F3;--字:#22201C;--字2:#4A453E;--字3:#6F675C;--边:#22201C1F;--幕:#22201C8C;--影:#22201C;
   --陶土:#C0503A;--橄榄:#647834;--靛蓝:#2F4B7C;--赭黄:#E0A43A;--烟粉:#D9A5A0;
   --上-陶土:#FFFFFF;--上-橄榄:#FFFFFF;--上-靛蓝:#FFFFFF;--上-赭黄:#1A1815;--上-烟粉:#1A1815;
@@ -73,12 +73,19 @@ kbd{font-family:var(--数字)}
 #体检:hover{border-color:var(--字)}
 #新路线{height:40px;padding:0 16px;border-radius:999px;background:var(--字);color:var(--底);font-size:13px;font-weight:700;white-space:nowrap}
 
-#搜{position:relative;width:250px}
-#搜 input{width:100%;height:42px;box-sizing:border-box;padding:0 44px 0 42px;border:1px solid var(--边);border-radius:999px;background:var(--面) var(--搜图) no-repeat 16px center/16px;color:var(--字);font-size:13px;transition:border-color .2s,box-shadow .2s}
+/* 搜索平时是一枚圆钮，点开（或按 /）才展开成输入框；有内容时保持展开。 */
+#搜{position:relative;width:42px;transition:width .45s var(--弹)}
+#搜:focus-within,#搜:has(input:not(:placeholder-shown)){width:260px}
+#搜 input{width:100%;height:42px;box-sizing:border-box;padding:0 44px 0 42px;border:1px solid var(--边);border-radius:999px;background:var(--面) var(--搜图) no-repeat 13px center/16px;color:var(--字);font-size:13px;cursor:pointer;transition:border-color .2s,box-shadow .2s}
+#搜:not(:focus-within):not(:has(input:not(:placeholder-shown))) input{padding-right:0}
+#搜:not(:focus-within):not(:has(input:not(:placeholder-shown))) input::placeholder{color:transparent}
+#搜 input:focus{cursor:text}
 #搜 input::placeholder{color:var(--字3)}
 #搜 input:focus{outline:none;border-color:var(--字);box-shadow:0 0 0 3px color-mix(in srgb,var(--赭黄) 45%,transparent)}
-#搜 kbd{position:absolute;right:12px;top:11px;padding:0 8px;border-radius:999px;background:var(--底);font-size:11px;line-height:20px;color:var(--字3);pointer-events:none}
-#搜果{position:absolute;top:50px;right:0;width:380px;max-width:calc(100vw - 24px);max-height:60vh;overflow:auto;display:none;padding:6px;border-radius:22px;background:var(--面);border:1px solid var(--边);box-shadow:0 24px 50px -24px color-mix(in srgb,var(--影) 60%,transparent)}
+#搜 kbd{position:absolute;right:12px;top:11px;padding:0 8px;border-radius:999px;background:var(--底);font-size:11px;line-height:20px;color:var(--字3);pointer-events:none;opacity:0;transition:opacity .2s}
+#搜:focus-within kbd{opacity:1;transition-delay:.2s}
+#搜果{position:absolute;top:50px;right:0;transform-origin:top right;width:380px;max-width:calc(100vw - 24px);max-height:60vh;overflow:auto;display:none;padding:6px;border-radius:22px;background:var(--面);border:1px solid var(--边);box-shadow:0 24px 50px -24px color-mix(in srgb,var(--影) 60%,transparent)}
+#搜果[style*="block"]{animation:矢量下拉 .34s var(--弹)}
 #搜果>div{padding:10px 14px;border-radius:14px;cursor:pointer;font-size:13px}
 #搜果>div:hover{background:var(--底)}
 .搜索副文{display:block;margin-top:2px;font-size:11.5px;color:var(--字3);overflow-wrap:anywhere}
@@ -341,17 +348,73 @@ body.矢量阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
 .检查建议{margin:8px 0 0;font-size:13px;color:var(--字2)}
 .检查项 button{margin-top:12px;height:32px;padding:0 14px;border-radius:999px;border:1px solid var(--边);font-size:12px;font-weight:700}
 
+/* 页内询问框：替代浏览器 prompt / confirm。右上角的四分之一圆稍晚转入。 */
+#询问{margin:auto;width:min(460px,calc(100vw - 32px));padding:0;color:var(--字);background:var(--面);border:0;border-radius:28px;overflow:hidden;box-shadow:0 40px 80px -30px color-mix(in srgb,var(--影) 70%,transparent)}
+#询问:after{content:"";position:absolute;right:0;top:0;width:64px;height:64px;border-bottom-left-radius:64px;background:var(--靛蓝);transform-origin:top right;pointer-events:none}
+#询问[data-危险]:after{background:var(--陶土)}
+#询问::backdrop{background:var(--幕)}
+#询问表{display:flex;flex-direction:column;gap:14px;padding:24px 26px 22px}
+#询问标题{margin:0;padding-right:56px;font-size:19px;font-weight:700;line-height:1.35}
+#询问说明{margin:0;padding-right:40px;font-size:13px;color:var(--字3);overflow-wrap:anywhere}
+#询问字段{display:flex;flex-direction:column;gap:12px}
+#询问字段:empty{display:none}
+.询问项{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:var(--字3)}
+.询问项 input{height:44px;box-sizing:border-box;padding:0 18px;border:1px solid var(--边);border-radius:999px;background:var(--底);color:var(--字);font-size:14px;font-weight:500}
+.询问项 input:focus{outline:none;border-color:var(--字);box-shadow:0 0 0 3px color-mix(in srgb,var(--赭黄) 45%,transparent)}
+.询问钮{display:flex;justify-content:flex-end;gap:8px;margin-top:6px}
+.询问钮 button{height:40px;padding:0 18px;border-radius:999px;border:1px solid var(--边);font-size:13px;font-weight:700}
+.询问钮 button:hover{border-color:var(--字)}
+#询问确定{background:var(--字);color:var(--底);border-color:transparent}
+#询问[data-危险] #询问确定{background:var(--陶土);color:var(--上-陶土)}
+
+#检查详情:after,#挑 .框:after{content:"";position:absolute;right:0;top:0;width:64px;height:64px;border-bottom-left-radius:64px;transform-origin:top right;pointer-events:none}
+#检查详情:after{background:var(--赭黄)}
+#检查详情 .检查头{padding-right:80px}
+#挑 .框{position:relative}
+#挑 .框:after{background:var(--橄榄)}
+#挑 .框 input{margin-right:80px}
+
+/* 进出场：弹入带回弹，退场短促；核心关闭前会先标 data-关闭中 等动画播完。 */
+@keyframes 矢量弹入{from{opacity:0;transform:translateY(18px) scale(.92)}}
+@keyframes 矢量弹出{to{opacity:0;transform:translateY(10px) scale(.96)}}
+@keyframes 矢量幕入{from{opacity:0}}
+@keyframes 矢量幕出{to{opacity:0}}
+@keyframes 矢量形入{from{transform:scale(0) rotate(-90deg)}}
+@keyframes 矢量项入{from{opacity:0;transform:translateY(8px)}}
+@keyframes 矢量下拉{from{opacity:0;transform:translateY(-6px) scale(.94)}}
+@keyframes 矢量抽屉入{from{opacity:0;transform:translateY(12px) scale(.96)}}
+@keyframes 矢量抽屉出{to{opacity:0;transform:translateY(8px) scale(.97)}}
+:is(#检查详情,#文件预览,#询问)[open]{animation:矢量弹入 .46s var(--弹)}
+:is(#检查详情,#文件预览,#询问)[open]::backdrop{animation:矢量幕入 .25s ease-out}
+:is(#检查详情,#文件预览,#询问)[data-关闭中]{animation:矢量弹出 .2s ease-in forwards}
+:is(#检查详情,#文件预览,#询问)[data-关闭中]::backdrop{animation:矢量幕出 .2s ease-in forwards}
+:is(#检查详情,#询问)[open]:after,#挑.开 .框:after{animation:矢量形入 .55s var(--弹) .12s backwards}
+#询问[open] .询问项{animation:矢量项入 .4s var(--弹) backwards}
+#询问[open] .询问项:nth-child(1){animation-delay:.08s}
+#询问[open] .询问项:nth-child(2){animation-delay:.14s}
+#询问[open] .询问钮{animation:矢量项入 .4s var(--弹) .18s backwards}
+#挑.开{animation:矢量幕入 .22s ease-out}
+#挑.开 .框{animation:矢量弹入 .46s var(--弹)}
+#挑[data-关闭中]{animation:矢量幕出 .2s ease-in forwards}
+#挑[data-关闭中] .框{animation:矢量弹出 .2s ease-in forwards}
+#检查详情[open] .检查项{animation:矢量项入 .4s var(--弹) backwards}
+#检查详情[open] .检查项:nth-child(2){animation-delay:.05s}
+#检查详情[open] .检查项:nth-child(3){animation-delay:.1s}
+#检查详情[open] .检查项:nth-child(n+4){animation-delay:.15s}
+
 /* ———— 底部悬浮控件 ———— */
-#未{position:fixed;left:24px;bottom:24px;z-index:20;max-height:50vh;display:flex;flex-direction:column;border-radius:24px;background:var(--面);border:1px solid var(--边);user-select:text}
+#未{position:fixed;left:24px;bottom:24px;z-index:20;width:auto;max-height:50vh;display:flex;flex-direction:column;border-radius:24px;background:var(--面);border:1px solid var(--边);user-select:text;transition:width .45s var(--弹),box-shadow .3s}
 #未 .头{min-height:46px;padding:0 10px 0 16px;display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px}
-#未 .头:before{content:"";width:16px;height:8px;border-radius:0 0 8px 8px;background:var(--烟粉)}
+#未 .头:before{content:"";width:16px;height:8px;border-radius:0 0 8px 8px;background:var(--烟粉);transition:transform .45s var(--弹)}
+#未.开 .头:before{transform:rotate(180deg)}
 #未 .头 b{font-weight:700}
 #未数{min-width:30px;height:30px;box-sizing:border-box;padding:0 10px;border-radius:999px;background:var(--烟粉);color:var(--上-烟粉);display:inline-flex;align-items:center;justify-content:center;font:700 13px var(--数字)}
 .未认领箭头{margin-left:auto;color:var(--字3);transition:transform .35s var(--弹)}
 #未.开{width:360px;box-shadow:0 24px 50px -24px color-mix(in srgb,var(--影) 60%,transparent)}
 #未.开 .未认领箭头{transform:rotate(180deg)}
 #未 .体{display:none;overflow:auto;padding:4px 8px 10px;border-top:1px solid var(--边)}
-#未.开 .体{display:block}
+#未.开 .体{display:block;animation:矢量抽屉入 .42s var(--弹)}
+#未[data-关闭中] .体{animation:矢量抽屉出 .2s ease-in forwards}
 #未 .组{padding:10px 8px 4px;font-size:12px;font-weight:700;color:var(--字3)}
 #未 .项{padding:8px 10px;border-radius:12px;font:12px var(--数字);color:var(--字2);cursor:grab;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #未 .项:hover{background:var(--底);color:var(--字)}
@@ -375,13 +438,12 @@ body.矢量阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
 .次文{padding:10px 12px;color:var(--字3)}
 
 /* ———— 动效装饰（由 主题.js 挂载，卸载时回收） ———— */
-.矢量换幕{position:fixed;inset:0;z-index:28;pointer-events:none}
 .矢量外观圈{position:fixed;z-index:1000;width:0;height:0;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none}
 .矢量过渡片{position:fixed;z-index:26;pointer-events:none;transform-origin:0 0;overflow:hidden;border-radius:28px;background:var(--面);box-shadow:0 30px 60px -30px color-mix(in srgb,var(--影) 60%,transparent)}
 .矢量过渡片>span{position:absolute;right:0;top:0;width:76px;height:76px;border-bottom-left-radius:76px;background:var(--卡色);transform-origin:top right}
 
 /* ———— 响应式 ———— */
-@media(max-width:1280px){#搜{width:200px}}
+@media(max-width:1280px){#搜:focus-within,#搜:has(input:not(:placeholder-shown)){width:220px}}
 @media(max-width:1120px){
   .品牌>div,.导航计数{display:none}
   #签 button{padding:0 12px}
@@ -392,7 +454,7 @@ body.矢量阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
   .品牌{grid-row:1;grid-column:1}
   #体检{grid-row:1;grid-column:3;margin:0}
   #新路线{grid-row:1;grid-column:4}
-  #搜{grid-row:1;grid-column:5;width:200px}
+  #搜{grid-row:1;grid-column:5}
   #主题控件{grid-row:1;grid-column:6}
   #刷{grid-row:1;grid-column:7}
   #签{grid-row:2;grid-column:1/-1;justify-self:start}
@@ -404,7 +466,8 @@ body.矢量阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
   .品牌 svg{width:40px;height:40px;padding:10px}
   #体检{grid-row:1;grid-column:3;margin:0;height:36px}
   #新路线{display:none!important}
-  #搜{grid-row:2;grid-column:1;width:100%}
+  #搜,#搜:focus-within,#搜:has(input:not(:placeholder-shown)){grid-row:2;grid-column:1;width:100%}
+  #搜 input::placeholder{color:var(--字3)!important}
   #搜 input{height:44px;padding-right:16px;font-size:14px}
   #搜 kbd{display:none}
   #主题控件{grid-row:2;grid-column:2}

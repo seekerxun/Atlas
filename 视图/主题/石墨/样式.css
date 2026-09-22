@@ -527,6 +527,22 @@ body.远 .盒>.头 span{font-size:min(20px,calc(10px / var(--缩,1)));flex-shrin
 @media(max-width:1200px){:root #体检{display:block;position:fixed;right:18px;bottom:78px}}
 @media(max-width:700px){:root #体检{right:12px;bottom:72px}.检查头,.检查正文{padding:14px}}
 
+/* 页内询问框：替代浏览器 prompt / confirm，外观沿用检查对话框。 */
+#询问{margin:auto;width:min(460px,calc(100vw - 32px));padding:0;background:var(--面);color:var(--字);border:1px solid var(--线);border-radius:16px;box-shadow:0 24px 90px #0008}
+#询问::backdrop{background:#08090bb3;backdrop-filter:blur(4px)}
+#询问表{display:flex;flex-direction:column;gap:14px;padding:20px 22px}
+#询问标题{margin:0;font-size:17px;line-height:1.4}
+#询问说明{margin:0;font-size:13px;color:var(--字2)}
+#询问字段{display:flex;flex-direction:column;gap:12px}
+#询问字段:empty{display:none}
+.询问项{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--字3)}
+.询问项 input{padding:9px 12px;border:1px solid var(--线);border-radius:8px;background:var(--底);color:var(--字);font:inherit;font-size:14px}
+.询问项 input:focus{outline:2px solid var(--主);outline-offset:1px}
+.询问钮{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
+.询问钮 button{padding:7px 14px;border:1px solid var(--线);border-radius:8px;color:var(--字2);font-size:13px}
+#询问确定{background:var(--主);border-color:var(--主);color:var(--底);font-weight:600}
+#询问[data-危险] #询问确定{background:var(--错);border-color:var(--错)}
+
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}
 }
 

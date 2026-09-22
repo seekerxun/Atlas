@@ -39,6 +39,10 @@
   <div class="文件预览头"><div><h2 id="文件预览标题">文件预览</h2><div id="文件预览路径"></div></div><button type="button" id="关闭文件预览" autofocus>关闭</button></div>
   <div id="文件预览正文" class="正文" aria-live="polite"></div>
 </dialog>
+<dialog id="询问" aria-labelledby="询问标题" aria-describedby="询问说明">
+  <form id="询问表"><h2 id="询问标题"></h2><p id="询问说明"></p><div id="询问字段"></div>
+    <div class="询问钮"><button type="button" id="询问取消">取消</button><button type="submit" id="询问确定">确定</button></div></form>
+</dialog>
 <dialog id="检查详情" aria-labelledby="检查标题" aria-describedby="检查说明">
   <div class="检查头"><h2 id="检查标题">项目检查</h2><span id="检查计数"></span><button id="关闭检查" type="button" autofocus>关闭</button></div>
   <div class="检查正文"><p id="检查说明"></p><ul id="检查列表"></ul></div>

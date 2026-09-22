@@ -56,7 +56,8 @@ function 步骤详情({r, s, 路线名, 步id, 路线文件}){
       <button class="叉" title="断开" aria-label="断开到 ${转义(t2 ? t2.title : x)} 的连线"
         onclick="断线('${q(路线名)}','${q(步id)}','${q(x)}')">✕</button></div>`;
   }).join('') || '<div class="尾 空项">这是末步</div>';
-  return 详情头(s.title, '路线步骤', 路线名, '路线') + `<div class="详情体">
+  const 序 = r.步骤.findIndex(y => y.id === s.id);
+  return 详情头(s.title, '路线步骤', 路线名, null, 序色(Math.max(0, 序))) + `<div class="详情体">
     <div class="路">${转义(路线名)} / ${转义(s.id)}　<span class="编辑入口"
       onclick="编辑步骤标题('${q(路线名)}','${q(步id)}')">改标题</span></div>
     <div class="步骤护栏"

@@ -170,6 +170,43 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) 核�
 $('#重试启动').onclick = () => location.reload();
 
 
+// 带退场动画关闭：先标 data-关闭中，主题若为它写了动画或过渡就等播完（最多 600ms），否则立即关。
+function 关弹窗(el, 关 = () => el.close()){
+  const 令 = el._关令 = {};
+  el.setAttribute('data-关闭中', '');
+  // 只等因 data-关闭中 新触发、尚未开始的动画；开场动画还在播也不必等它。
+  const 动 = 可动() ? el.getAnimations({subtree: true}).filter(a => a.pending && (a instanceof CSSAnimation || a instanceof CSSTransition)) : [];
+  const 完 = () => { if (el._关令 !== 令) return; el._关令 = null; el.removeAttribute('data-关闭中'); 关(); };
+  if (!动.length) { 完(); return; }
+  Promise.race([Promise.all(动.map(a => a.finished.catch(() => {}))), new Promise(r => setTimeout(r, 600))]).then(完);
+}
+function 取消关闭(el){ el._关令 = null; el.removeAttribute('data-关闭中'); }
+['#检查详情', '#文件预览', '#询问'].forEach(s => $(s).addEventListener('cancel', e => {
+  e.preventDefault(); if (s === '#询问') 询问中?.(null); else 关弹窗($(s));
+}));
+
+// 页内询问框，替代浏览器的 prompt / confirm；外观由主题决定。字段为空时就是确认框。
+// 返回各字段的值组成的数组，取消返回 null。
+let 询问中 = null;
+function 询问({标题, 说明 = '', 字段 = [], 确定 = '确定', 危险 = false}){
+  询问中?.(null);
+  const d = $('#询问'), 区 = $('#询问字段');
+  $('#询问标题').textContent = 标题;
+  $('#询问说明').textContent = 说明; $('#询问说明').hidden = !说明;
+  区.innerHTML = 字段.map((f, i) => `<label class="询问项"><span>${转义(f.名)}</span><input data-i="${i}" value="${转义(f.值 ?? '')}" placeholder="${转义(f.占位 || '')}" autocomplete="off"></label>`).join('');
+  $('#询问确定').textContent = 确定;
+  d.toggleAttribute('data-危险', 危险);
+  return new Promise(完 => {
+    询问中 = v => { 询问中 = null; 关弹窗(d); 完(v); };
+    取消关闭(d);
+    if (!d.open) d.showModal();
+    const 首 = 区.querySelector('input');
+    if (首) { 首.focus(); 首.select(); } else $(危险 ? '#询问取消' : '#询问确定').focus();
+  });
+}
+$('#询问表').onsubmit = e => { e.preventDefault(); 询问中?.([...$('#询问字段').querySelectorAll('input')].map(x => x.value)); };
+$('#询问取消').onclick = () => 询问中?.(null);
+
 function 提示(s){ const t = $('#提示'); t.textContent = s; t.classList.add('开');
   clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('开'), 1600); }
 
@@ -215,11 +252,11 @@ function 画检查(){
 function 打开检查(){
   if (!数据) return;
   画检查();
-  $('#检查详情').showModal();
+  取消关闭($('#检查详情')); $('#检查详情').showModal();
   $('#体检').setAttribute('aria-expanded', 'true');
 }
 $('#体检').onclick = 打开检查;
-$('#关闭检查').onclick = () => $('#检查详情').close();
+$('#关闭检查').onclick = () => 关弹窗($('#检查详情'));
 $('#检查详情').addEventListener('close', () => $('#体检').setAttribute('aria-expanded', 'false'));
 $('#检查列表').onclick = e => {
   const button = e.target.closest('button[data-发现]');
@@ -247,7 +284,7 @@ async function 预览文档(路径){
   $('#文件预览标题').textContent = '文件预览';
   $('#文件预览路径').textContent = 路径;
   body.className = '正文'; body.textContent = '正在读取…'; body.scrollTop = 0;
-  if (!dialog.open) dialog.showModal();
+  取消关闭(dialog); if (!dialog.open) dialog.showModal();
   try {
     const r = await fetch('/预览/' + encodeURIComponent(路径), {signal: controller.signal});
     const file = await r.json();
@@ -262,7 +299,7 @@ async function 预览文档(路径){
     if (e.name !== 'AbortError') body.textContent = '预览失败：' + e.message;
   }
 }
-$('#关闭文件预览').onclick = () => $('#文件预览').close();
+$('#关闭文件预览').onclick = () => 关弹窗($('#文件预览'));
 $('#文件预览').addEventListener('close', () => { 预览请求?.abort(); 预览请求 = null; });
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-预览]');
@@ -483,10 +520,12 @@ async function 重做(){
 
 // ---------------------------------------------------------------- 路线编辑
 async function 新建路线(){
-  const 名 = prompt('新路线叫什么？（就写你最常干的那件事）'); if (!名) return;
+  const 答 = await 询问({标题: '新路线', 说明: '名字就写你最常干的那件事。',
+    字段: [{名: '名字', 占位: '例如：出一个NPC'}, {名: '一句话说明', 占位: '可留空'}], 确定: '建好'});
+  if (!答 || !答[0].trim()) return;
+  const [名, 说] = 答;
   const 文件名 = 名.trim() + '.yml';
   if ((数据.路线 || []).some(r => r.文件名 === 文件名)) { 提示('已经有这条路线了'); return; }
-  const 说 = prompt('一句话说明（可留空）', '') || '';
   const res = await fetch('/路线', {method: 'POST', body: JSON.stringify(
     {文件名, 路线: {route: 名.trim(), desc: 说.trim(),
                   steps: [{id: '第一步', title: '第一步', docs: [], next: []}]}})});
@@ -630,7 +669,7 @@ function 编辑步骤标题(路线名, 步id){
 
 async function 删步骤(路线名, 步id){
   const r = 找路线(路线名); if (!r) return;
-  if (!confirm(`删掉「${步id}」这一步？指向它的线也会一起断开。`)) return;
+  if (!await 询问({标题: `删掉「${步id}」这一步？`, 说明: '指向它的线也会一起断开，可以用撤销恢复。', 确定: '删掉', 危险: true})) return;
   r.步骤 = r.步骤.filter(s => s.id !== 步id);
   r.步骤.forEach(s => s.next = (s.next || []).filter(x => x !== 步id));
   await 存路线(r, '删了：' + 步id);
@@ -638,15 +677,16 @@ async function 删步骤(路线名, 步id){
 
 async function 改路线头(路线名){
   const r = 找路线(路线名); if (!r) return;
-  const 名 = prompt('路线名字', r.名称); if (名 === null) return;
-  const 说 = prompt('一句话说明', r.说明 || ''); if (说 === null) return;
+  const 答 = await 询问({标题: '改名字和说明', 字段: [{名: '路线名字', 值: r.名称}, {名: '一句话说明', 值: r.说明 || '', 占位: '可留空'}], 确定: '保存'});
+  if (!答) return;
+  const [名, 说] = 答;
   r.名称 = 名.trim() || r.名称; r.说明 = 说.trim();
   await 存路线(r, '改好了');
 }
 
 async function 删路线(路线名){
   const r = 找路线(路线名); if (!r) return;
-  if (!confirm(`删掉整条「${路线名}」？文件 ${r.文件名} 会被删除，可以用撤销恢复。`)) return;
+  if (!await 询问({标题: `删掉整条「${路线名}」？`, 说明: `文件 ${r.文件名} 会被删除，可以用撤销恢复。`, 确定: '删掉', 危险: true})) return;
   const res = await fetch('/删路线', {method: 'POST', body: JSON.stringify({文件名: r.文件名})});
   const j = await res.json();
   if (j.错误) { 提示('删不掉：' + j.错误); return; }
@@ -659,7 +699,8 @@ async function 删路线(路线名){
 async function 改步骤字段(路线名, 步id, 字段, 提示文){
   const r = 找路线(路线名); if (!r) return;
   const s = r.步骤.find(x => x.id === 步id); if (!s) return;
-  const v = prompt(提示文, s[字段] || ''); if (v === null) return;
+  const 答 = await 询问({标题: 提示文, 字段: [{名: {note: 'AI 护栏'}[字段] || 字段, 值: s[字段] || ''}], 确定: '保存'});
+  if (!答) return; const v = 答[0];
   s[字段] = v.trim();
   await 存路线(r, '改好了');
 }
@@ -679,7 +720,10 @@ async function 加步骤项(路线名, 步id, 字段){
     s.docs = s.docs || []; if (s.docs.includes(选)) { 提示('已经有了'); return; }
     s.docs.push(选);
   } else {
-    const v = prompt(字段 === 'tools' ? '工具路径（仓库相对）' : '产出 glob'); if (!v) return;
+    const 工具 = 字段 === 'tools';
+    const 答 = await 询问({标题: 工具 ? '加工具' : '加产出',
+      字段: [{名: 工具 ? '工具路径（仓库相对）' : '产出位置（可用通配符）', 占位: 工具 ? '工具/某个脚本' : '资产/W-*/场景/**'}], 确定: '加上'});
+    const v = 答?.[0]; if (!v?.trim()) return;
     s[字段] = s[字段] || []; s[字段].push(v.trim());
   }
   await 存路线(r, '加好了');
@@ -702,9 +746,9 @@ function 挑文档(){
       单.innerHTML = 主题.模板.候选列表({命});
       单.querySelectorAll('button[data-i]').forEach(d => d.onclick = () => 收(命[+d.dataset.i].路径));
     };
-    const 收 = v => { 盒.classList.remove('开'); 输.oninput = null; 取消挑选 = null; 重画候选 = null; $('#屉 .收起')?.focus({preventScroll:true}); 完(v); };
+    const 收 = v => { 关弹窗(盒, () => 盒.classList.remove('开')); 输.oninput = null; 取消挑选 = null; 重画候选 = null; $('#屉 .收起')?.focus({preventScroll:true}); 完(v); };
     取消挑选 = () => 收(null);
-    输.value = ''; 画单(''); 盒.classList.add('开'); 输.focus();
+    输.value = ''; 画单(''); 取消关闭(盒); 盒.classList.add('开'); 输.focus();
     输.oninput = 重画候选 = () => 画单(输.value.trim().toLowerCase());
     盒.onclick = e => { if (e.target === 盒) 收(null); };
   });
@@ -1063,13 +1107,18 @@ function 画未认领(){
     e.ondragend = () => document.querySelectorAll('.卡').forEach(c => c.classList.remove('可放'));
   });
 }
-$('#未 .头').onclick = () => $('#未').classList.toggle('开');
+$('#未 .头').onclick = () => { const 未 = $('#未');
+  if (未.classList.contains('开')) 关弹窗(未, () => 未.classList.remove('开')); else { 取消关闭(未); 未.classList.add('开'); } };
 document.addEventListener('dragover', e => { if (e.target.closest('.卡')) e.preventDefault(); });
 document.addEventListener('drop', async e => {
   const 卡 = e.target.closest('.卡'); if (!卡) return;
   e.preventDefault();
   const 文件 = e.dataTransfer.getData('text/plain'); if (!文件) return;
-  const 分类 = 图后缀.test(文件) ? (prompt('挂成哪一类？（人设 / 场景 / 图标 …）', '未分类') || '未分类') : null;
+  let 分类 = null;
+  if (图后缀.test(文件)) {
+    const 答 = await 询问({标题: '挂成哪一类？', 说明: 文件.split('/').pop(), 字段: [{名: '分类', 值: '未分类', 占位: '人设 / 场景 / 图标 …'}], 确定: '认领'});
+    if (!答) return; 分类 = 答[0].trim() || '未分类';
+  }
   const r = await fetch('/认领', {method: 'POST', body: JSON.stringify(
     {条目: 卡.dataset.路径, 文件, 分类})});
   const j = await r.json();
@@ -1102,7 +1151,7 @@ const 搜框 = $('#搜 input'), 搜果 = $('#搜果');
   });
 };
 document.addEventListener('keydown', e => {
-  if ($('#检查详情').open || $('#文件预览').open) return;
+  if ($('#检查详情').open || $('#文件预览').open || $('#询问').open) return;
   const 在输入 = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName || '')
                 || document.activeElement?.isContentEditable;
   if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z' && !在输入){

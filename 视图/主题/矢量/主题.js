@@ -28,7 +28,6 @@ const 上 = k => `var(--上-${类型形(k)[0]})`;
 const 形 = k => 类型形(k)[1];
 const 小形 = k => `<span class="小形 形-${形(k)}" style="--形色:${色(k)}" aria-hidden="true"></span>`;
 const 序色 = i => 色相们[i % 5];
-const 视图色 = {路线:'陶土', 策划:'靛蓝', 内容:'橄榄', 创意:'赭黄', 资产:'烟粉'};
 
 const 图标 = {
   工具: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/></svg>',
@@ -43,10 +42,10 @@ const 导航图形 = {
   '资产':'<path d="M2 14V8a6 6 0 0 1 12 0v6z"/>'
 };
 
-let 已入场 = false, 签序 = -1;
+let 签序 = -1;
 
 function 装配界面(){
-  已入场 = false; 签序 = -1;
+  签序 = -1;
   api.监听(window, 'resize', () => 定位导航(true));
   api.清理(() => {
     document.querySelectorAll('.卡,.步').forEach(停卡片动效);
@@ -191,9 +190,9 @@ function 行(文, 尾, 点击, 类型, 图){
     <span>${转义(文)}</span>${尾 ? `<span class="尾">${转义(尾)}</span>` : ''}</div>`;
 }
 
-function 详情头(标题, 分类, 路径, 类型){
-  const k = 类型 ?? 分类;
-  return `<div class="详情头" style="--签色:${色(k)};--上:${上(k)}"><span class="类型签">${转义(分类)}</span><h3>${转义(标题)}</h3><div class="路">${转义(路径)}</div><button class="收起" onclick="收卡()" aria-label="收起卡片">收起 <kbd>Esc</kbd></button></div>`;
+function 详情头(标题, 分类, 路径, 类型, 色相){
+  const k = 类型 ?? 分类, 签色 = 色相 ? `var(--${色相})` : 色(k), 签上 = 色相 ? `var(--上-${色相})` : 上(k);
+  return `<div class="详情头" style="--签色:${签色};--上:${签上}"><span class="类型签">${转义(分类)}</span><h3>${转义(标题)}</h3><div class="路">${转义(路径)}</div><button class="收起" onclick="收卡()" aria-label="收起卡片">收起 <kbd>Esc</kbd></button></div>`;
 }
 
 function 停卡片动效(card){ card?._动效清理?.(); }
@@ -206,7 +205,8 @@ function 卡片过渡(card, 原框){
   const opening = card.classList.contains('展开'), duration = opening ? 460 : 240;
   const shell = document.createElement('div'); shell.className = '矢量过渡片';
   shell.setAttribute('aria-hidden','true'); shell.inert = true;
-  shell.style.cssText = `left:${终框.left}px;top:${终框.top}px;width:${终框.width}px;height:${终框.height}px;--卡色:${getComputedStyle(card).getPropertyValue('--卡色')};`;
+  const 色值 = card.querySelector(':scope>.序 .序号')?.style.getPropertyValue('--序色') || getComputedStyle(card).getPropertyValue('--卡色');
+  shell.style.cssText = `left:${终框.left}px;top:${终框.top}px;width:${终框.width}px;height:${终框.height}px;--卡色:${色值};`;
   shell.innerHTML = '<span></span>';
   api.装饰(shell); card._过渡壳 = shell;
   const sx = 原框.width / 终框.width, sy = 原框.height / 终框.height;
@@ -236,30 +236,10 @@ function 布置阅读幕(){
   curtain.style.cssText=`left:${-位.x/缩}px;top:${-位.y/缩}px;width:${stage.clientWidth/缩}px;height:${stage.clientHeight/缩}px;`;
 }
 
-// 切换视图：新视图的颜色从当前导航按钮处涨满，再收进对角露出新内容；卡片随后弹入，角形稍晚转入。
+// 切换视图：卡片依次弹入，角形稍晚转入；连线逐条画出，终点圆点弹出。
 function 画布入场(){
-  if (!可动()) { 已入场 = true; return; }
-  const 首次 = !已入场; 已入场 = true;
-  let 延 = 0;
-  if (!首次) {
-    const 钮 = $('#签 button.开'), {视图} = api.读取状态();
-    const 框 = 钮?.getBoundingClientRect();
-    if (框) {
-      const x = 框.left + 框.width / 2, y = 框.top + 框.height / 2;
-      const W = innerWidth, H = innerHeight, R = Math.hypot(Math.max(x, W - x), Math.max(y, H - y));
-      const 幕 = document.createElement('div'); 幕.className = '矢量换幕'; 幕.setAttribute('aria-hidden', 'true');
-      幕.style.background = `var(--${视图色[视图] || '陶土'})`;
-      api.装饰(幕);
-      const 涨 = api.动画(幕, [{clipPath:`circle(0px at ${x}px ${y}px)`},{clipPath:`circle(${R}px at ${x}px ${y}px)`}],
-        {duration:240, easing:'cubic-bezier(.7,0,.84,0)', fill:'forwards'});
-      涨.finished.then(() => {
-        const 收 = api.动画(幕, [{clipPath:`circle(${Math.hypot(W, H)}px at ${W}px ${H}px)`},{clipPath:`circle(0px at ${W}px ${H}px)`}],
-          {duration:420, easing:'cubic-bezier(.16,1,.3,1)', fill:'forwards'});
-        收.finished.then(() => 幕.remove(), () => 幕.remove());
-      }, () => 幕.remove());
-      延 = 260;
-    }
-  }
+  if (!可动()) return;
+  const 延 = 0;
   const stage=$('#台').getBoundingClientRect();
   const visible=[...$('#世界').querySelectorAll('.卡,.步,.空')].filter(el=>{
     const r=el.getBoundingClientRect();return !el.classList.contains('展开') && r.right>stage.left && r.left<stage.right && r.bottom>stage.top && r.top<stage.bottom;
