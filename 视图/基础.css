@@ -1,4 +1,4 @@
-/* 仅保留全屏画布及交互坐标基础；尺寸、排版、颜色和动效属于主题。 */
+/* 全屏画布、交互坐标和共享入口位置；其余排版、颜色和动效属于主题。 */
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;overflow:hidden}
 #台{position:fixed!important;inset:0!important;overflow:clip;user-select:none;-webkit-user-select:none;touch-action:none}
@@ -8,3 +8,43 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden}
 body[data-启动中] > :not(#启动状态){visibility:hidden}
 #启动状态{position:fixed;top:24px;left:24px;font:14px sans-serif}
 #启动状态[hidden]{display:none}
+
+/* 共享入口顺序：搜索 → 主题 → 重新扫描；主题仍决定控件配色和外观。 */
+#顶 > #主题控件{
+  position:static;inset:auto;transform:none;order:0;
+  width:auto;min-width:0;max-width:none;flex:0 0 auto;margin:0;white-space:nowrap;
+}
+#顶 > .品牌{min-width:0;flex-shrink:1}
+#顶 > .品牌 > div{min-width:0}
+#顶 .品牌 #名{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#顶 > #搜{min-width:0;flex-shrink:1}
+@media(max-width:950px) and (min-width:701px){
+  html[data-theme="石墨"] #顶{grid-template-columns:minmax(100px,1fr) minmax(130px,210px) auto 36px}
+  html[data-theme="石墨"] #顶 > #主题控件{grid-row:1;grid-column:3}
+  html[data-theme="石墨"] #顶 > #刷{grid-row:1;grid-column:4}
+}
+@media(max-width:800px){
+  html[data-theme="晴伴"] #顶 > .品牌{flex:1 1 70px}
+  html[data-theme="晴伴"] #顶 > #搜{width:auto;flex:1.5 1 110px}
+  #顶 > #主题控件{gap:4px;padding:7px 8px}
+  #顶 > #主题控件 label{display:none}
+  #顶 #主题选择{min-width:54px;max-width:70px}
+}
+@media(max-width:760px){
+  html[data-theme="邂逅"] #顶{grid-template-columns:minmax(48px,1fr) minmax(80px,1.3fr) auto 28px;column-gap:6px}
+  html[data-theme="邂逅"] #顶 > #主题控件{grid-row:1;grid-column:3}
+  html[data-theme="邂逅"] #顶 > #刷{grid-row:1;grid-column:4}
+}
+@media(max-width:700px){
+  html[data-theme="石墨"] #顶{grid-template-columns:minmax(48px,1fr) minmax(80px,1.3fr) auto 28px;column-gap:6px}
+  html[data-theme="石墨"] #顶 > #搜{grid-row:1;grid-column:2}
+  html[data-theme="石墨"] #顶 > #主题控件{grid-row:1;grid-column:3}
+  html[data-theme="石墨"] #顶 > #刷{grid-row:1;grid-column:4}
+  html[data-theme="卵石"] #顶 > .品牌{flex:1 1 64px}
+  html[data-theme="卵石"] #顶 > #搜{flex:1.5 1 96px}
+  html[data-theme="卵石"] #顶 > #体检,
+  html[data-theme="卵石"] #顶 > #新路线{order:6;min-height:32px;padding:0 10px;font-size:11px}
+  html[data-theme="卵石"] #顶 > #刷{width:32px;min-height:32px;flex-shrink:0}
+  html[data-theme="晴伴"] #顶 > .品牌 svg{flex-shrink:0}
+  #顶 > #主题控件{font-size:11px}
+}

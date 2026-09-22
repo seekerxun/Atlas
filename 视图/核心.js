@@ -6,6 +6,8 @@ let 数据 = null, 视图 = '内容', 选中 = null, 布局 = {}, 选中步 = nu
 let 缩 = 0.85, 位 = {x: 30, y: 24};
 let 展开卡 = null, 正文请求 = null, 首次 = true, 上次绘制视图 = null;
 let 悬停条目 = null, 悬停关联 = null;
+let 悬停计时 = null, 待悬停卡 = null;
+const 卡片悬停延迟 = 500;
 const 按路径 = {}, 按编号 = {}, 按名 = {};
 
 let 主题 = null, 当前主题包 = null, 主题请求序号 = 0;
@@ -295,10 +297,7 @@ function 画库(){
     e.tabIndex = 0; e.setAttribute('role', 'button'); e.setAttribute('aria-expanded', 'false');
     e.setAttribute('aria-label', '展开 ' + (按路径[e.dataset.路径].标题 || 按路径[e.dataset.路径].名称));
     e.onclick = ev => { ev.stopPropagation(); if (!ev.target.closest('#屉')) 选条目(e.dataset.路径); };
-    e.onpointerenter = ev => { if (ev.pointerType !== 'touch' && !ev.buttons && !e.classList.contains('展开')) { 悬停条目 = e.dataset.路径; 更新关联(); } };
-    e.onpointerleave = () => { if (悬停条目 === e.dataset.路径) { 悬停条目 = null; 更新关联(); } };
-    e.onfocus = () => { if (!e.classList.contains('展开')) { 悬停条目 = e.dataset.路径; 更新关联(); } };
-    e.onblur = () => { if (悬停条目 === e.dataset.路径) { 悬停条目 = null; 更新关联(); } };
+    绑定卡片关联(e);
     e.addEventListener('transitionend', ev => { if (ev.target === e && ev.propertyName === 'translate') 更新关联(); });
 
     e.onkeydown = ev => { if (ev.target === e && ['Enter', ' '].includes(ev.key)) { ev.preventDefault(); 选条目(e.dataset.路径); } };
@@ -657,6 +656,35 @@ function 挑文档(){
 }
 
 // ---------------------------------------------------------------- 选中与卡内详情
+// 关联触发时机属于核心；主题只呈现核心设置的状态类。
+function 清除卡片悬停(card = null){
+  if (!card || 待悬停卡 === card) {
+    clearTimeout(悬停计时); 悬停计时 = null; 待悬停卡 = null;
+  }
+  if (!card || 悬停条目 === card.dataset.路径) {
+    悬停条目 = null; 更新关联();
+  }
+}
+function 绑定卡片关联(card){
+  card.onpointerenter = ev => {
+    if (ev.pointerType === 'touch' || ev.buttons || card.classList.contains('展开')) return;
+    清除卡片悬停();
+    待悬停卡 = card;
+    悬停计时 = setTimeout(() => {
+      悬停计时 = null; 待悬停卡 = null;
+      if (!card.isConnected || card.classList.contains('展开')) return;
+      悬停条目 = card.dataset.路径; 更新关联();
+    }, 卡片悬停延迟);
+  };
+  card.onpointerleave = card.onpointercancel = () => 清除卡片悬停(card);
+  card.addEventListener('pointerdown', () => 清除卡片悬停(card));
+  card.onfocus = () => {
+    清除卡片悬停();
+    if (!card.classList.contains('展开')) { 悬停条目 = card.dataset.路径; 更新关联(); }
+  };
+  card.onblur = () => 清除卡片悬停(card);
+}
+
 function 一跳(n){
   const s = new Set([n.路径]);
   Object.values(n.关联 || {}).flat().forEach(t => { const x = 解析(t); if (x) s.add(x.路径); });
@@ -727,6 +755,7 @@ function 正文html(文本){
 
 
 function 收卡(恢复焦点 = true){
+  清除卡片悬停();
   正文请求?.abort(); 正文请求 = null;
   const card = 展开卡, panel = $('#屉');
   const 原框 = card?._过渡壳?.getBoundingClientRect() || card?.getBoundingClientRect();
@@ -890,9 +919,10 @@ function 应用变换(){
   if (!展开卡) 更新关联();
 }
 const 台 = $('#台');
+台.addEventListener('pointerdown', () => 清除卡片悬停(), true);
 台.addEventListener('wheel', e => {
   if (e.target.closest('#屉')) return;
-  e.preventDefault(); 停镜头();
+  e.preventDefault(); 停镜头(); 清除卡片悬停();
   const k = Math.exp(-e.deltaY * 0.0016), 新 = Math.min(2.4, Math.max(0.12, 缩 * k));
   const r = 台.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
   位.x = mx - (mx - 位.x) * (新 / 缩); 位.y = my - (my - 位.y) * (新 / 缩);
