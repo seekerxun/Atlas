@@ -127,17 +127,35 @@ kbd{font-family:var(--等宽)}
   .卡:not(.展开):hover .展开符{transform:rotate(90deg)}
 }
 
-/* ———— 语义缩放 ———— */
-body.远 .卡:not(.展开) :is(.要,.脚,.图条,.卡眉),body.远 .盒>.类标{display:none}
+/* ———— 语义缩放 ————
+   远景：条目卡只留类型签和标题；路线步骤的大框隐去，只在垂直中线放一块铭牌，
+   连线端点正好落在铭牌两侧。字号按 --缩 反向补偿，保证屏幕上仍能读。 */
+.远牌{display:none}
+body.远{--远字:clamp(22px,calc(15px / var(--缩,1)),34px);--远号:clamp(15px,calc(10px / var(--缩,1)),24px)}
 body.中 .卡:not(.展开) .图条{display:none}
-body.远 .卡:not(.展开){flex-direction:row;align-items:center}
-body.远 .卡:not(.展开) h4{width:100%;margin:0;font-size:clamp(26px,calc(18px / var(--缩,1)),52px);line-height:1.2;white-space:normal;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
-/* 路线远景保留原内容占位，缩放时连线端点不跳动。 */
-body.远 .步:not(.展开)>:not(.柄){visibility:hidden}
-body.远 .步:not(.展开):before{content:attr(data-标题);position:absolute;inset:20px;display:flex;align-items:center;font-size:clamp(26px,calc(18px / var(--缩,1)),40px);line-height:1.2;font-weight:600;overflow-wrap:anywhere;overflow:hidden;pointer-events:none}
+body.远 .卡:not(.展开) :is(.要,.脚,.图条,.编号,.展开符),body.远 .盒>.类标{display:none}
+body.远 .卡:not(.展开){justify-content:center;gap:12px}
+body.远 .卡:not(.展开) .类型签{font-size:var(--远号);padding:.1em .5em}
+body.远 .卡:not(.展开) h4{margin:0;font-size:var(--远字);line-height:1.25;letter-spacing:.02em;white-space:normal;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+body.远 .步:not(.展开){background:none;border-color:transparent;box-shadow:none}
+body.远 .步:not(.展开)>:not(.柄,.远牌){visibility:hidden}
+body.远 .步:not(.展开) .远牌{display:flex}
+.远牌{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);flex-direction:column;gap:10px;padding:18px 22px 20px;background:var(--面);border:1px solid color-mix(in srgb,var(--主) 50%,transparent);box-shadow:0 0 22px color-mix(in srgb,var(--主) 18%,transparent);pointer-events:none;transition:border-color .2s,box-shadow .2s}
+.远号{display:flex;align-items:center;gap:.5em;font:600 var(--远号)/1 var(--等宽);letter-spacing:.08em;color:var(--主);text-shadow:0 0 10px color-mix(in srgb,var(--主) 70%,transparent)}
+.远号:after{content:"";flex:1;height:1px;background:linear-gradient(90deg,color-mix(in srgb,var(--主) 60%,transparent),transparent)}
+.远题{font-size:var(--远字);line-height:1.25;font-weight:600;letter-spacing:.02em;color:#fff;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+body.远 .步:not(.展开):hover .远牌{border-color:var(--主);box-shadow:0 0 0 1px var(--主),0 0 28px color-mix(in srgb,var(--主) 40%,transparent)}
+body.远 .步.选:not(.展开) .远牌{border-color:var(--副);box-shadow:0 0 0 1px var(--副),0 0 28px color-mix(in srgb,var(--副) 42%,transparent)}
+body.远 .步.选 .远号{color:var(--副)}
+body.远 .步.选 .远号:after{background:linear-gradient(90deg,color-mix(in srgb,var(--副) 60%,transparent),transparent)}
+body.远 :is(.编辑条,.路线码,.路线说明){display:none}
+body.远 .路线名{font-size:clamp(32px,calc(21px / var(--缩,1)),64px);line-height:1.2}
+body.远 .步:is(.靶,.可放){outline:none}
+body.远 .步.靶 .远牌{outline:2px solid var(--好);outline-offset:3px}
+body.远 .步.可放 .远牌{outline:2px dashed var(--好);outline-offset:3px}
 body.远 .盒>.头{gap:8px;line-height:1.25}
-body.远 .盒>.头 b{font-size:min(28px,calc(14px / var(--缩,1)))}
-body.远 .盒>.头 span{font-size:min(20px,calc(10px / var(--缩,1)))}
+body.远 .盒>.头 b{font-size:clamp(19px,calc(22px / var(--缩,1)),56px)}
+body.远 .盒>.头 span{font-size:clamp(12px,calc(12px / var(--缩,1)),28px)}
 
 /* ———— 路线步骤 ———— */
 .步{--卡色:var(--k-流程);position:absolute;width:290px;padding:18px 18px 20px;background:var(--面);border:1px solid color-mix(in srgb,var(--主) 42%,transparent);box-shadow:0 0 18px color-mix(in srgb,var(--主) 14%,transparent);cursor:grab;transition:border-color .2s,box-shadow .2s}

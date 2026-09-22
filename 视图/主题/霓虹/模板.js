@@ -113,6 +113,7 @@ function 步骤卡({s, i, 路线文件}){
   return `<div class="序"><span>STEP // ${号}</span><span class="序号" aria-hidden="true">${号}</span></div><h4>${转义(s.title)}</h4>
       ${s.note ? `<div class="提"><span class="提签">AI 护栏</span>${转义(s.note)}</div>` : ''}
       <ul class="步骤清单">${li}${尾}</ul>
+      <div class="远牌" aria-hidden="true"><span class="远号">${号}</span><span class="远题">${转义(s.title)}</span></div>
       <div class="柄" title="拖到另一张卡上连线"></div>`;
 }
 
