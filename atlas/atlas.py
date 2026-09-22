@@ -194,6 +194,9 @@ def 命令_找(args):
             for x in st.tools:
                 声明.setdefault(x.rstrip("/"), []).append(f"路线:{r.名称}")
     已印 = set()
+    # 与 atlas 检查 的 W02 判定一致：代码目录是产品本身，不按"工具"要求
+    def 是代码(路径):
+        return any(路径 == d or 路径.startswith(d + "/") for d in idx.cfg.代码目录)
     for t in idx.工具:
         if q not in t.lower():
             continue
@@ -204,9 +207,15 @@ def 命令_找(args):
         用户 = 声明.get(键, [])
         个数 = sum(1 for x in idx.工具 if x == 键 or x.startswith(键 + "/"))
         尾 = f"（{个数} 个文件）" if 个数 > 1 else ""
-        print(f"{C['淡']}工具{C['_']} {C['粗']}{键}{C['_']}{C['淡']}{尾}{C['_']}\n     {C['淡']}"
-              + ("服务于：" + "、".join(dict.fromkeys(用户)) if 用户 else "⚠ 孤儿工具，没人声明")
-              + C["_"])
+        代码 = 是代码(键)
+        if 用户:
+            说明 = "服务于：" + "、".join(dict.fromkeys(用户))
+        elif 代码:
+            说明 = "产品代码，不按工具要求"
+        else:
+            说明 = "⚠ 孤儿工具，没人声明"
+        print(f"{C['淡']}{'代码' if 代码 else '工具'}{C['_']} {C['粗']}{键}{C['_']}{C['淡']}{尾}{C['_']}"
+              f"\n     {C['淡']}{说明}{C['_']}")
         命中 += 1
     for a in idx.资产:
         if q in a.lower():
