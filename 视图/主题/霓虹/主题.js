@@ -1,5 +1,5 @@
 import 创建模板 from './模板.js';
-/* 霓虹主题：深夜网格、霓虹描边、流光连线。视觉在 样式.css，本文件负责布局、模板与动效。 */
+/* 霓虹主题：深夜点阵、霓虹描边、流光连线。视觉在 样式.css，本文件负责布局、模板与动效。 */
 export default function 创建主题(api){
 const {$, 转义, 图后缀, 可动, 分组数据, 更新关联} = api;
 
@@ -32,11 +32,11 @@ function 色(k){
 
 let 读数 = null;
 
-// 画布上的网格随平移缩放移动，读数显示视口左上角的世界坐标。
+// 画布上的点阵随平移缩放移动，读数显示视口左上角的世界坐标。
 function 同步网格(){
   const {缩, 位} = api.读取状态(), 台 = $('#台');
   if (!台 || !(缩 > 0)) return;
-  let 尺 = 40 * 缩; while (尺 < 20) 尺 *= 2; while (尺 > 80) 尺 /= 2;
+  let 尺 = 24 * 缩; while (尺 < 14) 尺 *= 2; while (尺 > 48) 尺 /= 2;
   台.style.setProperty('--网格尺', 尺 + 'px');
   台.style.setProperty('--网格x', (位.x % 尺) + 'px');
   台.style.setProperty('--网格y', (位.y % 尺) + 'px');
@@ -267,9 +267,7 @@ function 定位展开(){
 
 function 阅读区域(){
   const stage=$('#台').getBoundingClientRect();
-  // 视图名浮在画布左上，取景和阅读都避开它。
-  const 上沿=Math.max($('#顶').getBoundingClientRect().bottom,$('#导航').getBoundingClientRect().bottom);
-  const 顶=Math.max(12,上沿-stage.top+14);
+  const 顶=Math.max(12,$('#顶').getBoundingClientRect().bottom-stage.top+14);
   const 底=Math.max(16,stage.bottom-$('#角').getBoundingClientRect().top+12);
   return {顶,底,高:Math.max(120,stage.height-顶-底)};
 }
@@ -280,7 +278,7 @@ function 初始视野(){
   if (!首) return;
   const 台宽 = $('#台').clientWidth;
   const 缩 = 台宽 < 700 ? .85 : .9;
-  const 顶 = 阅读区域().顶 + 8;
+  const 顶 = 阅读区域().顶 + 16;
   const 位 = {x:24 - (parseFloat(首.style.left)||0)*缩, y:顶 - (parseFloat(首.style.top)||0)*缩};
   if (视图 === '路线') {
     const 标题们 = [...$('#世界').querySelectorAll('.路线标题')];

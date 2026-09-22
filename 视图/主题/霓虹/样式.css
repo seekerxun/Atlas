@@ -1,4 +1,4 @@
-/* 霓虹的全部外观、字号、尺寸、位置与响应式规则：深夜网格、霓虹描边、流光连线。 */
+/* 霓虹的全部外观、字号、尺寸、位置与响应式规则：深夜点阵、霓虹描边、流光连线。 */
 :root{
   color-scheme:dark;
   --底:#07060e;--面:#0e0b1d;--面2:#151130;--深:#0b0918;--边:#2a2452;
@@ -72,15 +72,11 @@ kbd{font-family:var(--等宽)}
 #刷{width:38px;height:38px;flex-shrink:0;font-size:18px;line-height:1;color:var(--字2);border:1px solid var(--边)}
 #刷:hover{color:var(--主);border-color:color-mix(in srgb,var(--主) 55%,transparent)}
 
-/* ———— 视图名 ———— */
-#导航{position:fixed;top:78px;left:24px;display:flex;align-items:baseline;gap:14px;z-index:10;pointer-events:none;text-shadow:0 0 10px var(--底),0 0 2px var(--底)}
-#视图名{font-size:22px;font-weight:600;letter-spacing:.06em}
-#视图名:before{content:"//";margin-right:12px;font:12px var(--等宽);color:var(--副)}
-#视图数{font:12px var(--等宽);color:var(--主)}
-#导航 .帮助{font:11px var(--等宽);color:var(--字3)}
+/* 导航按钮已显示各视图条目数，视图名一行不再单独浮在画布上。 */
+#导航{display:none}
 
 /* ———— 画布 ———— */
-#台{z-index:0;cursor:grab;background-image:linear-gradient(#9682ff12 1px,transparent 1px),linear-gradient(90deg,#9682ff12 1px,transparent 1px);background-size:var(--网格尺,40px) var(--网格尺,40px);background-position:var(--网格x,0) var(--网格y,0)}
+#台{z-index:0;cursor:grab;background-image:radial-gradient(circle,#a99bff47 1px,transparent 1.6px);background-size:var(--网格尺,24px) var(--网格尺,24px);background-position:var(--网格x,0) var(--网格y,0)}
 #台:after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(180deg,#ffffff07 0 1px,transparent 1px 3px);transition:opacity .2s}
 body.霓虹阅读 #台:after{opacity:0}
 #台.拖{cursor:grabbing}
@@ -372,7 +368,7 @@ body.霓虹阅读 .盒.聚起>.卡:not(.展开),body.霓虹阅读 .盒.聚起>.�
 
 /* ———— 响应式 ———— */
 @media(max-width:1280px){
-  #导航 .帮助,.霓虹读数{display:none}
+  .霓虹读数{display:none}
   #搜{width:220px}
 }
 @media(max-width:1180px){
@@ -393,7 +389,6 @@ body.霓虹阅读 .盒.聚起>.卡:not(.展开),body.霓虹阅读 .盒.聚起>.�
   #签{grid-row:2;grid-column:1/-1;margin:0 -16px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr))}
   #签 button{justify-content:center}
   .导航图标{display:block}
-  #导航{top:114px}
 }
 @media(max-width:700px){
   #顶{height:auto;display:grid;grid-template-columns:minmax(0,1fr) auto auto;grid-template-rows:40px 44px 46px;gap:8px;padding:8px 12px 0}
@@ -412,8 +407,6 @@ body.霓虹阅读 .盒.聚起>.卡:not(.展开),body.霓虹阅读 .盒.聚起>.�
   #签 button{justify-content:center;gap:5px;padding:0 4px;font-size:13px}
   .导航图标{display:block;width:15px;height:15px}
   .导航计数{display:none}
-  #导航{top:156px;left:14px}
-  #视图名{font-size:18px}
   #未{left:10px;bottom:16px;width:auto;max-width:calc(100vw - 20px)}
   #未 .头{min-height:42px;padding:0 12px}
   .未认领箭头{display:none}
