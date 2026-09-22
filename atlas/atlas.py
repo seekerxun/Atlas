@@ -145,8 +145,13 @@ def 命令_路线(args):
                 行数 += n.行数
             elif (根 / f"{d}.md").exists() or (根 / d).exists():
                 p = f"{d}.md" if (根 / f"{d}.md").exists() else d
-                out.append(f"读   {p}")
+                try:
+                    源码行数 = (根 / p).read_text(encoding="utf-8").count("\n") + 1
+                except (UnicodeError, OSError):
+                    源码行数 = None
+                out.append(f"读   {p}" + (f"  # {源码行数}行" if 源码行数 is not None else ""))
                 文件.append(p)
+                行数 += 源码行数 or 0
             else:
                 out.append(f"读   ??? `{d}` 不存在")
         for t in s.tools:

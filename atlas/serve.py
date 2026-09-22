@@ -2,6 +2,7 @@
 
 接口：
   GET  /                 画布页面
+  GET  /界面/<路径>       Atlas 自身的界面资源，与当前被管理项目分开
   GET  /数据             扫描结果 + 校验结果 + 布局（每次请求重扫，规模小不值得缓存）
   GET  /文件/<路径>       读一个仓库里的文件（缩略图、原文预览）
   POST /布局             存卡片位置
@@ -24,9 +25,48 @@ import edit
 import miniyaml as y
 from lint import 校验, 体检数
 from model import ATLAS
-from scan import 建索引
+from scan import 建索引, _走
 
 页面 = ATLAS / "视图" / "画布.html"
+文本后缀 = {'.md', '.txt', '.html', '.htm', '.css', '.scss', '.js', '.mjs', '.ts',
+          '.tsx', '.jsx', '.vue', '.svelte', '.py', '.sh', '.json', '.yml', '.yaml',
+          '.toml', '.xml', '.csv', '.tsv', '.sql'}
+
+
+def 文件候选(idx):
+    """文档保持无 .md 的路线引用；代码使用完整文件名，不读入所有源码。"""
+    结果 = {n.路径: {"路径": n.路径[:-3], "文件路径": n.路径, "标题": n.标题 or n.名称,
+                       "类型": n.类型, "库": n.库, "行数": n.行数, "摘要": n.摘要}
+            for n in idx.条目.values()}
+    根 = idx.根.resolve()
+    for rel in _走(根, idx.cfg.忽略):
+        s = rel.as_posix()
+        if s in 结果 or any(p.startswith('.') for p in rel.parts):
+            continue
+        p = (根 / rel).resolve()
+        if not p.is_relative_to(根) or not p.is_file() or p.suffix.lower() not in 文本后缀:
+            continue
+        结果[s] = {"路径": s[:-3] if s.endswith('.md') else s, "文件路径": s,
+                   "标题": rel.name, "类型": '文档' if s.endswith('.md') else '代码 / 文本',
+                   "库": '', "行数": None, "摘要": ''}
+    return [结果[k] for k in sorted(结果)]
+
+
+def 预览文件(根: Path, rel: str):
+    根 = 根.resolve()
+    p = (根 / rel).resolve()
+    md = (根 / (rel + '.md')).resolve()
+    if md.is_relative_to(根) and md.is_file():
+        p = md
+    if not p.is_relative_to(根) or not p.is_file():
+        raise FileNotFoundError('文件不存在或不在当前项目内')
+    if p.suffix.lower() not in 文本后缀:
+        raise ValueError('该文件类型暂不支持文本预览')
+    if p.stat().st_size > 1024 * 1024:
+        raise ValueError('文件超过 1 MB，请在编辑器中查看')
+    内容 = p.read_text(encoding='utf-8')
+    return {"路径": p.relative_to(根).as_posix(), "内容": 内容,
+            "格式": 'markdown' if p.suffix.lower() == '.md' else 'code'}
 
 
 def 读布局(根: Path) -> dict:
@@ -49,11 +89,9 @@ def 打包(根: Path) -> dict:
     idx = 建索引(根)
     结果 = 校验(idx)
     已挂 = {a for n in idx.条目.values() for a in n.资产展开}
-    声明工具 = {x.rstrip("/") for n in idx.条目.values() for x in n.工具}
-    声明工具 |= {x.rstrip("/") for r in idx.路线 for st in r.步骤 for x in st.tools}
     未认领资产 = [a for a in idx.资产 if a.startswith("资产/") and a not in 已挂]
-    孤儿工具 = [t for t in idx.工具
-               if not any(t == k or t.startswith(k + "/") for k in 声明工具)]
+    # 与项目检查共用 W02 判定，代码目录中的产品文件不能被界面误报为孤儿。
+    孤儿工具 = [f.位置 for f in 结果 if f.码 == 'W02']
     产出 = []
     d = 根 / "产出"
     if d.is_dir():
@@ -61,7 +99,7 @@ def 打包(根: Path) -> dict:
             if p.is_file() and p.name != ".DS_Store":
                 产出.append(str(p.relative_to(根)).replace(os.sep, "/"))
     return {
-        "项目": idx.cfg.名称, "主分组": idx.cfg.主分组,
+        "项目": idx.cfg.名称, "主分组": idx.cfg.主分组, "文件候选": 文件候选(idx),
         "条目": [n.to_dict() for n in idx.条目.values()],
         "路线": [{"名称": r.名称, "路径": r.路径, "说明": r.说明, "入口": r.入口,
                  "文件名": r.路径.split("/")[-1],
@@ -124,6 +162,17 @@ class 处理器(BaseHTTPRequestHandler):
         if 路径 in ("/", "/index.html"):
             self._发(200, 页面.read_bytes(), "text/html; charset=utf-8")
             return
+        if 路径.startswith('/界面/'):
+            根 = 页面.parent.resolve()
+            p = (根 / 路径[len('/界面/'):]).resolve()
+            类型 = {'.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
+                    '.svg': 'image/svg+xml', '.png': 'image/png', '.webp': 'image/webp',
+                    '.woff2': 'font/woff2'}
+            if not p.is_relative_to(根) or not p.is_file() or p.suffix.lower() not in 类型:
+                self._发(404, b'not found', 'text/plain')
+                return
+            self._发(200, p.read_bytes(), 类型[p.suffix.lower()])
+            return
         if 路径 == "/数据":
             try:
                 self._json(打包(self.根))
@@ -132,9 +181,15 @@ class 处理器(BaseHTTPRequestHandler):
             return
         if 路径 == "/候选":
             idx = 建索引(self.根)
-            self._json([{"路径": n.路径[:-3], "标题": n.标题, "类型": n.类型,
-                         "库": n.库, "行数": n.行数, "摘要": n.摘要}
-                        for n in sorted(idx.条目.values(), key=lambda x: x.路径)])
+            self._json(文件候选(idx))
+            return
+        if 路径.startswith("/预览/"):
+            try:
+                self._json(预览文件(self.根, 路径[len('/预览/'):]))
+            except FileNotFoundError as e:
+                self._json({"错误": str(e)}, 404)
+            except (ValueError, OSError):
+                self._json({"错误": '无法预览：请确认文件是 UTF-8 文本，且不超过 1 MB。'}, 400)
             return
         if 路径.startswith("/文件/"):
             rel = 路径[len("/文件/"):]

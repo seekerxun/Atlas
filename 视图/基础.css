@@ -1,0 +1,6 @@
+/* 仅保留全屏画布及交互坐标基础；尺寸、排版、颜色和动效属于主题。 */
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden}
+#台{position:fixed!important;inset:0!important;overflow:clip;user-select:none;-webkit-user-select:none;touch-action:none}
+#世界{position:absolute;transform-origin:0 0}
+#屉{user-select:text;-webkit-user-select:text}
