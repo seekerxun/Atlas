@@ -190,7 +190,9 @@ function 卡片过渡(card, 原框){
   const opening = card.classList.contains('展开'), duration = opening ? 260 : 200;
   const shell = document.createElement('div'); shell.className = '霓虹过渡片';
   shell.setAttribute('aria-hidden','true'); shell.inert = true;
-  shell.style.cssText = `left:${终框.left}px;top:${终框.top}px;width:${终框.width}px;height:${终框.height}px;--卡色:${getComputedStyle(card).getPropertyValue('--卡色')};`;
+  // 路线步骤的外框是霓虹主色，过渡片跟着它，不用文档类型色。
+  const 色值 = card.classList.contains('步') ? 'var(--主)' : getComputedStyle(card).getPropertyValue('--卡色');
+  shell.style.cssText = `left:${终框.left}px;top:${终框.top}px;width:${终框.width}px;height:${终框.height}px;--卡色:${色值};`;
   api.装饰(shell); card._过渡壳 = shell;
   const start = `translate(${原框.left-终框.left}px,${原框.top-终框.top}px) scale(${原框.width/终框.width},${原框.height/终框.height})`;
   const ease = 'cubic-bezier(.2,.9,.25,1)';
