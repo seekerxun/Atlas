@@ -356,9 +356,9 @@ function 画边(r, 位置){
     const 形 = `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`;
     const 键 = `${r.名称}|${s.id}|${nx}`;
     d += `<path class="边击" d="${形}" data-边="${转义(键)}"/>
-          <path class="边" d="${形}" fill="none" stroke="var(--线)" stroke-width="2"
+          <path class="边" d="${形}" fill="none" stroke="var(--线,#888)" stroke-width="2"
                 data-边="${转义(键)}"><title>点一下断开这条线</title></path>
-          <circle cx="${x2}" cy="${y2}" r="3.5" fill="var(--主)"/>`;
+          <circle cx="${x2}" cy="${y2}" r="3.5" fill="var(--主,#888)"/>`;
   }));
   svg.innerHTML = d;
   svg.querySelectorAll('[data-边]').forEach(e => e.onclick = ev => {
@@ -471,7 +471,7 @@ function 起连线(ev, 卡){
   const svg = $('#线');
   const x1 = parseFloat(卡.style.left) + 主题.布局.连线出口, y1 = parseFloat(卡.style.top) + 卡.offsetHeight / 2;
   const 临 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  临.setAttribute('stroke', 'var(--好)'); 临.setAttribute('stroke-width', '2');
+  临.setAttribute('stroke', 'var(--好,#888)'); 临.setAttribute('stroke-width', '2');
   临.setAttribute('fill', 'none'); 临.setAttribute('stroke-dasharray', '5 4');
   svg.appendChild(临);
   document.querySelectorAll(`.步[data-路线="${CSS.escape(路线名)}"]`).forEach(e => {
@@ -763,7 +763,11 @@ function 装入卡(card){
   card.setAttribute('role', 'region'); card.setAttribute('aria-expanded', 'true');
   const panel = $('#屉'); card.appendChild(panel); panel.classList.add('开');
   主题.装配详情?.(panel);
-  panel.querySelector('h3').id = '详情标题'; card.setAttribute('aria-labelledby', '详情标题');
+  // 详情模板由主题提供；缺连接点时提示作者，不让整张卡片展开失败。
+  const 缺 = ['h3', '.收起', '.详情体'].filter(sel => !panel.querySelector(sel));
+  if (缺.length) { console.error('主题详情模板缺少连接点：', 缺); 提示('主题详情模板缺少连接点：' + 缺.join('、')); }
+  const 标题节点 = panel.querySelector('h3');
+  if (标题节点) { 标题节点.id = '详情标题'; card.setAttribute('aria-labelledby', '详情标题'); }
   panel.querySelectorAll('[onclick]:not(button):not(a)').forEach(e => {
     e.tabIndex = 0; e.setAttribute('role', 'button');
     e.onkeydown = ev => { if (ev.target === e && ['Enter',' '].includes(ev.key)) { ev.preventDefault(); e.click(); } };
@@ -774,7 +778,7 @@ function 装入卡(card){
     e.onpointerenter = ev => { if (ev.pointerType !== 'touch') 开(); };
     e.onpointerleave = 关; e.onfocus = 开; e.onblur = 关;
   });
-  定位展开(); panel.querySelector('.收起').focus({preventScroll:true});
+  定位展开(); panel.querySelector('.收起')?.focus({preventScroll:true});
   卡片过渡(card, 原框);
 }
 
@@ -785,8 +789,10 @@ function 开抽屉(n){
   if (!card) return;
   $('#屉').innerHTML = 主题.模板.条目详情({n, 按路径, 解析});
   装入卡(card);
+  const 正文 = $('#原');
+  if (!正文) { 阅读完成 = Promise.resolve(); 提示('主题条目详情缺少 #原 正文插槽'); return; }
   正文请求 = new AbortController();
-  const controller = 正文请求, 正文 = $('#原');
+  const controller = 正文请求;
   阅读完成 = fetch('/文件/' + encodeURI(n.路径), {signal: controller.signal}).then(r => {
     if (!r.ok) throw new Error('读取失败'); return r.text();
   }).then(t => {
@@ -805,7 +811,8 @@ function 选步骤(路线名, 步id){
     e.dataset.路线 === 路线名 && e.dataset.步 === 步id));
   $('#屉').innerHTML = 主题.模板.步骤详情({r, s, 路线名, 步id, 路线文件});
   装入卡($('#世界').querySelector(`.步[data-路线="${CSS.escape(路线名)}"][data-步="${CSS.escape(步id)}"]`));
-  $('#详情标题').innerHTML = `<button class="步骤标题按钮" title="点击编辑步骤标题" onclick="${转义(`编辑步骤标题(${JSON.stringify(路线名)},${JSON.stringify(步id)})`)}">${转义(s.title)}<span aria-hidden="true">✎</span></button>`;
+  const 步骤标题节点 = $('#详情标题');
+  if (步骤标题节点) 步骤标题节点.innerHTML = `<button class="步骤标题按钮" title="点击编辑步骤标题" onclick="${转义(`编辑步骤标题(${JSON.stringify(路线名)},${JSON.stringify(步id)})`)}">${转义(s.title)}<span aria-hidden="true">✎</span></button>`;
 }
 
 function 切视图(v){
