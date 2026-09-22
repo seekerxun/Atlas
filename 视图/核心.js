@@ -17,7 +17,7 @@ const 主题API = {
 const 主题调用 = name => (...args) => 主题?.[name](...args);
 const 色 = 主题调用('色'), 定位文件预览 = 主题调用('定位文件预览'), 定位导航 = 主题调用('定位导航');
 const 算库布局 = 主题调用('算库布局'), 算路线布局 = 主题调用('算路线布局'), 卡html = 主题调用('卡html');
-const 行 = 主题调用('行'), 详情头 = 主题调用('详情头'), 停卡片动效 = 主题调用('停卡片动效');
+const 停卡片动效 = 主题调用('停卡片动效');
 const 卡片过渡 = 主题调用('卡片过渡'), 布置阅读幕 = 主题调用('布置阅读幕'), 画布入场 = 主题调用('画布入场');
 const 定位展开 = 主题调用('定位展开'), 阅读区域 = 主题调用('阅读区域');
 let 阅读完成 = Promise.resolve();
@@ -26,6 +26,7 @@ let 待恢复阅读 = null;
 function 保存主题视图(){
   const input = $('#屉 .步骤标题编辑 input');
   return {视图, 缩, 位:{...位}, 选中, 步:选中步 ? {...选中步} : null,
+    列表滚动:['#未体','#搜果','#检查列表','#挑 .单'].map(s => [s,$(s)?.scrollTop || 0]),
     滚动:待恢复阅读?.节点 === $('#屉 .详情体') ? 待恢复阅读.滚动 : ($('#屉 .详情体')?.scrollTop || 0),
     草稿:input ? {值:input.value, start:input.selectionStart, end:input.selectionEnd} : null,
     焦点:document.activeElement,
@@ -38,6 +39,12 @@ function 渲染主题包(pack, state){
   主题.装配界面?.();
   $('#签').replaceChildren(); 画签();
   if (!数据) return;
+  画未认领();
+  if ($('#检查详情').open) 画检查();
+  const 搜果显示 = 搜果.style.display;
+  搜框.oninput(); 搜果.style.display = 搜果显示;
+  重画候选?.();
+  state.列表滚动.forEach(([s,top]) => { if ($(s)) $(s).scrollTop = top; });
   视图 = state.视图; 缩 = state.缩; 位 = {...state.位};
   画();
   if (state.选中 && 按路径[state.选中]) 选条目(state.选中);
@@ -139,19 +146,18 @@ async function 取数(){
   画签(); 画未认领(); 画(); if (初次) 阅读视野();
 }
 
-function 打开检查(){
+function 画检查(){
   if (!数据) return;
   const 发现 = 数据.发现 || [];
   $('#检查计数').textContent = $('#体检').textContent;
   $('#检查说明').textContent = 发现.length
     ? '警告是项目规范提醒，不阻止画布使用；错误表示检查未通过。下方列出具体原因与处理建议。'
     : '本次扫描未发现错误或警告。';
-  $('#检查列表').innerHTML = 发现.map((f, i) => `<li class="检查项">
-    <span class="检查级别 ${f.级别 === '错误' ? '错误' : ''}">${转义(f.级别)} · ${转义(f.码)}</span>
-    <h3>${转义(f.信息)}</h3><div class="检查位置">${转义(f.位置)}</div>
-    ${f.提示 ? `<p class="检查建议">建议：${转义(f.提示)}</p>` : ''}
-    ${按路径[f.位置] ? `<button type="button" data-发现="${i}">查看文档 →</button>` : ''}
-  </li>`).join('');
+  $('#检查列表').innerHTML = 主题.模板.检查列表({发现, 按路径});
+}
+function 打开检查(){
+  if (!数据) return;
+  画检查();
   $('#检查详情').showModal();
   $('#体检').setAttribute('aria-expanded', 'true');
 }
@@ -283,7 +289,7 @@ function 画库(){
            ${卡html(c.节)}</div>`).join('');
     w.insertAdjacentHTML('beforeend',
       `<div class="盒" data-id="${b.id}" style="left:${b.x}px;top:${b.y}px;width:${b.w}px;height:${b.h}px">
-        <div class="头"><b>${转义(b.名)}</b><span>${b.数} 条</span></div>${内}</div>`);
+        ${主题.模板.分组头({b})}${内}</div>`);
   });
   w.querySelectorAll('.卡').forEach(e => {
     e.tabIndex = 0; e.setAttribute('role', 'button'); e.setAttribute('aria-expanded', 'false');
@@ -310,29 +316,15 @@ function 画路线(){
     基y = Math.max(...位置.map(p => p.y + p.h), 基y) + 主题.布局.路线间距;
     w.insertAdjacentHTML('beforeend',
       `<div class="类标 路线标题" style="left:${左}px;top:${顶 - 主题.布局.路线标题距}px;">
-        ${r.入口 ? '★ ' : ''}${转义(r.名称)}
-        <span class="路线说明">　${转义(r.说明 || '')}</span></div>
+        ${主题.模板.路线标题({r})}</div>
        <div class="编辑条" style="left:${左}px;top:${顶 - 主题.布局.路线编辑距}px">
-        <button onclick="加步骤('${转义(r.名称)}')">+ 加一步</button>
-        <button onclick="改路线头('${转义(r.名称)}')">改名字/说明</button>
-        <button onclick="删路线('${转义(r.名称)}')" class="危险">删掉这条路线</button>
-        <span>从右侧圆点拖到另一张卡 = 连线；点线 = 断开</span></div>`);
+        ${主题.模板.路线工具({r})}</div>`);
     r.步骤.forEach((s, i) => {
       const p = 位置[i]; if (!p) return;
-      const li = (s.docs || []).map(d => {
-        const n = 路线文件(d);
-        return `<li><span class="点" style="background:${n ? 色(n.类型) : 'var(--错)'}"></span>${
-          转义(n ? n.标题 : d + ' ⚠缺失')}</li>`;
-      }).join('');
-      const 尾 = [...(s.tools || []).map(x => `<li>🔧 ${转义(x.split('/').pop())}</li>`),
-                 ...(s.outputs || []).map(o => `<li>📦 ${转义(o)}</li>`)].join('');
       w.insertAdjacentHTML('beforeend',
         `<div class="步" data-标题="${转义(s.title)}" data-id="${p.id}" data-路线="${转义(r.名称)}" data-步="${转义(s.id)}"
           style="--卡色:${色(按路径[(s.docs || [])[0] + '.md']?.类型 || '流程')};left:${p.x}px;top:${p.y}px">
-          <div class="序"><span>步骤 ${i + 1}</span><span class="序号" aria-hidden="true">${String(i + 1).padStart(2, '0')}</span></div><h4>${转义(s.title)}</h4>
-          ${s.note ? `<div class="提">${转义(s.note)}</div>` : ''}
-          <ul class="步骤清单">${li}${尾}</ul>
-          <div class="柄" title="拖到另一张卡上连线"></div></div>`);
+          ${主题.模板.步骤卡({s, i, 路线文件})}</div>`);
     });
     const 本次主题 = 主题, 本次世界 = w.lastElementChild;
     requestAnimationFrame(() => { if (主题 === 本次主题 && 本次世界?.isConnected) 画边(r, 位置); });
@@ -639,7 +631,7 @@ async function 加步骤项(路线名, 步id, 字段){
   await 存路线(r, '加好了');
 }
 
-let 候选缓存 = null, 取消挑选 = null;
+let 候选缓存 = null, 取消挑选 = null, 重画候选 = null;
 function 挑文档(){
   return new Promise(async 完 => {
     try {
@@ -653,16 +645,13 @@ function 挑文档(){
     const 画单 = q => {
       const 命 = 候选缓存.filter(c =>
         !q || (c.路径 + ' ' + c.标题 + ' ' + c.类型).toLowerCase().includes(q)).slice(0, 80);
-      单.innerHTML = 命.map((c, i) => `<div class="候选项"><button class="候选选择" data-i="${i}"><b>${转义(c.标题)}</b>
-        <small>${转义(c.类型)} · ${转义(c.文件路径 || c.路径)}${c.行数 == null ? '' : ` · ${c.行数}行`}</small></button>
-        <button class="预览按钮" data-预览="${转义(c.路径)}" aria-label="预览 ${转义(c.标题)}">预览</button></div>`).join('')
-        || '<div><small>没找到</small></div>';
+      单.innerHTML = 主题.模板.候选列表({命});
       单.querySelectorAll('button[data-i]').forEach(d => d.onclick = () => 收(命[+d.dataset.i].路径));
     };
-    const 收 = v => { 盒.classList.remove('开'); 输.oninput = null; 取消挑选 = null; $('#屉 .收起')?.focus({preventScroll:true}); 完(v); };
+    const 收 = v => { 盒.classList.remove('开'); 输.oninput = null; 取消挑选 = null; 重画候选 = null; $('#屉 .收起')?.focus({preventScroll:true}); 完(v); };
     取消挑选 = () => 收(null);
     输.value = ''; 画单(''); 盒.classList.add('开'); 输.focus();
-    输.oninput = () => 画单(输.value.trim().toLowerCase());
+    输.oninput = 重画候选 = () => 画单(输.value.trim().toLowerCase());
     盒.onclick = e => { if (e.target === 盒) 收(null); };
   });
 }
@@ -794,34 +783,7 @@ function 装入卡(card){
 function 开抽屉(n){
   const card = $('#世界').querySelector(`.卡[data-路径="${CSS.escape(n.路径)}"]`);
   if (!card) return;
-  const 跳钮 = (文, 路径, 尾) => 行(文, 尾, 转义(`跳(${JSON.stringify(路径)})`), 色(按路径[路径]?.类型))
-    .replace('class="行"', `class="行" data-关联="${转义(路径)}" style="--关联色:${色(按路径[路径]?.类型)}"`);
-  const 关联 = Object.entries(n.关联 || {}).map(([k, v]) =>
-    `<h5>${转义(k)}</h5>` + (Array.isArray(v) ? v : [v]).map(t => {
-      const x = 解析(t);
-      return x ? 跳钮(x.标题 || x.名称, x.路径, x.类型) : 行(t, '未找到');
-    }).join('')).join('');
-  const 被引 = (n.被引用 || []).map(p => {
-    const x = 按路径[p]; return 跳钮(x ? x.标题 || x.名称 : p, p, x?.类型);
-  }).join('');
-  const 图 = (n.资产展开 || []).filter(a => 图后缀.test(a));
-  const 属性 = [['类型',n.类型],['状态',n.状态],['分组',n.分组],['编号',n.编号],['位阶',n.位阶],['篇幅',n.行数 + ' 行']]
-    .filter(([,v]) => v !== null && v !== undefined && v !== '')
-    .map(([k,v]) => `<dt>${k}</dt><dd>${转义(v)}</dd>`).join('');
-  $('#屉').innerHTML = 详情头(n.标题 || n.名称, n.类型 || '文档', n.路径) + `
-    <div class="详情体">
-      ${n.摘要 ? `<p class="详情摘要">${转义(n.摘要)}</p>` : ''}
-      <div class="详情格"><div><article class="正文" id="原"><div class="读取">正在读取正文…</div></article>
-        ${图.length ? '<h5>资产 (' + 图.length + ')</h5><div class="资产格">' + 图.map(a => `<a href="/文件/${转义(encodeURI(a))}" target="_blank" rel="noopener"><img class="预" loading="lazy" src="/文件/${转义(encodeURI(a))}" alt="${转义(a.split('/').pop())}"></a>`).join('') + '</div>' : ''}
-      </div><aside class="详情侧"><h5>属性</h5><dl class="属性表">${属性}</dl>
-      ${(n.标签 || []).length ? '<h5>标签</h5>' + n.标签.map(t => `<span class="小丸">${转义(t)}</span>`).join(' ') : ''}
-      ${(n.机制 || []).length ? '<h5>调用机制</h5>' + n.机制.map(m => 行(m, '')).join('') : ''}
-      ${关联}${被引 ? '<h5>被谁引用</h5>' + 被引 : ''}
-      ${(n.软引用 || []).length ? '<h5>文中引用</h5>' + n.软引用.map(t => { const x = 解析(t); return x ? 跳钮(x.标题 || x.名称, x.路径, '') : 行(t, ''); }).join('') : ''}
-      ${(n.工具 || []).length ? '<h5>工具</h5>' + n.工具.map(t => 行(t, '', 转义(`抄(${JSON.stringify(t)})`))).join('') : ''}
-      ${(n.路线 || []).length ? '<h5>出现在路线</h5>' + n.路线.map(r => 行(r, '', 转义(`去路线(${JSON.stringify(r)})`))).join('') : ''}
-      <div class="卡操作"><button onclick="${转义(`抄(${JSON.stringify(n.路径)})`)}">复制路径</button><a href="/文件/${转义(encodeURI(n.路径))}" target="_blank" rel="noopener">打开原文</a></div>
-      </aside></div></div>`;
+  $('#屉').innerHTML = 主题.模板.条目详情({n, 按路径, 解析});
   装入卡(card);
   正文请求 = new AbortController();
   const controller = 正文请求, 正文 = $('#原');
@@ -841,46 +803,9 @@ function 选步骤(路线名, 步id){
   选中步 = {路线: 路线名, 步: 步id};
   document.querySelectorAll('.步').forEach(e => e.classList.toggle('选',
     e.dataset.路线 === 路线名 && e.dataset.步 === 步id));
-  const q = x => 转义(String(x).replace(/\\/g, '\\\\').replace(/'/g, "\\'"));
-  const 项 = (字段, 值, 文, 尾, 色条) =>
-    `<div class="行"><span class="点" style="background:${色条 || 'var(--字3)'}"></span>
-      ${字段 === 'docs' || 路线文件(值) ? `<button class="文件名称" data-预览="${转义(值)}">${转义(文)}</button><button class="预览按钮" data-预览="${转义(值)}" aria-label="预览 ${转义(文)}">预览</button>` : `<span>${转义(文)}</span>`}${尾 ? `<span class="尾">${转义(尾)}</span>` : ''}
-      <button class="叉" title="从这一步移掉"
-        onclick="删步骤项('${q(路线名)}','${q(步id)}','${字段}','${q(值)}')">✕</button></div>`;
-  const 文档 = (s.docs || []).map(d => {
-    const n = 路线文件(d);
-    return 项('docs', d, n ? (n.标题 || n.名称) : d + ' ⚠不存在',
-             n ? `${n.行数 == null ? '' : n.行数 + '行 · '}${n.类型}` : '', n ? 色(n.类型) : 'var(--错)');
-  }).join('') || '<div class="尾 空项">还没挂文档</div>';
-  const 行数 = (s.docs || []).reduce((a, d) => a + (路线文件(d)?.行数 || 0), 0);
-  const 后续 = (s.next || []).map(x => {
-    const t2 = r.步骤.find(y => y.id === x);
-    return `<div class="行"><span>${转义(t2 ? t2.title : x)}</span>
-      <button class="叉" title="断开"
-        onclick="断线('${q(路线名)}','${q(步id)}','${q(x)}')">✕</button></div>`;
-  }).join('') || '<div class="尾 空项">这是末步</div>';
-  $('#屉').innerHTML = 详情头(s.title, '路线步骤', 路线名) + `<div class="详情体">
-    <div class="路">${转义(路线名)} / ${转义(s.id)}　<span class="编辑入口"
-      onclick="编辑步骤标题('${q(路线名)}','${q(步id)}')">改标题</span></div>
-    <div class="步骤护栏"
-      onclick="改步骤字段('${q(路线名)}','${q(步id)}','note','给 AI 的一句话护栏（留空则去掉）')">
-      ${s.note ? 转义(s.note) : '＋ 加一句给 AI 的护栏'}</div>
-    <h5>要读的文件（${(s.docs || []).length} 个${(s.docs || []).some(d => 路线文件(d)?.行数 == null) ? '' : ` / 约 ${行数} 行`}）</h5>${文档}
-    <div class="行" onclick="加步骤项('${q(路线名)}','${q(步id)}','docs')">＋ 添加文档或代码文件</div>
-    <h5>工具</h5>
-    ${(s.tools || []).map(x => 项('tools', x, '🔧 ' + x)).join('')}
-    <div class="行" onclick="加步骤项('${q(路线名)}','${q(步id)}','tools')">＋ 加工具</div>
-    <h5>产出到</h5>
-    ${(s.outputs || []).map(x => 项('outputs', x, '📦 ' + x)).join('')}
-    <div class="行" onclick="加步骤项('${q(路线名)}','${q(步id)}','outputs')">＋ 加产出</div>
-    <h5>下一步</h5>${后续}
-    <h5>给 AI 的命令</h5>
-    <div class="行" onclick="抄('atlas 路线 ${q(路线名)}')">atlas 路线 ${转义(路线名)}</div>
-    <h5>危险</h5>
-    <div class="行 危险"
-      onclick="删步骤('${q(路线名)}','${q(步id)}')">删掉这一步</div></div>`;
+  $('#屉').innerHTML = 主题.模板.步骤详情({r, s, 路线名, 步id, 路线文件});
   装入卡($('#世界').querySelector(`.步[data-路线="${CSS.escape(路线名)}"][data-步="${CSS.escape(步id)}"]`));
-  $('#详情标题').innerHTML = `<button class="步骤标题按钮" title="点击编辑步骤标题" onclick="编辑步骤标题('${q(路线名)}','${q(步id)}')">${转义(s.title)}<span aria-hidden="true">✎</span></button>`;
+  $('#详情标题').innerHTML = `<button class="步骤标题按钮" title="点击编辑步骤标题" onclick="${转义(`编辑步骤标题(${JSON.stringify(路线名)},${JSON.stringify(步id)})`)}">${转义(s.title)}<span aria-hidden="true">✎</span></button>`;
 }
 
 function 切视图(v){
@@ -1037,10 +962,7 @@ function 画未认领(){
   const 总 = 组.reduce((a, [, v]) => a + (v || []).length, 0);
   $('#未数').textContent = 总 ? `${总} 件` : '空了';
   $('#未数').dataset.状态 = 总 ? '警告' : '正常';
-  $('#未体').innerHTML = 组.filter(([, v]) => (v || []).length).map(([k, v]) =>
-    `<div class="组">${k} · ${v.length}</div>` + v.map(p =>
-      `<div class="项" draggable="true" data-文件="${转义(p)}" title="${转义(p)}">${转义(p)}</div>`).join('')
-  ).join('') || '<div class="组">都挂上了</div>';
+  $('#未体').innerHTML = 主题.模板.未认领列表({组});
   $('#未体').querySelectorAll('.项').forEach(e => {
     e.ondragstart = ev => {
       ev.dataTransfer.setData('text/plain', e.dataset.文件);
@@ -1081,11 +1003,9 @@ const 搜框 = $('#搜 input'), 搜果 = $('#搜果');
   数据.工具.forEach(t => { if (t.toLowerCase().includes(q))
     命中.push({文: t.split('/').pop(), 副: '工具 · ' + t, 走: () => 抄(t)}); });
   const 前 = 命中.slice(0, 30);
-  搜果.innerHTML = 前.map((h, i) => `<div data-i="${i}"><b>${转义(h.文)}</b>
-    <span class="搜索副文"> · ${转义(h.副)}</span></div>`).join('')
-    || '<div class="次文">没找到</div>';
+  搜果.innerHTML = 主题.模板.搜索结果({前:前.map(({文,副})=>({文,副}))});
   搜果.style.display = 'block';
-  搜果.querySelectorAll('div[data-i]').forEach(d => d.onclick = () => {
+  搜果.querySelectorAll('[data-i]').forEach(d => d.onclick = () => {
     前[+d.dataset.i].走(); 搜果.style.display = 'none'; 搜框.value = '';
   });
 };

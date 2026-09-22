@@ -1,6 +1,6 @@
 // 主题目录、按需加载和资源生命周期。任何时刻只启用一份主题样式。
 window.Atlas主题加载器 = (() => {
-  const 必需 = ['色','导航内容','定位导航','算库布局','算路线布局','卡html','行','详情头',
+  const 必需 = ['色','导航内容','定位导航','算库布局','算路线布局','卡html',
     '初始视野','缩放外观','定位文件预览','定位展开','阅读区域','卡片过渡',
     '停卡片动效','布置阅读幕','画布入场','镜头缓动'];
   const 键 = 'atlas:theme';
@@ -81,6 +81,8 @@ window.Atlas主题加载器 = (() => {
     const scope = 生命周期(api);
     try {
       const theme = factory(scope.api);
+      for (const key of ['路线标题','路线工具','条目详情','步骤详情','检查列表','候选列表','未认领列表','搜索结果','步骤卡','分组头'])
+        if (typeof theme?.模板?.[key] !== 'function') throw new Error('主题缺少区域模板：' + key);
       for (const key of 必需) if (typeof theme?.[key] !== 'function') throw new Error('主题缺少接口：' + key);
       for (const key of ['卡宽','卡高','隙','盒隙','内左','内顶','路线起点','路线间距','路线标题距','路线编辑距','连线出口'])
         if (!Number.isFinite(theme.布局?.[key]) || theme.布局[key] < 0) throw new Error('主题布局参数不正确：' + key);
