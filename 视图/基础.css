@@ -40,11 +40,6 @@ body[data-启动中] > :not(#启动状态){visibility:hidden}
   html[data-theme="石墨"] #顶 > #搜{grid-row:1;grid-column:2}
   html[data-theme="石墨"] #顶 > #主题控件{grid-row:1;grid-column:3}
   html[data-theme="石墨"] #顶 > #刷{grid-row:1;grid-column:4}
-  html[data-theme="卵石"] #顶 > .品牌{flex:1 1 64px}
-  html[data-theme="卵石"] #顶 > #搜{flex:1.5 1 96px}
-  html[data-theme="卵石"] #顶 > #体检,
-  html[data-theme="卵石"] #顶 > #新路线{order:6;min-height:32px;padding:0 10px;font-size:11px}
-  html[data-theme="卵石"] #顶 > #刷{width:32px;min-height:32px;flex-shrink:0}
   html[data-theme="晴伴"] #顶 > .品牌 svg{flex-shrink:0}
   #顶 > #主题控件{font-size:11px}
 }
