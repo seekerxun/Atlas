@@ -11,10 +11,11 @@ const 卡片悬停延迟 = 500;
 const 按路径 = {}, 按编号 = {}, 按名 = {};
 
 let 主题 = null, 当前主题包 = null, 主题请求序号 = 0;
+let 主题选择 = null, 当前外观 = null, 选择序号 = 0;
 const 主题API = {
   $, 转义, 图后缀, 可动,
   分组数据: () => 分组数据(), 更新关联: () => 更新关联(),
-  读取状态: () => ({数据, 视图, 缩, 位: {...位}, 布局, 展开卡}),
+  读取状态: () => ({数据, 视图, 缩, 位: {...位}, 布局, 展开卡, 外观: 当前外观}),
 };
 const 主题调用 = name => (...args) => 主题?.[name](...args);
 const 色 = 主题调用('色'), 定位文件预览 = 主题调用('定位文件预览'), 定位导航 = 主题调用('定位导航');
@@ -34,10 +35,10 @@ function 保存主题视图(){
     焦点:document.activeElement,
   };
 }
-function 渲染主题包(pack, state){
-  主题 = pack.theme; 当前主题包 = pack;
+function 渲染主题包(pack, state, 外观){
+  主题 = pack.theme; 当前主题包 = pack; 当前外观 = 外观;
   ({卡宽, 卡高, 隙, 盒隙} = 主题.布局);
-  Atlas主题加载器.启用(pack);
+  Atlas主题加载器.启用(pack, 外观);
   主题.装配界面?.();
   $('#签').replaceChildren(); 画签();
   if (!数据) return;
@@ -64,31 +65,38 @@ function 渲染主题包(pack, state){
   if ($('#文件预览').open) 定位文件预览();
   if (state.焦点?.isConnected) state.焦点.focus({preventScroll:true});
 }
-async function 切换主题(id){
-  const 序号 = ++主题请求序号;
-  if (当前主题包?.meta.id === id) { $('#主题选择').value = id; $('#主题选择').removeAttribute('aria-busy'); return true; }
+// 方案 = {id, 外观}。同一主题只换外观时不重载，只改 html 的 data-外观 并通知主题。
+async function 切换方案(方案){
+  const 序号 = ++主题请求序号, id = 方案.id;
+  if (当前主题包?.meta.id === id) {
+    const 旧外观 = 当前外观;
+    if (旧外观 !== 方案.外观) {
+      当前外观 = 方案.外观; document.documentElement.dataset.外观 = 方案.外观;
+      try { 主题.外观变化?.(方案.外观, 旧外观); } catch (e) { console.error('主题外观切换失败', e); }
+    }
+    $('#主题选择').removeAttribute('aria-busy');
+    return true;
+  }
   $('#主题选择').setAttribute('aria-busy', 'true');
   let pack;
   try {
     pack = await Atlas主题加载器.准备(id, 主题API);
     if (序号 !== 主题请求序号) { Atlas主题加载器.卸载(pack); return false; }
-    const state = 保存主题视图(), old = 当前主题包;
+    const state = 保存主题视图(), old = 当前主题包, 旧外观 = 当前外观;
     停镜头();
     if (主题) 收卡(false);
     Atlas主题加载器.卸载(old);
-    try { 渲染主题包(pack, state); }
+    try { 渲染主题包(pack, state, 方案.外观); }
     catch (e){
       Atlas主题加载器.卸载(pack); pack = null;
       当前主题包 = null; 主题 = null;
-      if (old) 渲染主题包(Atlas主题加载器.重建(old, 主题API), state);
+      if (old) 渲染主题包(Atlas主题加载器.重建(old, 主题API), state, 旧外观);
       throw e;
     }
-    $('#主题选择').value = id; Atlas主题加载器.记住(id);
     return true;
   } catch (e){
     if (pack && 当前主题包 !== pack) Atlas主题加载器.卸载(pack);
     if (序号 === 主题请求序号){
-      $('#主题选择').value = 当前主题包?.meta.id || '';
       if (当前主题包) 提示('主题切换失败，已保留原主题：' + e.message);
       else throw e;
     }
@@ -97,13 +105,41 @@ async function 切换主题(id){
     if (序号 === 主题请求序号) $('#主题选择').removeAttribute('aria-busy');
   }
 }
+
+// 主题下拉：跟随系统 / 固定使用某个方案 / 设定跟随时白天、夜间各用哪个方案。
+function 画主题选项(){
+  const 全 = Atlas主题加载器.方案们(), s = 主题选择;
+  const 项 = (值, 文, 勾) => `<option value="${转义(值)}">${转义(文)}${勾 ? '　✓' : ''}</option>`;
+  const 组 = (标, 列) => 列.length ? `<optgroup label="${标}">${列.join('')}</optgroup>` : '';
+  $('#主题选择').innerHTML = 项('跟随', '跟随系统')
+    + 组('固定使用', 全.map(f => 项('手动:' + f.值, f.名称)))
+    + 组('跟随时白天用', 全.filter(f => f.外观 === '浅').map(f => 项('浅:' + f.值, f.名称, s.浅 === f.值)))
+    + 组('跟随时夜间用', 全.filter(f => f.外观 === '深').map(f => 项('深:' + f.值, f.名称, s.深 === f.值)));
+  const 名 = 值 => Atlas主题加载器.找方案(值)?.名称 || '未设';
+  $('#主题选择').value = s.模式 === '跟随' ? '跟随' : '手动:' + s.手动;
+  $('#主题选择').title = s.模式 === '跟随' ? `跟随系统：白天用${名(s.浅)}，夜间用${名(s.深)}` : '';
+}
+async function 应用主题选择(s){
+  const 本次 = ++选择序号, 旧 = 主题选择;
+  主题选择 = s; 画主题选项();
+  const 方案 = Atlas主题加载器.当前方案(s);
+  const ok = 方案 ? await 切换方案(方案) : false;
+  if (本次 !== 选择序号) return;
+  if (ok) Atlas主题加载器.记选择(s);
+  else { 主题选择 = 旧; 画主题选项(); }
+}
 async function 启动界面(){
   try {
     const d = await Atlas主题加载器.读取目录();
-    $('#主题选择').innerHTML = d.主题.map(t => `<option value="${转义(t.id)}">${转义(t.名称)}</option>`).join('');
-    const id = Atlas主题加载器.偏好();
-    try { await 切换主题(id); }
-    catch (e) { if (id === d.默认) throw e; await 切换主题(d.默认); }
+    主题选择 = Atlas主题加载器.读选择(); 画主题选项();
+    const 方案 = Atlas主题加载器.当前方案(主题选择);
+    try { await 切换方案(方案); }
+    catch (e) {
+      const 默认 = Atlas主题加载器.方案们().find(f => f.id === d.默认);
+      if (方案.id === d.默认) throw e;
+      主题选择 = {...主题选择, 模式:'手动', 手动:默认.值}; 画主题选项();
+      await 切换方案(默认);
+    }
     await 取数();
     document.body.removeAttribute('data-启动中'); $('#启动状态').hidden = true;
   } catch (e){
@@ -111,7 +147,26 @@ async function 启动界面(){
     $('#重试启动').hidden = false;
   }
 }
-$('#主题选择').onchange = e => 切换主题(e.target.value);
+$('#主题选择').onchange = e => {
+  const v = e.target.value, s = {...主题选择}, 分 = v.indexOf(':');
+  if (v === '跟随') s.模式 = '跟随';
+  else if (v.slice(0, 分) === '手动') { s.模式 = '手动'; s.手动 = v.slice(分 + 1); }
+  else {
+    const 外观 = v.slice(0, 分); s.模式 = '跟随'; s[外观] = v.slice(分 + 1);
+    if (外观 !== Atlas主题加载器.系统外观())
+      提示(`已设为${外观 === '浅' ? '白天' : '夜间'}主题：${Atlas主题加载器.找方案(s[外观])?.名称}，系统切到${外观}色时生效`);
+  }
+  应用主题选择(s);
+};
+// 系统外观变化时跟换；回到窗口时再核对一次，补上后台期间可能漏掉的变化。
+function 核对系统外观(){
+  if (主题选择?.模式 !== '跟随' || !当前主题包) return;
+  const 目标 = Atlas主题加载器.当前方案(主题选择);
+  if (目标 && (目标.id !== 当前主题包.meta.id || 目标.外观 !== 当前外观)) 应用主题选择({...主题选择});
+}
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', 核对系统外观);
+addEventListener('focus', 核对系统外观);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) 核对系统外观(); });
 $('#重试启动').onclick = () => location.reload();
 
 

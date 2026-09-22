@@ -3,8 +3,9 @@ window.Atlas主题加载器 = (() => {
   const 必需 = ['色','导航内容','定位导航','算库布局','算路线布局','卡html',
     '初始视野','缩放外观','定位文件预览','定位展开','阅读区域','卡片过渡',
     '停卡片动效','布置阅读幕','画布入场','镜头缓动'];
-  const 键 = 'atlas:theme';
+  const 旧键 = 'atlas:theme', 选择键 = 'atlas:主题选择', 外观们 = ['浅','深'];
   let 目录;
+  const 外观表 = item => Array.isArray(item.外观) ? item.外观 : [item.外观];
   async function 读取目录(){
     const r = await fetch('/界面/主题/目录.json');
     if (!r.ok) throw new Error('无法读取主题目录');
@@ -12,16 +13,38 @@ window.Atlas主题加载器 = (() => {
     if (!Array.isArray(d.主题) || !d.主题.length) throw new Error('主题目录为空');
     for (const item of d.主题){
       if (!item || typeof item.id !== 'string' || !/^[\p{L}\p{N}_-]+$/u.test(item.id) || ids.has(item.id) || typeof item.名称 !== 'string') throw new Error('主题登记格式不正确');
+      const 表 = 外观表(item);
+      if (!表.length || 表.some(v => !外观们.includes(v)) || new Set(表).size !== 表.length) throw new Error('主题外观应为 "浅"、"深" 或两者：' + item.id);
       ids.add(item.id);
     }
     if (!ids.has(d.默认)) throw new Error('默认主题未登记');
     目录 = d; return d;
   }
-  function 偏好(){
-    let saved; try { saved = localStorage.getItem(键); } catch {}
-    return 目录.主题.some(t => t.id === saved) ? saved : 目录.默认;
+  // 方案 = 主题 + 外观。只支持一种外观的主题只有一个方案；深浅两用的主题有两个。
+  function 方案们(){
+    return 目录.主题.flatMap(t => { const 表 = 外观表(t);
+      return 表.map(外观 => ({值:`${t.id}@${外观}`, id:t.id, 外观, 名称:表.length > 1 ? `${t.名称} · ${外观}` : t.名称})); });
   }
-  function 记住(id){ try { localStorage.setItem(键, id); } catch {} }
+  function 找方案(值){ return 方案们().find(f => f.值 === 值); }
+  function 系统外观(){ return matchMedia('(prefers-color-scheme: dark)').matches ? '深' : '浅'; }
+  // 选择：手动固定一个方案，或跟随系统，在白天、夜间各用一个方案。
+  function 读选择(){
+    let s; try { s = JSON.parse(localStorage.getItem(选择键)); } catch {}
+    const 全 = 方案们(), 有 = (值, 外观) => 全.some(f => f.值 === 值 && (!外观 || f.外观 === 外观));
+    const 默认 = 外观 => (全.find(f => f.id === 目录.默认 && (!外观 || f.外观 === 外观)) || (外观 && 全.find(f => f.外观 === 外观)))?.值 ?? null;
+    if (!s || typeof s !== 'object') {
+      let 旧; try { 旧 = localStorage.getItem(旧键); } catch {}
+      s = {模式:'手动', 手动:全.find(f => f.id === 旧)?.值};
+    }
+    return {
+      模式: s.模式 === '跟随' ? '跟随' : '手动',
+      手动: 有(s.手动) ? s.手动 : 默认(),
+      浅: 有(s.浅, '浅') ? s.浅 : 默认('浅'),
+      深: 有(s.深, '深') ? s.深 : 默认('深'),
+    };
+  }
+  function 记选择(s){ try { localStorage.setItem(选择键, JSON.stringify(s)); localStorage.removeItem(旧键); } catch {} }
+  function 当前方案(s){ return 找方案(s.模式 === '跟随' ? (s[系统外观()] || s.手动) : s.手动); }
 
   // 主题须通过这些接口创建副作用；卸载时统一回收，保留核心的事件和 DOM。
   function 生命周期(api){
@@ -109,8 +132,9 @@ window.Atlas主题加载器 = (() => {
     } catch (e) { css.remove(); throw e; }
     finally { clearTimeout(timer); css.onload = css.onerror = null; }
   }
-  function 启用(pack){
+  function 启用(pack, 外观){
     if (!pack.css.isConnected) document.head.appendChild(pack.css);
+    document.documentElement.dataset.外观 = 外观;
     pack.css.media = 'all'; document.documentElement.dataset.theme = pack.meta.id;
   }
   function 卸载(pack){
@@ -119,5 +143,5 @@ window.Atlas主题加载器 = (() => {
     finally { pack.scope.dispose(); pack.css.remove(); }
   }
   function 重建(pack, api){ return 实例(pack.meta, pack.factory, pack.css, api); }
-  return {读取目录, 偏好, 记住, 准备, 启用, 卸载, 重建};
+  return {读取目录, 方案们, 找方案, 系统外观, 读选择, 记选择, 当前方案, 准备, 启用, 卸载, 重建};
 })();

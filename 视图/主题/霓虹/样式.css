@@ -68,6 +68,7 @@ kbd{font-family:var(--等宽)}
 #主题控件{display:flex;align-items:center;gap:8px;font:11px var(--等宽);letter-spacing:.1em;color:var(--字3)}
 #主题选择{height:38px;padding:0 8px;background:var(--深);color:var(--副);border:1px solid color-mix(in srgb,var(--副) 45%,transparent);border-radius:0;font:13px var(--字体);letter-spacing:0;cursor:pointer}
 #主题选择:hover{border-color:var(--副)}
+#主题选择 optgroup{background:var(--面);color:var(--字3)}
 #主题选择 option{background:var(--面);color:var(--字)}
 #刷{width:38px;height:38px;flex-shrink:0;font-size:18px;line-height:1;color:var(--字2);border:1px solid var(--边)}
 #刷:hover{color:var(--主);border-color:color-mix(in srgb,var(--主) 55%,transparent)}

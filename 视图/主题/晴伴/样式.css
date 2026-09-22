@@ -308,6 +308,7 @@ body.远 .盒>.头 span{font-size:min(20px,calc(10px / var(--缩,1)));flex-shrin
 
 #主题控件{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--面);border:1px solid var(--线);border-radius:10px;color:var(--字3);font-size:11px}
 #主题选择{max-width:140px;min-width:64px;border:0;background:transparent;color:var(--字);font:inherit;cursor:pointer}
+#主题选择 optgroup{background:var(--面);color:var(--字3)}
 #主题选择 option{background:var(--面);color:var(--字)}
 
 
