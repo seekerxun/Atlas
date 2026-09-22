@@ -8,13 +8,102 @@ let 展开卡 = null, 正文请求 = null, 首次 = true, 上次绘制视图 = n
 let 悬停条目 = null, 悬停关联 = null;
 const 按路径 = {}, 按编号 = {}, 按名 = {};
 
-const 主题 = window.创建Atlas主题({
+let 主题 = null, 当前主题包 = null, 主题请求序号 = 0;
+const 主题API = {
   $, 转义, 图后缀, 可动,
   分组数据: () => 分组数据(), 更新关联: () => 更新关联(),
   读取状态: () => ({数据, 视图, 缩, 位: {...位}, 布局, 展开卡}),
-});
-const {色, 定位文件预览, 定位导航, 算库布局, 算路线布局, 卡html, 行, 详情头,
-  停卡片动效, 卡片过渡, 布置阅读幕, 画布入场, 定位展开, 阅读区域} = 主题;
+};
+const 主题调用 = name => (...args) => 主题?.[name](...args);
+const 色 = 主题调用('色'), 定位文件预览 = 主题调用('定位文件预览'), 定位导航 = 主题调用('定位导航');
+const 算库布局 = 主题调用('算库布局'), 算路线布局 = 主题调用('算路线布局'), 卡html = 主题调用('卡html');
+const 行 = 主题调用('行'), 详情头 = 主题调用('详情头'), 停卡片动效 = 主题调用('停卡片动效');
+const 卡片过渡 = 主题调用('卡片过渡'), 布置阅读幕 = 主题调用('布置阅读幕'), 画布入场 = 主题调用('画布入场');
+const 定位展开 = 主题调用('定位展开'), 阅读区域 = 主题调用('阅读区域');
+let 阅读完成 = Promise.resolve();
+let 待恢复阅读 = null;
+
+function 保存主题视图(){
+  const input = $('#屉 .步骤标题编辑 input');
+  return {视图, 缩, 位:{...位}, 选中, 步:选中步 ? {...选中步} : null,
+    滚动:待恢复阅读?.节点 === $('#屉 .详情体') ? 待恢复阅读.滚动 : ($('#屉 .详情体')?.scrollTop || 0),
+    草稿:input ? {值:input.value, start:input.selectionStart, end:input.selectionEnd} : null,
+    焦点:document.activeElement,
+  };
+}
+function 渲染主题包(pack, state){
+  主题 = pack.theme; 当前主题包 = pack;
+  ({卡宽, 卡高, 隙, 盒隙} = 主题.布局);
+  Atlas主题加载器.启用(pack);
+  主题.装配界面?.();
+  $('#签').replaceChildren(); 画签();
+  if (!数据) return;
+  视图 = state.视图; 缩 = state.缩; 位 = {...state.位};
+  画();
+  if (state.选中 && 按路径[state.选中]) 选条目(state.选中);
+  else if (state.步) 选步骤(state.步.路线, state.步.步);
+  if (state.草稿 && 选中步){
+    编辑步骤标题(选中步.路线, 选中步.步);
+    const input = $('#屉 .步骤标题编辑 input');
+    if (input) { input.value = state.草稿.值; input.setSelectionRange(state.草稿.start, state.草稿.end); }
+  }
+  const reading = {节点:$('#屉 .详情体'), 滚动:state.滚动};
+  待恢复阅读 = state.选中 ? reading : null;
+  const restoreScroll = () => { if (当前主题包 === pack && 选中 === state.选中 && 选中步?.路线 === state.步?.路线 && 选中步?.步 === state.步?.步 && reading.节点 === $('#屉 .详情体') && reading.节点) reading.节点.scrollTop = state.滚动; };
+  restoreScroll();
+  if (state.选中) 阅读完成.then(() => { restoreScroll(); if (待恢复阅读 === reading) 待恢复阅读 = null; });
+  if ($('#文件预览').open) 定位文件预览();
+  if (state.焦点?.isConnected) state.焦点.focus({preventScroll:true});
+}
+async function 切换主题(id){
+  const 序号 = ++主题请求序号;
+  if (当前主题包?.meta.id === id) { $('#主题选择').value = id; $('#主题选择').removeAttribute('aria-busy'); return true; }
+  $('#主题选择').setAttribute('aria-busy', 'true');
+  let pack;
+  try {
+    pack = await Atlas主题加载器.准备(id, 主题API);
+    if (序号 !== 主题请求序号) { Atlas主题加载器.卸载(pack); return false; }
+    const state = 保存主题视图(), old = 当前主题包;
+    停镜头();
+    if (主题) 收卡(false);
+    Atlas主题加载器.卸载(old);
+    try { 渲染主题包(pack, state); }
+    catch (e){
+      Atlas主题加载器.卸载(pack); pack = null;
+      当前主题包 = null; 主题 = null;
+      if (old) 渲染主题包(Atlas主题加载器.重建(old, 主题API), state);
+      throw e;
+    }
+    $('#主题选择').value = id; Atlas主题加载器.记住(id);
+    return true;
+  } catch (e){
+    if (pack && 当前主题包 !== pack) Atlas主题加载器.卸载(pack);
+    if (序号 === 主题请求序号){
+      $('#主题选择').value = 当前主题包?.meta.id || '';
+      if (当前主题包) 提示('主题切换失败，已保留原主题：' + e.message);
+      else throw e;
+    }
+    return false;
+  } finally {
+    if (序号 === 主题请求序号) $('#主题选择').removeAttribute('aria-busy');
+  }
+}
+async function 启动界面(){
+  try {
+    const d = await Atlas主题加载器.读取目录();
+    $('#主题选择').innerHTML = d.主题.map(t => `<option value="${转义(t.id)}">${转义(t.名称)}</option>`).join('');
+    const id = Atlas主题加载器.偏好();
+    try { await 切换主题(id); }
+    catch (e) { if (id === d.默认) throw e; await 切换主题(d.默认); }
+    await 取数();
+    document.body.removeAttribute('data-启动中'); $('#启动状态').hidden = true;
+  } catch (e){
+    $('#启动状态').firstChild.textContent = '界面加载失败：' + e.message + ' ';
+    $('#重试启动').hidden = false;
+  }
+}
+$('#主题选择').onchange = e => 切换主题(e.target.value);
+$('#重试启动').onclick = () => location.reload();
 
 
 function 提示(s){ const t = $('#提示'); t.textContent = s; t.classList.add('开');
@@ -140,7 +229,7 @@ function 画签(){
 }
 
 // ---------------------------------------------------------------- 布局计算
-const {卡宽, 卡高, 隙, 盒隙} = 主题.布局;
+let 卡宽, 卡高, 隙, 盒隙;
 
 function 分组数据(){
   const 库 = 视图;
@@ -174,7 +263,7 @@ function 画(){
   $('#视图数').textContent = `${数} ${视图 === '路线' ? '条路线' : '个条目'}`;
   if (原选 && w.querySelector(`.卡[data-路径="${CSS.escape(原选)}"]`)) 选条目(原选);
   else if (原步 && 视图 === '路线') 选步骤(原步.路线, 原步.步);
-  if (切换了) { const 本次视图 = 视图; requestAnimationFrame(() => { if (视图 === 本次视图) 画布入场(); }); }
+  if (切换了) { const 本次视图 = 视图, 本次主题 = 主题; requestAnimationFrame(() => { if (视图 === 本次视图 && 主题 === 本次主题) 画布入场(); }); }
 }
 
 
@@ -245,7 +334,8 @@ function 画路线(){
           <ul class="步骤清单">${li}${尾}</ul>
           <div class="柄" title="拖到另一张卡上连线"></div></div>`);
     });
-    requestAnimationFrame(() => 画边(r, 位置));
+    const 本次主题 = 主题, 本次世界 = w.lastElementChild;
+    requestAnimationFrame(() => { if (主题 === 本次主题 && 本次世界?.isConnected) 画边(r, 位置); });
   });
   w.querySelectorAll('.步').forEach(e => {
     e.tabIndex = 0; e.setAttribute('role', 'button'); e.setAttribute('aria-expanded', 'false');
@@ -735,7 +825,7 @@ function 开抽屉(n){
   装入卡(card);
   正文请求 = new AbortController();
   const controller = 正文请求, 正文 = $('#原');
-  fetch('/文件/' + encodeURI(n.路径), {signal: controller.signal}).then(r => {
+  阅读完成 = fetch('/文件/' + encodeURI(n.路径), {signal: controller.signal}).then(r => {
     if (!r.ok) throw new Error('读取失败'); return r.text();
   }).then(t => {
     if (controller.signal.aborted || !正文.isConnected) return;
@@ -898,7 +988,7 @@ function 调缩(k){
 }
 $('#放大').onclick = () => 调缩(1.2);
 $('#缩小').onclick = () => 调缩(1/1.2);
-window.addEventListener('resize', () => { 停镜头(); document.querySelectorAll('.卡,.步').forEach(停卡片动效);定位导航();定位展开();布置阅读幕();if ($('#文件预览').open) 定位文件预览(); });
+window.addEventListener('resize', () => { if (!主题) return; 停镜头(); document.querySelectorAll('.卡,.步').forEach(停卡片动效);定位导航();定位展开();布置阅读幕();if ($('#文件预览').open) 定位文件预览(); });
 $('#屉').addEventListener('click', e => e.stopPropagation());
 $('#屉').addEventListener('pointerdown', e => e.stopPropagation());
 
@@ -1022,5 +1112,4 @@ $('#新路线').onclick = 新建路线;
 $('#撤销').onclick = 撤销;
 $('#重做').onclick = 重做;
 
-主题.装配界面?.();
-取数().catch(() => 提示('读取项目失败，请确认本地服务已启动后重新扫描'));
+启动界面();

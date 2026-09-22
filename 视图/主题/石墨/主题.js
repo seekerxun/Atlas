@@ -1,6 +1,16 @@
-/* 石墨主题：视觉样式见 石墨.css；本文件决定布局、模板与动效。 */
-window.创建Atlas主题 = function(api){
+/* 石墨主题：视觉样式见 样式.css；本文件决定布局、模板与动效。 */
+export default function 创建主题(api){
 const {$, 转义, 图后缀, 可动, 分组数据, 更新关联} = api;
+function 装配界面(){
+api.清理(() => {
+  document.querySelectorAll('.卡,.步').forEach(停卡片动效);
+  document.body.classList.remove('石墨阅读','远','中');
+  $('#阅读幕').classList.remove('开'); $('#阅读幕').removeAttribute('style');
+  $('#签').style.removeProperty('--签左'); $('#签').style.removeProperty('--签宽');
+  $('#文件预览').style.removeProperty('--预览顶'); $('#文件预览').style.removeProperty('--预览高');
+});
+}
+
 const 卡宽 = 284, 卡高 = 216, 隙 = 16, 盒隙 = 44;
 const 导航图形 = {
   '路线':'<circle cx="5" cy="5" r="2.5"/><circle cx="19" cy="19" r="2.5"/><path d="M7.5 5h7a4 4 0 0 1 0 8h-5a4 4 0 0 0 0 8h7"/>',
@@ -141,15 +151,15 @@ function 卡片过渡(card, 原框){
   shell.setAttribute('aria-hidden','true'); shell.inert = true;
   const surface = getComputedStyle(card);
   shell.style.cssText = `left:${终框.left}px;top:${终框.top}px;width:${终框.width}px;height:${终框.height}px;--卡色:${surface.getPropertyValue('--卡色')};`;
-  document.body.appendChild(shell); card._过渡壳 = shell;
+  api.装饰(shell); card._过渡壳 = shell;
   const start = `translate(${原框.left-终框.left}px,${原框.top-终框.top}px) scale(${原框.width/终框.width},${原框.height/终框.height})`;
   const ease = 'cubic-bezier(.22,1,.36,1)';
   const animations = [];
-  const move = shell.animate([{transform:start},{transform:'none'}],{duration,easing:ease});
-  animations.push(move, shell.animate([{opacity:1,offset:0},{opacity:1,offset:.62},{opacity:0,offset:1}],{duration,fill:'forwards'}));
-  animations.push(card.animate([{opacity:0,offset:0},{opacity:0,offset:.42},{opacity:1,offset:1}],{duration,easing:'ease-out'}));
+  const move = api.动画(shell,[{transform:start},{transform:'none'}],{duration,easing:ease});
+  animations.push(move, api.动画(shell,[{opacity:1,offset:0},{opacity:1,offset:.62},{opacity:0,offset:1}],{duration,fill:'forwards'}));
+  animations.push(api.动画(card,[{opacity:0,offset:0},{opacity:0,offset:.42},{opacity:1,offset:1}],{duration,easing:'ease-out'}));
   if (opening) {
-    card.querySelectorAll('.详情头,.详情体').forEach((el,i) => animations.push(el.animate(
+    card.querySelectorAll('.详情头,.详情体').forEach((el,i) => animations.push(api.动画(el,
       [{opacity:0,transform:`translateY(${i ? 14 : 8}px)`},{opacity:1,transform:'none'}],
       {duration:160,delay:40+i*30,easing:ease,fill:'backwards'})));
   }
@@ -175,14 +185,14 @@ function 画布入场(){
   visible.forEach((el,i)=>{
     // 与拖拽使用的 left/top、悬停使用的 translate 分开。
     el._入场动画?.cancel();
-    el._入场动画=el.animate([{opacity:0,transform:'translateY(30px) scale(.94)'},{opacity:1,transform:'none'}],
+    el._入场动画=api.动画(el,[{opacity:0,transform:'translateY(30px) scale(.94)'},{opacity:1,transform:'none'}],
       {duration:560,delay:Math.min(i,7)*65,easing:'cubic-bezier(.18,.8,.2,1)',fill:'backwards'});
   });
-  $('#世界').querySelectorAll('.路线标题,.盒>.头,.类标:not(.路线标题)').forEach(el=>el.animate(
+  $('#世界').querySelectorAll('.路线标题,.盒>.头,.类标:not(.路线标题)').forEach(el=>api.动画(el,
     [{opacity:0,transform:'translateY(8px)'},{opacity:1,transform:'none'}],{duration:400,easing:'ease-out'}));
   $('#线').querySelectorAll('path.边').forEach((path,i)=>{
     const length=path.getTotalLength();
-    path.animate([{strokeDasharray:`${length} ${length}`,strokeDashoffset:length,opacity:0},
+    api.动画(path,[{strokeDasharray:`${length} ${length}`,strokeDashoffset:length,opacity:0},
       {strokeDasharray:`${length} ${length}`,strokeDashoffset:0,opacity:1}],
       {duration:750,delay:180+Math.min(i,8)*80,easing:'cubic-bezier(.25,.6,.3,1)',fill:'backwards'});
   });
@@ -234,7 +244,7 @@ function 缩放外观(缩){
   document.body.classList.toggle('中', 缩 >= .55 && 缩 < .8);
 }
 return {
-  名称: '石墨',
+  名称: '石墨', 装配界面,
   布局: {卡宽, 卡高, 隙, 盒隙, 内左:22, 内顶:64, 路线起点:60, 路线间距:90, 路线标题距:66, 路线编辑距:32, 连线出口:300},
   镜头时长:460, 镜头缓动:t => 1-Math.pow(1-t,4),
   色, 导航内容, 缩放外观, 初始视野, 定位文件预览, 定位导航, 算库布局, 算路线布局,

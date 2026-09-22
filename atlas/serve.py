@@ -165,7 +165,7 @@ class 处理器(BaseHTTPRequestHandler):
         if 路径.startswith('/界面/'):
             根 = 页面.parent.resolve()
             p = (根 / 路径[len('/界面/'):]).resolve()
-            类型 = {'.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
+            类型 = {'.json': 'application/json; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
                     '.svg': 'image/svg+xml', '.png': 'image/png', '.webp': 'image/webp',
                     '.woff2': 'font/woff2'}
             if not p.is_relative_to(根) or not p.is_file() or p.suffix.lower() not in 类型:
