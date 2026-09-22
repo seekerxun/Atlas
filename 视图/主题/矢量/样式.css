@@ -405,13 +405,14 @@ body.矢量阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
 /* ———— 底部悬浮控件 ———— */
 #未{position:fixed;left:24px;bottom:24px;z-index:20;width:auto;max-height:50vh;display:flex;flex-direction:column;border-radius:24px;background:var(--面);border:1px solid var(--边);user-select:text;transition:width .45s var(--弹),box-shadow .3s}
 #未 .头{min-height:46px;padding:0 10px 0 16px;display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px}
-#未 .头:before{content:"";width:16px;height:8px;border-radius:0 0 8px 8px;background:var(--烟粉);transition:transform .45s var(--弹)}
+#未 .头:before{content:"";width:16px;height:8px;border-radius:8px 8px 0 0;background:var(--烟粉);transition:transform .45s var(--弹)}
 #未.开 .头:before{transform:rotate(180deg)}
 #未 .头 b{font-weight:700}
 #未数{min-width:30px;height:30px;box-sizing:border-box;padding:0 10px;border-radius:999px;background:var(--烟粉);color:var(--上-烟粉);display:inline-flex;align-items:center;justify-content:center;font:700 13px var(--数字)}
-.未认领箭头{margin-left:auto;color:var(--字3);transition:transform .35s var(--弹)}
+/* 抽屉贴底、向上展开：收起时箭头朝上，展开后朝下。 */
+.未认领箭头{margin-left:auto;color:var(--字3);transform:rotate(180deg);transition:transform .35s var(--弹)}
 #未.开{width:360px;box-shadow:0 24px 50px -24px color-mix(in srgb,var(--影) 60%,transparent)}
-#未.开 .未认领箭头{transform:rotate(180deg)}
+#未.开 .未认领箭头{transform:none}
 #未 .体{display:none;overflow:auto;padding:4px 8px 10px;border-top:1px solid var(--边)}
 #未.开 .体{display:block;animation:矢量抽屉入 .42s var(--弹)}
 #未[data-关闭中] .体{animation:矢量抽屉出 .2s ease-in forwards}

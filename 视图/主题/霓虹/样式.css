@@ -363,9 +363,10 @@ body.霓虹阅读 .盒.聚起>.卡:not(.展开),body.霓虹阅读 .盒.聚起>.�
 #未 .头{display:flex;align-items:center;gap:10px;min-height:42px;padding:0 14px;font-size:13px;cursor:pointer}
 #未 .头 b{font-weight:600}
 #未数{padding:0 6px;font:11px var(--等宽);color:var(--副);border:1px solid color-mix(in srgb,var(--副) 45%,transparent)}
-.未认领箭头{margin-left:auto;color:var(--字2);transition:transform .2s}
+/* 抽屉贴底、向上展开：收起时箭头朝上，展开后朝下。 */
+.未认领箭头{margin-left:auto;color:var(--字2);transform:rotate(180deg);transition:transform .2s}
 #未.开{width:360px;box-shadow:0 0 30px color-mix(in srgb,var(--副) 20%,transparent)}
-#未.开 .未认领箭头{transform:rotate(180deg)}
+#未.开 .未认领箭头{transform:none}
 #未 .体{display:none;overflow:auto;padding:0 8px 8px;border-top:1px solid var(--边)}
 #未.开 .体{display:block;animation:霓虹展开 .34s cubic-bezier(.2,.8,.2,1)}
 #未[data-关闭中] .体{animation:霓虹收起 .18s ease-in forwards}
