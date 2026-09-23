@@ -383,10 +383,14 @@ body.矢量阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
 @keyframes 矢量形入{from{transform:scale(0) rotate(-90deg)}}
 @keyframes 矢量项入{from{opacity:0;transform:translateY(8px)}}
 @keyframes 矢量下拉{from{opacity:0;transform:translateY(-6px) scale(.94)}}
-:is(#检查详情,#文件预览,#询问)[open]{animation:矢量弹入 .46s var(--弹)}
+/* 检查弹窗的进出场是从检查胶囊长出来的形状补间，由 主题.js 播放；这里只给它的幕布。 */
+:is(#文件预览,#询问)[open]{animation:矢量弹入 .46s var(--弹)}
 :is(#检查详情,#文件预览,#询问)[open]::backdrop{animation:矢量幕入 .25s ease-out}
-:is(#检查详情,#文件预览,#询问)[data-关闭中]{animation:矢量弹出 .2s ease-in forwards}
+:is(#文件预览,#询问)[data-关闭中]{animation:矢量弹出 .2s ease-in forwards}
 :is(#检查详情,#文件预览,#询问)[data-关闭中]::backdrop{animation:矢量幕出 .2s ease-in forwards}
+/* 核心只等 CSS 动画：幕布退场与缩回胶囊的补间等长，核心才会等形变播完再关。 */
+#检查详情[data-关闭中]::backdrop{animation-duration:.32s}
+#体检[aria-expanded="true"]{opacity:0}
 :is(#检查详情,#询问)[open]:after,#挑.开 .框:after{animation:矢量形入 .55s var(--弹) .12s backwards}
 #询问[open] .询问项{animation:矢量项入 .4s var(--弹) backwards}
 #询问[open] .询问项:nth-child(1){animation-delay:.08s}
@@ -396,10 +400,11 @@ body.矢量阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
 #挑.开 .框{animation:矢量弹入 .46s var(--弹)}
 #挑[data-关闭中]{animation:矢量幕出 .2s ease-in forwards}
 #挑[data-关闭中] .框{animation:矢量弹出 .2s ease-in forwards}
-#检查详情[open] .检查项{animation:矢量项入 .4s var(--弹) backwards}
-#检查详情[open] .检查项:nth-child(2){animation-delay:.05s}
-#检查详情[open] .检查项:nth-child(3){animation-delay:.1s}
-#检查详情[open] .检查项:nth-child(n+4){animation-delay:.15s}
+#检查详情[open]:after{animation-delay:.32s}
+#检查详情[open] .检查项{animation:矢量项入 .4s var(--弹) .22s backwards}
+#检查详情[open] .检查项:nth-child(2){animation-delay:.27s}
+#检查详情[open] .检查项:nth-child(3){animation-delay:.32s}
+#检查详情[open] .检查项:nth-child(n+4){animation-delay:.37s}
 
 /* ———— 底部悬浮控件 ———— */
 /* 未认领是形状补间：胶囊的宽和高连续长成贴底向上的抽屉，半圆两端顺势变成圆角，列表等形状撑开后再淡入。
@@ -444,7 +449,7 @@ body.矢量阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
 /* ———— 动效装饰（由 主题.js 挂载，卸载时回收） ———— */
 .矢量外观圈{position:fixed;z-index:1000;width:0;height:0;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none}
 .矢量过渡片{position:fixed;z-index:26;pointer-events:none;transform-origin:0 0;overflow:hidden;border-radius:28px;background:var(--面);box-shadow:0 30px 60px -30px color-mix(in srgb,var(--影) 60%,transparent)}
-.矢量过渡片>span{position:absolute;right:0;top:0;width:76px;height:76px;border-bottom-left-radius:76px;background:var(--卡色);transform-origin:top right}
+.矢量过渡片>span{position:absolute;left:0;top:0;width:76px;height:76px;background:var(--卡色)}
 
 /* ———— 响应式 ———— */
 @media(max-width:1280px){#搜:focus-within,#搜:has(input:not(:placeholder-shown)){width:220px}}

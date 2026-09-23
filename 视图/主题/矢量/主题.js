@@ -53,6 +53,41 @@ function 装配界面(){
     $('#阅读幕').classList.remove('开'); $('#阅读幕').removeAttribute('style');
     $('#文件预览').style.removeProperty('--预览顶'); $('#文件预览').style.removeProperty('--预览高');
   });
+  装配检查形变();
+}
+
+// 检查弹窗由顶栏的检查胶囊长成：弹窗先平移到胶囊处、只露出胶囊大小的圆角区域，再连续撑开成面板；收起反向缩回胶囊。
+// 核心只等 CSS 动画，收起时长由 样式.css 里 #检查详情 的幕布退场动画（.32s）撑住，这里的补间与它等长。
+function 装配检查形变(){
+  const 窗 = $('#检查详情'), 钮 = $('#体检');
+  if (!窗 || !钮) return;
+  let 态 = 窗.open ? '展' : '关', 动们 = [];
+  const 停 = () => { 动们.forEach(a => a.cancel()); 动们 = []; };
+  const 观 = new MutationObserver(() => {
+    const 新 = !窗.open ? '关' : 窗.hasAttribute('data-关闭中') ? '收' : '展';
+    if (新 === 态) return;
+    const 旧 = 态; 态 = 新; 停();
+    // 收起途中又被打开（核心取消关闭）时直接停在展开态，不重播。
+    if (!可动() || 新 === '关' || (新 === '展' && 旧 === '收')) return;
+    const 展 = 新 === '展', B = 钮.getBoundingClientRect(), D = 窗.getBoundingClientRect();
+    const 内 = [...窗.children];
+    if (!B.width || !D.width) {
+      动们 = [api.动画(窗, 展 ? [{opacity:0, transform:'translateY(18px) scale(.92)'}, {opacity:1, transform:'none'}]
+                               : [{opacity:1}, {opacity:0, transform:'translateY(10px) scale(.96)'}],
+                  {duration:展 ? 460 : 320, easing:展 ? 弹 : 'ease-in', fill:'forwards'})];
+      return;
+    }
+    const 胶囊 = {transform:`translate(${B.right - D.right}px,${B.top - D.top}px)`,
+                 clipPath:`inset(0px 0px ${Math.max(0, D.height - B.height)}px ${Math.max(0, D.width - B.width)}px round ${B.height / 2}px)`};
+    const 面板 = {transform:'none', clipPath:'inset(0px 0px 0px 0px round 28px)'};
+    const 时 = 展 ? 540 : 320, 缓 = 展 ? 'cubic-bezier(.3,1.12,.5,1)' : 'cubic-bezier(.5,0,.75,.2)';
+    动们.push(api.动画(窗, 展 ? [胶囊, 面板] : [面板, 胶囊], {duration:时, easing:缓, fill:'forwards'}));
+    内.forEach(el => 动们.push(api.动画(el, 展
+      ? [{opacity:0}, {opacity:0, offset:.35}, {opacity:1}]
+      : [{opacity:1}, {opacity:0, offset:.4}, {opacity:0}], {duration:时, fill:'forwards'})));
+  });
+  观.observe(窗, {attributes:true, attributeFilter:['open','data-关闭中']});
+  api.清理(() => { 观.disconnect(); 停(); });
 }
 
 // 分组底色取组内最多的类型的色相；类型小标去掉核心加的「●」，改画成对应形状。
@@ -197,26 +232,46 @@ function 详情头(标题, 分类, 路径, 类型, 色相){
 
 function 停卡片动效(card){ card?._动效清理?.(); }
 
-// 展开：一片与卡片同形的色面从卡片位置弹性撑开到阅读面板，角形同步长大；收起反向、不回弹。
+// 卡片上的角形（卡片坐标 px，右距／顶／宽／高／四角圆角），与 样式.css 的 .角.形-* 保持一致。
+const 角形 = {
+  q:{右:0, 顶:0, 宽:64, 高:64, 圆:[0,0,0,64]},
+  c:{右:-18, 顶:-18, 宽:76, 高:76, 圆:[38,38,38,38]},
+  h:{右:18, 顶:0, 宽:60, 高:30, 圆:[0,0,30,30]},
+  d:{右:10, 顶:-14, 宽:46, 高:46, 圆:[0,0,0,0], 菱:true},
+  s:{右:16, 顶:16, 宽:32, 高:32, 圆:[8,8,8,8]},
+};
+const 满形 = 'polygon(0% 0%,100% 0%,100% 100%,0% 100%)', 菱形 = 'polygon(50% 0%,100% 50%,50% 100%,0% 50%)';
+const 圆角 = (a, s = 1) => a.map(v => v * s + 'px').join(' ');
+// 过渡片里角形的一帧：展开端是详情头的四分之一圆；卡片端是该类型的形状，步骤端是左上的序号圆。
+function 角帧(card, 框, 展开端){
+  if (展开端) return {left:框.width - 76 + 'px', top:'0px', width:'76px', height:'76px', borderRadius:'0px 0px 0px 76px', clipPath:满形};
+  const s = api.读取状态().缩;
+  if (card.classList.contains('步'))
+    return {left:18*s + 'px', top:18*s + 'px', width:44*s + 'px', height:44*s + 'px', borderRadius:圆角([22,22,22,22], s), clipPath:满形};
+  const g = 角形[card.querySelector(':scope>.角')?.className.match(/形-(\w)/)?.[1]] || 角形.q;
+  return {left:框.width - (g.右 + g.宽) * s + 'px', top:g.顶 * s + 'px', width:g.宽 * s + 'px', height:g.高 * s + 'px',
+          borderRadius:圆角(g.圆, s), clipPath:g.菱 ? 菱形 : 满形};
+}
+
+// 展开是形状补间：色面的位置、宽高、圆角从卡片连续变成阅读面板（不拉伸），类型角形同时变成详情头的四分之一圆；收起反向、不回弹。
 function 卡片过渡(card, 原框){
   if (!可动() || !原框?.width) return;
   const 终框 = card.getBoundingClientRect();
   if (!终框.width || !终框.height) return;
-  const opening = card.classList.contains('展开'), duration = opening ? 460 : 240;
+  const opening = card.classList.contains('展开'), duration = opening ? 520 : 280;
   const shell = document.createElement('div'); shell.className = '矢量过渡片';
   shell.setAttribute('aria-hidden','true'); shell.inert = true;
   const 色值 = card.querySelector(':scope>.序 .序号')?.style.getPropertyValue('--序色') || getComputedStyle(card).getPropertyValue('--卡色');
   shell.style.cssText = `left:${终框.left}px;top:${终框.top}px;width:${终框.width}px;height:${终框.height}px;--卡色:${色值};`;
   shell.innerHTML = '<span></span>';
   api.装饰(shell); card._过渡壳 = shell;
-  const sx = 原框.width / 终框.width, sy = 原框.height / 终框.height;
-  const start = `translate(${原框.left-终框.left}px,${原框.top-终框.top}px) scale(${sx},${sy})`;
-  const ease = opening ? 'cubic-bezier(.34,1.25,.64,1)' : 'cubic-bezier(.4,0,.2,1)';
+  const 小圆 = (card.classList.contains('步') ? 26 : 22) * api.读取状态().缩 + 'px';
+  const 框帧 = (框, 展开端) => ({left:框.left + 'px', top:框.top + 'px', width:框.width + 'px', height:框.height + 'px', borderRadius:展开端 ? '32px' : 小圆});
+  const ease = opening ? 'cubic-bezier(.34,1.2,.64,1)' : 'cubic-bezier(.4,0,.2,1)';
   const animations = [];
-  const move = api.动画(shell, [{transform:start},{transform:'none'}], {duration, easing:ease});
+  const move = api.动画(shell, [框帧(原框, !opening), 框帧(终框, opening)], {duration, easing:ease});
   animations.push(move, api.动画(shell,[{opacity:1,offset:0},{opacity:1,offset:.6},{opacity:0,offset:1}],{duration,fill:'forwards'}));
-  // 角形反向补偿缩放，色面拉伸时它仍是正圆的四分之一。
-  animations.push(api.动画(shell.firstChild, [{transform:`scale(${1/sx},${1/sy})`},{transform:'none'}], {duration, easing:ease}));
+  animations.push(api.动画(shell.firstChild, [角帧(card, 原框, !opening), 角帧(card, 终框, opening)], {duration, easing:ease}));
   animations.push(api.动画(card,[{opacity:0,offset:0},{opacity:0,offset:.5},{opacity:1,offset:1}],{duration,easing:'ease-out'}));
   if (opening) {
     card.querySelectorAll('.详情头,.详情体').forEach((el,i) => animations.push(api.动画(el,
