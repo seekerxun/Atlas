@@ -192,16 +192,21 @@ function 算库布局(){
     const w = 列 * (卡宽 + 隙) - 隙 + 内左 * 2, h = 内y + 内顶 + 6;
     if (x + w > 限宽 && x > 40) { x = 40; y += 行高 + 盒隙; 行高 = 0; }
     const id = `盒:${视图}:${名}`;
-    const p = {...(布局[id] || {x, y})};
-    // 卡片尺寸与其他主题不同，旧布局可能相交；只调整显示位置，不覆盖用户保存的布局。
-    for (let 次 = 0; 次 <= 结果.length; 次++) {
-      const 撞 = 结果.find(b => p.x < b.x+b.w+盒隙 && p.x+w+盒隙 > b.x && p.y < b.y+b.h+盒隙 && p.y+h+盒隙 > b.y);
-      if (!撞) break;
-      p.x = 撞.x + 撞.w + 盒隙;
-    }
-    结果.push({id, 名, 数: ns.length, x: p.x, y: p.y, w, h, 卡们});
+    结果.push({id, 名, 数: ns.length, x, y, w, h, 卡们, 存: 布局[id]});
     x += w + 盒隙; 行高 = Math.max(行高, h);
   });
+  // 用户拖过的分组原样放在保存的位置，不做避让，否则切换导航重绘后会被挤开。
+  // 没拖过的分组按自动排列落位，撞上已放好的分组就往右让。
+  const 已放 = 结果.filter(b => b.存).map(b => Object.assign(b, {x: b.存.x, y: b.存.y}));
+  结果.filter(b => !b.存).forEach(b => {
+    for (let 次 = 0; 次 <= 已放.length; 次++) {
+      const 撞 = 已放.find(o => b.x < o.x+o.w+盒隙 && b.x+b.w+盒隙 > o.x && b.y < o.y+o.h+盒隙 && b.y+b.h+盒隙 > o.y);
+      if (!撞) break;
+      b.x = 撞.x + 撞.w + 盒隙;
+    }
+    已放.push(b);
+  });
+  结果.forEach(b => delete b.存);
   return 结果;
 }
 
