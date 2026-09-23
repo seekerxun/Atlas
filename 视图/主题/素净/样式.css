@@ -3,7 +3,7 @@
    动效约定：150–250ms 缓出，只有淡入、几像素位移和平滑形变，不回弹。 */
 :root{
   color-scheme:light;
-  --底:#F6F6F4;--面:#FFFFFF;--面2:#FBFBFA;--组:#EDEDEA;--浅:#F2F1EE;--控件底:#ECECE9;
+  --底:#EFEEEA;--面:#FFFFFF;--面2:#FBFBFA;--组:#E6E5E0;--浅:#F2F1EE;--控件底:#E7E6E2;--点:#1C1C1A24;
   --边:#E4E3DF;--边强:#D3D1CB;--字:#1C1C1A;--字2:#55534E;--字3:#6F6D67;--幕:#1C1C1A47;--影:#1C1C1A;
   --强调:#3A5CCC;--强调上:#FFFFFF;--危:#B23B2E;--好色:#3F8A6A;--警:#A0822A;
   --蓝灰:#5B6B8C;--青:#3F8A7A;--陶:#B0643F;--金:#A88A2E;--紫:#7A64A0;--序:var(--字3);
@@ -16,8 +16,8 @@
 }
 html[data-外观="深"]{
   color-scheme:dark;
-  --底:#141413;--面:#1F1F1D;--面2:#1B1B1A;--组:#1A1A18;--浅:#2A2927;--控件底:#232321;
-  --边:#2E2D2A;--边强:#45433F;--字:#ECEBE7;--字2:#B5B2AB;--字3:#8F8C85;--幕:#000000A3;--影:#000000;
+  --底:#1B1B1A;--面:#2B2B28;--面2:#272725;--组:#222221;--浅:#34332F;--控件底:#2C2C2A;--点:#ECEBE71F;
+  --边:#3A3935;--边强:#45433F;--字:#ECEBE7;--字2:#B5B2AB;--字3:#8F8C85;--幕:#000000A3;--影:#000000;
   --强调:#8AA2F0;--强调上:#141413;--危:#E0786A;--好色:#5FB08A;--警:#D2B25C;
   --蓝灰:#8A9AC0;--青:#5FB09E;--陶:#D98A63;--金:#D2B25C;--紫:#A993CC;
   --卡影:0 1px 2px #0000004D;--浮影:0 12px 28px -10px #000000B3;--窗影:0 24px 60px -20px #000000CC,0 0 0 1px #FFFFFF12;
@@ -48,7 +48,7 @@ kbd{font-family:var(--字体)}
 /* 导航：分段控件，白色滑块由 主题.js 定位。 */
 #签{position:relative;isolation:isolate;display:flex;gap:2px;padding:3px;border-radius:9px;background:var(--控件底)}
 .签块{position:absolute;top:3px;bottom:3px;left:3px;width:0;opacity:0;border-radius:7px;background:var(--面);box-shadow:0 1px 2px #0000001A,0 0 0 .5px #00000008;z-index:-1}
-html[data-外观="深"] .签块{background:#353431}
+html[data-外观="深"] .签块{background:#42413D}
 #签 button{height:30px;padding:0 12px;display:flex;align-items:center;gap:6px;border-radius:7px;font-size:13.5px;color:var(--字2);white-space:nowrap;transition:color .15s}
 #签 button:not(.开):hover{color:var(--字)}
 #签 button.开{color:var(--字);font-weight:600}
@@ -97,7 +97,8 @@ html[data-外观="深"] .签块{background:#353431}
 #导航{display:none}
 
 /* ———— 画布 ———— */
-#台{z-index:1;cursor:grab}
+/* 点阵固定在屏幕上，不随平移缩放移动；给大面积底色一点质感，久看不刺眼。 */
+#台{z-index:1;cursor:grab;background-image:radial-gradient(circle,var(--点) .9px,transparent 1.3px);background-size:20px 20px}
 #台.拖{cursor:grabbing}
 #世界{will-change:transform}
 #线{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}

@@ -1,15 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 42">
-  <rect width="64" height="42" fill="#141413"/>
-  <rect x="0" y="0" width="64" height="7" fill="#1A1A19"/>
-  <rect x="0" y="7" width="64" height=".6" fill="#2E2D2A"/>
+  <rect width="64" height="42" fill="#1B1B1A"/>
+  <circle cx="3" cy="9.5" r=".45" fill="#ECEBE7" fill-opacity=".22"/><circle cx="7" cy="9.5" r=".45" fill="#ECEBE7" fill-opacity=".22"/><circle cx="11" cy="9.5" r=".45" fill="#ECEBE7" fill-opacity=".22"/><circle cx="15" cy="9.5" r=".45" fill="#ECEBE7" fill-opacity=".22"/><circle cx="19" cy="9.5" r=".45" fill="#ECEBE7" fill-opacity=".22"/><circle cx="23" cy="9.5" r=".45" fill="#ECEBE7" fill-opacity=".22"/><circle cx="27" cy="9.5" r=".45" fill="#ECEBE7" fill-opacity=".22"/><circle cx="31" cy="9.5" r=".45" fill="#ECEBE7" fill-opacity=".22"/><circle cx="35" cy="9.5" r=".45" fill="#ECEBE7" fill-opacity=".22"/><circle cx="39" cy="9.5" r=".45" fill="#ECEBE7" fill-opacity=".22"/><circle cx="43" cy="9.5" r=".45" fill="#ECEBE7" fill-opacity=".22"/><circle cx="47" cy="9.5" r=".45" fill="#ECEBE7" fill-opacity=".22"/><circle cx="51" cy="9.5" r=".45" fill="#ECEBE7" fill-opacity=".22"/><circle cx="55" cy="9.5" r=".45" fill="#ECEBE7" fill-opacity=".22"/><circle cx="59" cy="9.5" r=".45" fill="#ECEBE7" fill-opacity=".22"/><circle cx="63" cy="9.5" r=".45" fill="#ECEBE7" fill-opacity=".22"/><circle cx="3" cy="40" r=".45" fill="#ECEBE7" fill-opacity=".22"/><circle cx="7" cy="40" r=".45" fill="#ECEBE7" fill-opacity=".22"/><circle cx="11" cy="40" r=".45" fill="#ECEBE7" fill-opacity=".22"/><circle cx="15" cy="40" r=".45" fill="#ECEBE7" fill-opacity=".22"/><circle cx="19" cy="40" r=".45" fill="#ECEBE7" fill-opacity=".22"/><circle cx="23" cy="40" r=".45" fill="#ECEBE7" fill-opacity=".22"/><circle cx="27" cy="40" r=".45" fill="#ECEBE7" fill-opacity=".22"/><circle cx="31" cy="40" r=".45" fill="#ECEBE7" fill-opacity=".22"/><circle cx="35" cy="40" r=".45" fill="#ECEBE7" fill-opacity=".22"/><circle cx="39" cy="40" r=".45" fill="#ECEBE7" fill-opacity=".22"/><circle cx="43" cy="40" r=".45" fill="#ECEBE7" fill-opacity=".22"/><circle cx="47" cy="40" r=".45" fill="#ECEBE7" fill-opacity=".22"/><circle cx="51" cy="40" r=".45" fill="#ECEBE7" fill-opacity=".22"/><circle cx="55" cy="40" r=".45" fill="#ECEBE7" fill-opacity=".22"/><circle cx="59" cy="40" r=".45" fill="#ECEBE7" fill-opacity=".22"/><circle cx="63" cy="40" r=".45" fill="#ECEBE7" fill-opacity=".22"/>
+  <rect x="0" y="0" width="64" height="7" fill="#222221"/>
+  <rect x="0" y="7" width="64" height=".6" fill="#3A3935"/>
   <rect x="4" y="2" width="3" height="3" rx=".8" fill="#ECEBE7"/>
-  <rect x="5" y="11" width="54" height="27" rx="3" fill="#1A1A18"/>
-  <rect x="8.5" y="16" width="22" height="18" rx="2" fill="#1F1F1D" stroke="#2E2D2A" stroke-width=".6"/>
+  <rect x="5" y="11" width="54" height="27" rx="3" fill="#222221"/>
+  <rect x="8.5" y="16" width="22" height="18" rx="2" fill="#2B2B28" stroke="#3A3935" stroke-width=".6"/>
   <circle cx="11.5" cy="19.5" r="1" fill="#8A9AC0"/>
   <rect x="11" y="22.5" width="13" height="1.8" rx=".6" fill="#ECEBE7"/>
   <rect x="11" y="26.5" width="16" height="1.1" rx=".5" fill="#B5B2AB" fill-opacity=".55"/>
   <rect x="11" y="29" width="11" height="1.1" rx=".5" fill="#B5B2AB" fill-opacity=".55"/>
-  <rect x="33.5" y="16" width="22" height="18" rx="2" fill="#1F1F1D" stroke="#8AA2F0" stroke-width="1.2"/>
+  <rect x="33.5" y="16" width="22" height="18" rx="2" fill="#2B2B28" stroke="#8AA2F0" stroke-width="1.2"/>
   <circle cx="36.5" cy="19.5" r="1" fill="#5FB09E"/>
   <rect x="36" y="22.5" width="11" height="1.8" rx=".6" fill="#ECEBE7"/>
   <rect x="36" y="26.5" width="15" height="1.1" rx=".5" fill="#B5B2AB" fill-opacity=".55"/>

@@ -261,7 +261,7 @@ function 画布入场(){
 function 外观变化(外观, 旧外观){
   if (!可动() || !旧外观) return;
   const 层 = document.createElement('div'); 层.className = '素净换色'; 层.setAttribute('aria-hidden', 'true');
-  层.style.background = 旧外观 === '深' ? '#141413' : '#F6F6F4';
+  层.style.background = 旧外观 === '深' ? '#1B1B1A' : '#EFEEEA';
   api.装饰(层);
   api.动画(层, [{opacity:.85}, {opacity:0}], {duration:260, easing:'ease-out', fill:'forwards'})
     .finished.then(() => 层.remove(), () => 层.remove());
