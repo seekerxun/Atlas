@@ -5,6 +5,12 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden}
 #世界{position:absolute;transform-origin:0 0}
 #屉{user-select:text;-webkit-user-select:text}
 
+/* 卡片展开阅读：画布整体盖到固定界面（顶栏、未认领、角落控件，主题须让它们低于 60）之上；
+   世界里除展开卡外都不接收鼠标，点在别处都落到 #台 上由核心收卡，拖动和滚轮缩放也停用。 */
+body[data-阅读中] #台{z-index:60!important}
+body[data-阅读中] #世界 :not(.展开, .展开 *){pointer-events:none!important}
+body[data-阅读中] #世界 .展开{pointer-events:auto!important}
+
 body[data-启动中] > :not(#启动状态){visibility:hidden}
 #启动状态{position:fixed;top:24px;left:24px;font:14px sans-serif}
 #启动状态[hidden]{display:none}

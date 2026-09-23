@@ -124,7 +124,7 @@ kbd{font-family:var(--等宽)}
 .小丸.引{color:var(--卡色,var(--主))}
 .小丸.路{color:var(--k-路线);background:color-mix(in srgb,var(--k-路线) 10%,transparent);overflow:hidden;text-overflow:ellipsis}
 
-/* 核心标记状态：悬 = 悬停 500ms 后，选 = 选中，邻 = 关联，暗 = 非关联。 */
+/* 核心标记状态：悬 = 悬停 250ms 后，选 = 选中，邻 = 关联，暗 = 非关联。 */
 .卡:hover,.卡.悬{border-color:var(--卡色);box-shadow:0 0 0 1px var(--卡色),0 0 22px color-mix(in srgb,var(--卡色) 42%,transparent),inset 0 0 18px color-mix(in srgb,var(--卡色) 8%,transparent)}
 .卡:hover .展开符,.卡.悬 .展开符{color:var(--卡色)}
 .卡.选{border-color:var(--副);box-shadow:0 0 0 1px var(--副),0 0 26px color-mix(in srgb,var(--副) 42%,transparent),inset 0 0 18px color-mix(in srgb,var(--副) 12%,transparent)}
@@ -394,7 +394,7 @@ body.霓虹阅读 .盒.聚起>.卡:not(.展开),body.霓虹阅读 .盒.聚起>.�
 .空 b{display:block;margin-bottom:10px;font-size:21px;color:var(--字)}
 .空位{position:absolute;left:40px;top:40px}
 
-.霓虹过渡片{position:fixed;z-index:26;pointer-events:none;transform-origin:0 0;background:var(--深);border:1px solid var(--卡色);box-shadow:0 0 30px color-mix(in srgb,var(--卡色) 40%,transparent),inset 0 0 30px color-mix(in srgb,var(--卡色) 12%,transparent)}
+.霓虹过渡片{position:fixed;z-index:70;pointer-events:none;transform-origin:0 0;background:var(--深);border:1px solid var(--卡色);box-shadow:0 0 30px color-mix(in srgb,var(--卡色) 40%,transparent),inset 0 0 30px color-mix(in srgb,var(--卡色) 12%,transparent)}
 .霓虹过渡片:before{content:"";position:absolute;left:-1px;right:-1px;top:-1px;height:2px;background:var(--卡色);box-shadow:0 0 12px var(--卡色)}
 
 /* 核心只标记状态，主题决定状态如何呈现。 */

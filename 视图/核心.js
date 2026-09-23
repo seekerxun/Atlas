@@ -7,7 +7,7 @@ let 缩 = 0.85, 位 = {x: 30, y: 24};
 let 展开卡 = null, 正文请求 = null, 首次 = true, 上次绘制视图 = null;
 let 悬停条目 = null, 悬停关联 = null;
 let 悬停计时 = null, 待悬停卡 = null;
-const 卡片悬停延迟 = 500;
+const 卡片悬停延迟 = 250;
 const 按路径 = {}, 按编号 = {}, 按名 = {};
 
 let 主题 = null, 当前主题包 = null, 主题请求序号 = 0;
@@ -872,6 +872,7 @@ function 收卡(恢复焦点 = true){
     card.removeAttribute('aria-labelledby'); card.closest('.盒')?.classList.remove('聚起');
   }
   展开卡 = null; 选中 = null; 选中步 = null; 悬停条目 = null; 悬停关联 = null;
+  document.body.removeAttribute('data-阅读中');
   document.querySelectorAll('.卡.选,.步.选,.卡.邻,.卡.暗,.卡.悬').forEach(e => e.classList.remove('选', '邻', '暗', '悬'));
   if (视图 !== '路线') $('#线').innerHTML = '';
   if (恢复焦点 && card?.isConnected) card.focus({preventScroll:true});
@@ -893,6 +894,8 @@ function 装入卡(card){
 
   card._原高 = card.offsetHeight;
   展开卡 = card; card.classList.add('展开', '选'); card.closest('.盒')?.classList.add('聚起');
+  // 阅读时展开卡之外的一切都在它后面、不接收鼠标：基础.css 据此把画布盖到固定界面上，点在别处都落到 #台 上收卡。
+  document.body.setAttribute('data-阅读中', '');
   card.setAttribute('role', 'region'); card.setAttribute('aria-expanded', 'true');
   const panel = $('#屉'); card.appendChild(panel); panel.classList.add('开');
   主题.装配详情?.(panel);
@@ -1026,7 +1029,8 @@ const 台 = $('#台');
 台.addEventListener('pointerdown', () => 清除卡片悬停(), true);
 台.addEventListener('wheel', e => {
   if (e.target.closest('#屉')) return;
-  e.preventDefault(); 停镜头(); 清除卡片悬停();
+  e.preventDefault(); if (展开卡) return;
+  停镜头(); 清除卡片悬停();
   const k = Math.exp(-e.deltaY * 0.0016), 新 = Math.min(2.4, Math.max(0.12, 缩 * k));
   const r = 台.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
   位.x = mx - (mx - 位.x) * (新 / 缩); 位.y = my - (my - 位.y) * (新 / 缩);
@@ -1034,7 +1038,7 @@ const 台 = $('#台');
 }, {passive: false});
 let 拖 = null;
 台.addEventListener('pointerdown', e => {
-  if (e.button !== 0 || e.target.closest('.卡,.步,.盒,button,a,input,.编辑条')) return;
+  if (e.button !== 0 || 展开卡 || e.target.closest('.卡,.步,.盒,button,a,input,.编辑条')) return;
   停镜头();
   拖 = {x: e.clientX - 位.x, y: e.clientY - 位.y}; 台.classList.add('拖');
   台.setPointerCapture(e.pointerId);
