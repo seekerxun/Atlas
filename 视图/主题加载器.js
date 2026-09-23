@@ -21,9 +21,11 @@ window.Atlas主题加载器 = (() => {
     目录 = d; return d;
   }
   // 方案 = 主题 + 外观。只支持一种外观的主题只有一个方案；深浅两用的主题有两个。
+  // 每个方案的图标是主题目录里的 图标-<外观>.svg，主题面板用它代替名字。
   function 方案们(){
     return 目录.主题.flatMap(t => { const 表 = 外观表(t);
-      return 表.map(外观 => ({值:`${t.id}@${外观}`, id:t.id, 外观, 名称:表.length > 1 ? `${t.名称} · ${外观}` : t.名称})); });
+      return 表.map(外观 => ({值:`${t.id}@${外观}`, id:t.id, 外观, 名称:表.length > 1 ? `${t.名称} · ${外观}` : t.名称,
+        图标:`/界面/主题/${encodeURIComponent(t.id)}/图标-${外观}.svg`})); });
   }
   function 找方案(值){ return 方案们().find(f => f.值 === 值); }
   function 系统外观(){ return matchMedia('(prefers-color-scheme: dark)').matches ? '深' : '浅'; }

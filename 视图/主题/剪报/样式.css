@@ -79,8 +79,16 @@ kbd{font-family:var(--窄)}
 /* 主题选择：基础.css 统一成小图标，这里只给方钮外观。 */
 #主题控件{--主题钮:38px;border:2px solid var(--字);background:var(--面);color:var(--字)}
 #主题控件:hover{background:var(--马克);color:var(--马克上)}
-#主题选择 optgroup{background:var(--面);color:var(--字3)}
-#主题选择 option{background:var(--面);color:var(--字)}
+#主题面板{border:2px solid var(--字);border-radius:0;background:var(--面) var(--纸纹);box-shadow:5px 6px 0 var(--影)}
+#主题面板:popover-open{animation:剪报贴入 .25s steps(1,end)}
+#主题面板 .主题模式{border:2px solid var(--字);border-radius:0}
+#主题面板 .主题模式 button{border-radius:0;font-weight:800}
+#主题面板 .主题模式 button[aria-pressed="true"]{background:var(--马克);color:var(--马克上)}
+#主题面板 .主题组名{font:800 11px var(--窄);letter-spacing:.12em}
+#主题面板 .主题项,#主题面板 .主题项 img{border-radius:0}
+#主题面板 .主题项[aria-pressed="true"]{border-color:var(--路线红)}
+#询问字段 .询问选项 span{border:2px solid var(--字);border-radius:0;font:700 14px var(--字体)}
+#询问字段 .询问选项 input:checked + span{background:var(--马克);color:var(--马克上);border-color:var(--字)}
 #刷{flex-shrink:0;width:38px;height:38px;background:var(--字);color:var(--马克);font-size:18px;font-weight:700;line-height:1}
 #刷:hover{box-shadow:3px 3px 0 var(--路线红)}
 #刷 svg{display:block;width:19px;height:19px;margin:auto;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}

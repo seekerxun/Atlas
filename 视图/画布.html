@@ -15,7 +15,8 @@
   <button type="button" class="丸" id="体检" aria-haspopup="dialog" aria-controls="检查详情" aria-expanded="false"></button>
   <button id="新路线" style="display:none">＋ 新路线</button>
   <div id="搜"><input aria-label="搜索条目、工具、资产" placeholder="搜索条目、工具、资产"><kbd>/</kbd><div id="搜果"></div></div>
-  <div id="主题控件"><label for="主题选择">主题</label><select id="主题选择" aria-label="界面主题"></select></div>
+  <div id="主题控件"><button type="button" id="主题选择" popovertarget="主题面板" aria-haspopup="dialog" aria-controls="主题面板" aria-label="界面主题"></button>
+    <div id="主题面板" popover role="dialog" aria-label="界面主题"></div></div>
   <button id="刷" title="重新扫描" aria-label="重新扫描">↻</button>
 </div>
 

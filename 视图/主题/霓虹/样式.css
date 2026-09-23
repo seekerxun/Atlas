@@ -77,8 +77,17 @@ kbd{font-family:var(--等宽)}
 /* 主题选择：基础.css 统一成小图标，这里只给方钮外观。 */
 #主题控件{--主题钮:38px;--主题图标:17px;background:var(--深);color:var(--副);border:1px solid color-mix(in srgb,var(--副) 45%,transparent)}
 #主题控件:hover{border-color:var(--副);box-shadow:0 0 12px color-mix(in srgb,var(--副) 35%,transparent)}
-#主题选择 optgroup{background:var(--面);color:var(--字3)}
-#主题选择 option{background:var(--面);color:var(--字)}
+#主题面板{border:1px solid color-mix(in srgb,var(--主) 55%,transparent);border-radius:0;background:var(--深);box-shadow:0 0 30px color-mix(in srgb,var(--主) 18%,transparent),0 20px 60px #000a}
+#主题面板:popover-open{animation:霓虹开屏 .3s cubic-bezier(.2,.8,.2,1)}
+#主题面板 .主题模式{border-radius:0;border-color:var(--边)}
+#主题面板 .主题模式 button{border-radius:0;font:11px var(--等宽);letter-spacing:.08em}
+#主题面板 .主题模式 button[aria-pressed="true"]{background:color-mix(in srgb,var(--主) 16%,transparent);color:var(--主)}
+#主题面板 .主题组名{font:10px var(--等宽);letter-spacing:.12em;color:var(--副)}
+#主题面板 .主题项,#主题面板 .主题项 img{border-radius:0}
+#主题面板 .主题项:hover{border-color:color-mix(in srgb,var(--主) 45%,transparent)}
+#主题面板 .主题项[aria-pressed="true"]{border-color:var(--主);box-shadow:0 0 12px color-mix(in srgb,var(--主) 40%,transparent)}
+#询问字段 .询问选项 span{border-radius:0;border-color:color-mix(in srgb,var(--主) 40%,transparent);font:12px var(--等宽)}
+#询问字段 .询问选项 input:checked + span{background:color-mix(in srgb,var(--主) 16%,transparent);color:var(--主);border-color:var(--主)}
 #刷{width:38px;height:38px;flex-shrink:0;font-size:18px;line-height:1;color:var(--字2);border:1px solid var(--边)}
 #刷:hover{color:var(--主);border-color:color-mix(in srgb,var(--主) 55%,transparent)}
 #刷 svg{display:block;width:17px;height:17px;margin:auto;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}

@@ -16,7 +16,7 @@ body[data-启动中] > :not(#启动状态){visibility:hidden}
 #启动状态[hidden]{display:none}
 
 /* 共享入口顺序：搜索 → 主题 → 重新扫描；主题仍决定控件配色和外观。
-   主题选择统一是一枚小图标按钮（所有主题都一样）：原生下拉透明地铺满按钮，点图标就弹出核心生成的选项。
+   主题选择统一是一枚小图标按钮（所有主题都一样）：透明按钮 #主题选择 铺满，点开核心生成的 #主题面板。
    主题只决定按钮尺寸（--主题钮，默认 40px）、图标尺寸（--主题图标）、底色、边框和图标颜色（currentColor）。 */
 #顶 > #主题控件{
   position:relative!important;inset:auto!important;transform:none;order:0;
@@ -24,7 +24,6 @@ body[data-启动中] > :not(#启动状态){visibility:hidden}
   width:var(--主题钮,40px)!important;height:var(--主题钮,40px)!important;
   min-width:0!important;max-width:none!important;margin:0;padding:0!important;gap:0!important;
 }
-#主题控件 label{display:none!important}
 #主题控件::before{
   content:"";width:var(--主题图标,18px);height:var(--主题图标,18px);background:currentColor;pointer-events:none;
   -webkit-mask:var(--主题图形) center/contain no-repeat;mask:var(--主题图形) center/contain no-repeat;
@@ -33,9 +32,47 @@ body[data-启动中] > :not(#启动状态){visibility:hidden}
 #顶 #主题选择{
   position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
   min-width:0!important;max-width:none!important;margin:0!important;padding:0!important;
-  opacity:0!important;cursor:pointer;font-size:16px;
+  opacity:0!important;cursor:pointer;border:0;background:none;border-radius:inherit;
 }
 #主题控件:has(#主题选择:focus-visible){outline:2px solid currentColor;outline-offset:3px}
+
+/* 主题面板：位置由核心按按钮算好（fixed 的 left/top），结构在这里，配色取主题变量。
+   主题可以改 #主题面板 的底色、边框、圆角、阴影、字体和开合动画，以及 .主题项 的边框和选中态；不改位置和图标尺寸。 */
+#主题面板{
+  position:fixed;inset:auto;margin:0;box-sizing:border-box;width:max-content;max-width:calc(100vw - 16px);
+  padding:12px;border:1px solid var(--边,#8886);border-radius:14px;
+  background:var(--面,Canvas);color:var(--字,CanvasText);font:13px/1.4 var(--字体,sans-serif);
+  box-shadow:0 18px 40px -16px #0008;overflow:visible;
+}
+#主题面板[data-定位中]{visibility:hidden}
+#主题面板:not(:popover-open){display:none}
+#主题面板 button{font:inherit;color:inherit;cursor:pointer}
+#主题面板 .主题模式{display:flex;gap:2px;padding:2px;margin-bottom:10px;border:1px solid var(--边,#8886);border-radius:999px}
+#主题面板 .主题模式 button{flex:1;height:28px;padding:0 12px;border:0;border-radius:999px;background:none;color:var(--字3,GrayText);white-space:nowrap}
+#主题面板 .主题模式 button[aria-pressed="true"]{background:var(--字,CanvasText);color:var(--面,Canvas)}
+#主题面板 .主题组 + .主题组{margin-top:10px}
+#主题面板 .主题组名{display:block;margin:0 2px 6px;font-size:11px;color:var(--字3,GrayText)}
+#主题面板 .主题项们{display:flex;flex-wrap:wrap;gap:8px}
+#主题面板 .主题项{
+  position:relative;display:grid;place-items:center;width:72px;height:50px;padding:0;box-sizing:border-box;
+  border:2px solid transparent;border-radius:10px;background:none;overflow:hidden;
+}
+#主题面板 .主题项 img{display:block;width:64px;height:42px;border-radius:6px;pointer-events:none}
+#主题面板 .主题项:hover{border-color:color-mix(in srgb,var(--字,CanvasText) 35%,transparent)}
+#主题面板 .主题项[aria-pressed="true"]{border-color:var(--主,Highlight)}
+#主题面板 .主题项:focus-visible{outline:2px solid var(--字,CanvasText);outline-offset:2px}
+#主题面板 .主题项名{display:none}
+#主题面板 .主题项[data-无图] img{display:none}
+#主题面板 .主题项[data-无图] .主题项名{display:block;font-size:12px}
+
+/* 询问框的单选字段：原生单选隐藏，文字做成一排可点的片；主题负责片的外观。 */
+#询问字段 .询问选项{display:flex;flex-wrap:wrap;gap:8px}
+#询问字段 .询问选项 label{position:relative;display:inline-flex}
+#询问字段 .询问选项 input{position:absolute;inset:0;width:100%;height:100%;margin:0;padding:0;border:0;opacity:0;cursor:pointer}
+#询问字段 .询问选项 span{display:inline-flex;align-items:center;min-height:34px;padding:0 14px;box-sizing:border-box;
+  border:1px solid var(--边,#8886);border-radius:999px;font-size:13px;letter-spacing:0;pointer-events:none}
+#询问字段 .询问选项 input:checked + span{background:var(--字,CanvasText);color:var(--面,Canvas);border-color:transparent}
+#询问字段 .询问选项 input:focus-visible + span{outline:2px solid var(--主,Highlight);outline-offset:2px}
 #顶 > .品牌{min-width:0;flex-shrink:1;text-align:left}
 #顶 > .品牌 > span{min-width:0}
 #顶 .品牌 #名{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

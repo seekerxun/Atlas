@@ -65,6 +65,7 @@ function 渲染主题包(pack, state, 外观){
   if (state.选中) 阅读完成.then(() => { restoreScroll(); if (待恢复阅读 === reading) 待恢复阅读 = null; });
   if ($('#文件预览').open) 定位文件预览();
   if (state.焦点?.isConnected) state.焦点.focus({preventScroll:true});
+  定位主题面板();
 }
 // 方案 = {id, 外观}。同一主题只换外观时不重载，只改 html 的 data-外观 并通知主题。
 async function 切换方案(方案){
@@ -107,19 +108,35 @@ async function 切换方案(方案){
   }
 }
 
-// 主题下拉：跟随系统 / 固定使用某个方案 / 设定跟随时白天、夜间各用哪个方案。
+// 主题面板：固定用一个方案，或跟随系统、白天和夜间各用一个方案。每个方案用主题自带的图标表示，名字只在悬停提示里。
+// 面板由核心生成，放在浏览器顶层；外观随当前主题（基础.css 给结构，主题给配色）。
 function 画主题选项(){
-  const 全 = Atlas主题加载器.方案们(), s = 主题选择;
-  const 项 = (值, 文, 勾) => `<option value="${转义(值)}">${转义(文)}${勾 ? '　✓' : ''}</option>`;
-  const 组 = (标, 列) => 列.length ? `<optgroup label="${标}">${列.join('')}</optgroup>` : '';
-  $('#主题选择').innerHTML = 项('跟随', '跟随系统')
-    + 组('固定使用', 全.map(f => 项('手动:' + f.值, f.名称)))
-    + 组('跟随时白天用', 全.filter(f => f.外观 === '浅').map(f => 项('浅:' + f.值, f.名称, s.浅 === f.值)))
-    + 组('跟随时夜间用', 全.filter(f => f.外观 === '深').map(f => 项('深:' + f.值, f.名称, s.深 === f.值)));
+  const 全 = Atlas主题加载器.方案们(), s = 主题选择, 跟随 = s.模式 === '跟随', 面 = $('#主题面板');
+  const 焦 = 面.contains(document.activeElement) ? document.activeElement : null;
+  const 焦键 = 焦 && (焦.dataset.值 ? `[data-值="${CSS.escape(焦.dataset.值)}"]` : 焦.dataset.模式 ? `[data-模式="${焦.dataset.模式}"]` : null);
+  const 模式钮 = (值, 文) => `<button type="button" data-模式="${值}" aria-pressed="${s.模式 === 值}">${文}</button>`;
+  const 项 = f => { const 中 = 跟随 ? s[f.外观] === f.值 : s.手动 === f.值;
+    return `<button type="button" class="主题项" data-值="${转义(f.值)}" aria-pressed="${中}" title="${转义(f.名称)}" aria-label="${转义(f.名称)}"><img src="${转义(f.图标)}" alt="" draggable="false"><span class="主题项名">${转义(f.名称)}</span></button>`; };
+  const 组 = (外观, 标) => { const 列 = 全.filter(f => f.外观 === 外观);
+    return 列.length ? `<div class="主题组" data-外观="${外观}"><span class="主题组名">${标}</span><div class="主题项们">${列.map(项).join('')}</div></div>` : ''; };
+  面.innerHTML = `<div class="主题模式" role="group" aria-label="主题模式">${模式钮('手动', '固定')}${模式钮('跟随', '跟随系统')}</div>`
+    + 组('浅', 跟随 ? '白天用' : '浅色') + 组('深', 跟随 ? '夜间用' : '深色');
+  面.dataset.模式 = s.模式;
+  if (焦键) 面.querySelector(焦键)?.focus({preventScroll: true});
   const 名 = 值 => Atlas主题加载器.找方案(值)?.名称 || '未设';
-  $('#主题选择').value = s.模式 === '跟随' ? '跟随' : '手动:' + s.手动;
   // 主题选择只剩一枚图标，悬停提示要说清当前用的是哪个方案。
-  $('#主题选择').title = s.模式 === '跟随' ? `界面主题：跟随系统（白天${名(s.浅)}，夜间${名(s.深)}）` : `界面主题：${名(s.手动)}`;
+  $('#主题选择').title = 跟随 ? `界面主题：跟随系统（白天${名(s.浅)}，夜间${名(s.深)}）` : `界面主题：${名(s.手动)}`;
+  定位主题面板();
+}
+// 面板贴着按钮下方右对齐，放不下就翻到上方；主题换了按钮位置或窗口变化时重新定位。
+function 定位主题面板(){
+  const 面 = $('#主题面板');
+  if (!面.matches(':popover-open')) return;
+  const r = $('#主题选择').getBoundingClientRect(), w = 面.offsetWidth, h = 面.offsetHeight;
+  let top = r.bottom + 8;
+  if (top + h > innerHeight - 8) top = Math.max(8, r.top - h - 8);
+  面.style.left = Math.max(8, Math.min(r.right - w, innerWidth - w - 8)) + 'px';
+  面.style.top = top + 'px';
 }
 async function 应用主题选择(s){
   const 本次 = ++选择序号, 旧 = 主题选择;
@@ -149,15 +166,31 @@ async function 启动界面(){
     $('#重试启动').hidden = false;
   }
 }
-$('#主题选择').onchange = e => {
-  const v = e.target.value, s = {...主题选择}, 分 = v.indexOf(':');
-  if (v === '跟随') s.模式 = '跟随';
-  else if (v.slice(0, 分) === '手动') { s.模式 = '手动'; s.手动 = v.slice(分 + 1); }
-  else {
-    const 外观 = v.slice(0, 分); s.模式 = '跟随'; s[外观] = v.slice(分 + 1);
-    if (外观 !== Atlas主题加载器.系统外观())
-      提示(`已设为${外观 === '浅' ? '白天' : '夜间'}主题：${Atlas主题加载器.找方案(s[外观])?.名称}，系统切到${外观}色时生效`);
-  }
+$('#主题面板').addEventListener('beforetoggle', e => { if (e.newState === 'open') e.target.setAttribute('data-定位中', ''); });
+$('#主题面板').addEventListener('toggle', e => {
+  if (e.newState !== 'open') return;
+  定位主题面板(); e.target.removeAttribute('data-定位中');
+});
+// 图标缺失时退回显示名字，不留空白格。
+$('#主题面板').addEventListener('error', e => e.target.closest?.('.主题项')?.setAttribute('data-无图', ''), true);
+$('#主题面板').onclick = e => {
+  const 钮 = e.target.closest('button');
+  if (!钮 || $('#主题选择').getAttribute('aria-busy')) return;
+  const s = {...主题选择};
+  if (钮.dataset.模式) {
+    if (钮.dataset.模式 === s.模式) return;
+    // 从跟随改固定时，固定成眼下正在用的方案，界面不跳。
+    if (钮.dataset.模式 === '手动') s.手动 = Atlas主题加载器.当前方案(s)?.值 || s.手动;
+    s.模式 = 钮.dataset.模式;
+  } else if (钮.dataset.值) {
+    const 值 = 钮.dataset.值, 外观 = Atlas主题加载器.找方案(值)?.外观;
+    if (s.模式 === '手动') s.手动 = 值;
+    else {
+      s[外观] = 值;
+      if (外观 !== Atlas主题加载器.系统外观())
+        提示(`已设为${外观 === '浅' ? '白天' : '夜间'}主题：${Atlas主题加载器.找方案(值)?.名称}，系统切到${外观}色时生效`);
+    }
+  } else return;
   应用主题选择(s);
 };
 // 系统外观变化时跟换；回到窗口时再核对一次，补上后台期间可能漏掉的变化。
@@ -188,6 +221,7 @@ function 取消关闭(el){ el._关令 = null; el.removeAttribute('data-关闭中
 }));
 
 // 页内询问框，替代浏览器的 prompt / confirm；外观由主题决定。字段为空时就是确认框。
+// 字段 {名, 值, 占位} 是输入框；带 选项（字符串数组）时是一组单选，值为默认选中项。
 // 返回各字段的值组成的数组，取消返回 null。
 let 询问中 = null;
 function 询问({标题, 说明 = '', 字段 = [], 确定 = '确定', 危险 = false}){
@@ -195,18 +229,21 @@ function 询问({标题, 说明 = '', 字段 = [], 确定 = '确定', 危险 = f
   const d = $('#询问'), 区 = $('#询问字段');
   $('#询问标题').textContent = 标题;
   $('#询问说明').textContent = 说明; $('#询问说明').hidden = !说明;
-  区.innerHTML = 字段.map((f, i) => `<label class="询问项"><span>${转义(f.名)}</span><input data-i="${i}" value="${转义(f.值 ?? '')}" placeholder="${转义(f.占位 || '')}" autocomplete="off"></label>`).join('');
+  区.innerHTML = 字段.map((f, i) => f.选项
+    ? `<div class="询问项" role="radiogroup" aria-labelledby="询问名${i}"><span id="询问名${i}">${转义(f.名)}</span><div class="询问选项">${f.选项.map(o =>
+        `<label><input type="radio" name="询问选${i}" value="${转义(o)}"${o === f.值 ? ' checked' : ''}><span>${转义(o)}</span></label>`).join('')}</div></div>`
+    : `<label class="询问项"><span>${转义(f.名)}</span><input data-i="${i}" value="${转义(f.值 ?? '')}" placeholder="${转义(f.占位 || '')}" autocomplete="off"></label>`).join('');
   $('#询问确定').textContent = 确定;
   d.toggleAttribute('data-危险', 危险);
   return new Promise(完 => {
     询问中 = v => { 询问中 = null; 关弹窗(d); 完(v); };
     取消关闭(d);
     if (!d.open) d.showModal();
-    const 首 = 区.querySelector('input');
+    const 首 = 区.querySelector('input:not([type=radio]), input:checked');
     if (首) { 首.focus(); 首.select(); } else $(危险 ? '#询问取消' : '#询问确定').focus();
   });
 }
-$('#询问表').onsubmit = e => { e.preventDefault(); 询问中?.([...$('#询问字段').querySelectorAll('input')].map(x => x.value)); };
+$('#询问表').onsubmit = e => { e.preventDefault(); 询问中?.([...$('#询问字段').children].map(项 => (项.querySelector('input:checked') || 项.querySelector('input:not([type=radio])'))?.value ?? '')); };
 $('#询问取消').onclick = () => 询问中?.(null);
 
 function 提示(s){ const t = $('#提示'); t.textContent = s; t.classList.add('开');
@@ -325,9 +362,9 @@ $('#项目列表').onclick = e => {
 $('#新建项目').onclick = () => {
   const 模板 = 项目清单?.模板 || [];
   反复询问({标题: '新建项目', 确定: '新建',
-    说明: `在「位置」下新建一个以名称命名的文件夹，带好 AGENTS.md、路线、目录骨架和 DevDock 配置，在新标签页打开它的画布。模板可选：${模板.join('、')}。`,
+    说明: '在「位置」下新建一个以名称命名的文件夹，带好 AGENTS.md、路线、目录骨架和 DevDock 配置，在新标签页打开它的画布。',
     字段: [{名: '名称', 占位: '比如 夏日MV'}, {名: '位置', 值: 项目清单?.建议位置 || ''},
-           {名: '模板', 值: 模板.includes('通用项目') ? '通用项目' : 模板[0] || ''}]},
+           {名: '模板', 选项: 模板, 值: 模板.includes('通用项目') ? '通用项目' : 模板[0] || ''}]},
     ([名称, 位置, 模板名]) => 启动项目('/新建项目', {名称, 位置, 模板: 模板名}));
 };
 $('#打开路径').onclick = () => 反复询问({标题: '打开项目', 确定: '打开',
@@ -1130,7 +1167,7 @@ function 调缩(k){
 }
 $('#放大').onclick = () => 调缩(1.2);
 $('#缩小').onclick = () => 调缩(1/1.2);
-window.addEventListener('resize', () => { if (!主题) return; 停镜头(); document.querySelectorAll('.卡,.步').forEach(停卡片动效);定位导航();定位展开();布置阅读幕();if ($('#文件预览').open) 定位文件预览(); });
+window.addEventListener('resize', () => { if (!主题) return; 停镜头(); document.querySelectorAll('.卡,.步').forEach(停卡片动效);定位导航();定位展开();布置阅读幕();定位主题面板();if ($('#文件预览').open) 定位文件预览(); });
 $('#屉').addEventListener('click', e => e.stopPropagation());
 $('#屉').addEventListener('pointerdown', e => e.stopPropagation());
 
