@@ -42,11 +42,11 @@ kbd{font-family:var(--窄)}
 #顶{position:fixed;top:0;left:0;right:0;height:64px;box-sizing:border-box;padding:0 24px;display:flex;align-items:center;gap:18px;z-index:30;
   background:var(--底) var(--纸纹);border-bottom:3px solid var(--字);box-shadow:0 5px 0 -4px var(--字)}
 .品牌{display:flex;align-items:center;gap:10px;min-width:0;padding:0;cursor:pointer}
-.品牌 svg{display:none}
+.品牌 svg{flex-shrink:0;width:38px;height:38px;box-sizing:border-box;padding:7px;background:var(--字);color:var(--马克)}
+.品牌:hover svg{box-shadow:3px 3px 0 var(--路线红)}
 .品牌>span{display:flex;align-items:baseline;gap:10px;min-width:0}
 .品牌 #名{order:1;padding:0 8px;background:var(--马克);color:var(--马克上);font:800 26px/34px var(--窄);letter-spacing:-.01em;white-space:nowrap}
 .品牌 small{order:2;font:13px var(--衬线);color:var(--字3);white-space:nowrap}
-.品牌:hover #名{box-shadow:3px 3px 0 var(--字)}
 
 #签{align-self:stretch;display:flex;align-items:flex-end;gap:2px}
 #签 button{height:40px;padding:0 14px;display:flex;align-items:center;gap:7px;font-size:15px;color:var(--字2);white-space:nowrap;border:2px solid transparent;border-bottom:0}
