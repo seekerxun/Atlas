@@ -15,6 +15,13 @@
   atlas 改名 --字段 旧=新                  自定义字段名改名
   atlas 钩子                装 git pre-commit
   atlas serve [--端口 7391] [--不开浏览器]   起本地画布
+
+英文别名（与中文等价，可混用）：
+  scan 扫描 · check 检查 · route 路线 · find 找 · migrate 迁移 · claim 认领
+  new 新建 · rename 改名 · hook 钩子
+  --errors-only 只看错误 · --list 列表 · --add-field 加字段 · --rename 改名
+  --filter 筛选 · --dry-run 演习 · --category 分类 · --name 名称 · --type 类型
+  --entry 条目 · --vocab 词表 · --field 字段 · --port 端口 · --no-browser 不开浏览器
 """
 from __future__ import annotations
 import json, os, shutil, sys
@@ -374,29 +381,35 @@ def main():
                                  formatter_class=argparse.RawDescriptionHelpFormatter,
                                  epilog=__doc__)
     sub = ap.add_subparsers(dest="命令")
-    sub.add_parser("扫描")
-    q = sub.add_parser("检查"); q.add_argument("--只看错误", action="store_true")
-    q = sub.add_parser("路线"); q.add_argument("名字", nargs="?"); q.add_argument("--列表", action="store_true")
-    q = sub.add_parser("找"); q.add_argument("关键词")
-    q = sub.add_parser("迁移")
-    q.add_argument("--加字段"); q.add_argument("--改名")
-    q.add_argument("--筛选"); q.add_argument("--演习", action="store_true")
-    q = sub.add_parser("认领")
+    # 每个命令和选项都有英文别名，方便不切输入法；分派和 args 字段一律用中文名。
+    英 = {"扫描": "scan", "检查": "check", "路线": "route", "找": "find", "迁移": "migrate",
+         "认领": "claim", "新建": "new", "改名": "rename", "钩子": "hook"}
+    def 命令(名): return sub.add_parser(名, aliases=[英[名]] if 名 in 英 else [])
+    def 选项(q, 名, 英名, **kw): q.add_argument("--" + 名, "--" + 英名, dest=名, **kw)
+    命令("扫描")
+    q = 命令("检查"); 选项(q, "只看错误", "errors-only", action="store_true")
+    q = 命令("路线"); q.add_argument("名字", nargs="?"); 选项(q, "列表", "list", action="store_true")
+    q = 命令("找"); q.add_argument("关键词")
+    q = 命令("迁移")
+    选项(q, "加字段", "add-field"); 选项(q, "改名", "rename")
+    选项(q, "筛选", "filter"); 选项(q, "演习", "dry-run", action="store_true")
+    q = 命令("认领")
     q.add_argument("文件"); q.add_argument("条目")
-    q.add_argument("--分类"); q.add_argument("--演习", action="store_true")
-    q = sub.add_parser("新建"); q.add_argument("模板"); q.add_argument("路径"); q.add_argument("--名称")
-    q = sub.add_parser("改名")
-    q.add_argument("--类型"); q.add_argument("--条目")
-    q.add_argument("--词表"); q.add_argument("--字段")
-    q.add_argument("--演习", action="store_true")
-    sub.add_parser("钩子")
-    q = sub.add_parser("serve")
-    q.add_argument("--端口", default=7391); q.add_argument("--不开浏览器", action="store_true")
+    选项(q, "分类", "category"); 选项(q, "演习", "dry-run", action="store_true")
+    q = 命令("新建"); q.add_argument("模板"); q.add_argument("路径"); 选项(q, "名称", "name")
+    q = 命令("改名")
+    选项(q, "类型", "type"); 选项(q, "条目", "entry")
+    选项(q, "词表", "vocab"); 选项(q, "字段", "field")
+    选项(q, "演习", "dry-run", action="store_true")
+    命令("钩子")
+    q = 命令("serve")
+    选项(q, "端口", "port", default=7391); 选项(q, "不开浏览器", "no-browser", action="store_true")
 
     args = ap.parse_args()
     if not args.命令:
         ap.print_help()
         return
+    args.命令 = {v: k for k, v in 英.items()}.get(args.命令, args.命令)
     for k in ("只看错误", "列表", "演习", "名字", "分类", "筛选", "加字段", "改名",
               "端口", "不开浏览器", "类型", "条目", "词表"):
         if not hasattr(args, k):
