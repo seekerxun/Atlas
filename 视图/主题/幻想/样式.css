@@ -1,6 +1,6 @@
 /* 幻想的全部外观、字号、尺寸、位置与响应式规则：金色细边、四角菱饰、衬线标题、原创立绘背景。
-   深浅两用：默认浅色「白昼」（羊皮纸 + 挂着的肖像），html[data-外观="深"] 是「星夜」（满幅背景立绘）。
-   立绘在本目录：背景.webp 是满幅背景，立绘.webp 是 2×2 拼图（①胸像 ②捧星图 ③侧身 ④Q 版），按格裁用。 */
+   深浅两用：默认浅色「白昼」，html[data-外观="深"] 是「星夜」。五个视图各有一位原创角色，body[data-幻想视图] 由 主题.js 按当前导航设置：
+   背景-<视图>-夜/昼.webp 是满幅背景；拼图-<视图>.webp 是 2×2 拼图（①胸像 ②持物 ③侧身 ④Q 版），头像等按格裁用。 */
 :root{
   color-scheme:light;
   --底:#EFE6D4;--面:#FBF6EC;--面透:#FBF6ECF5;--盒底:#FBF6EC80;--行底:#F4ECDC;--护栏底:#F1E6CF;
@@ -19,7 +19,6 @@
   --顺:cubic-bezier(.2,.8,.3,1);
   --搜图:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%235E5546' stroke-width='1.8' stroke-linecap='round'%3E%3Ccircle cx='7' cy='7' r='5'/%3E%3Cpath d='m11 11 3.5 3.5'/%3E%3C/svg%3E");
   --徽:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44' fill='none' stroke='%23A8874B' stroke-width='1.5'%3E%3Cpath d='M22 2 42 22 22 42 2 22Z'/%3E%3Cpath d='M22 9 35 22 22 35 9 22Z' stroke-opacity='.5'/%3E%3Cpath d='M22 14 24 20 30 22 24 24 22 30 20 24 14 22 20 20Z' fill='%23A8874B'/%3E%3C/svg%3E");
-  --罗盘:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 800' fill='none' stroke='%23A8874B' stroke-opacity='.4'%3E%3Ccircle cx='400' cy='400' r='390'/%3E%3Ccircle cx='400' cy='400' r='350' stroke-dasharray='2 10'/%3E%3Ccircle cx='400' cy='400' r='230' stroke-width='1.4'/%3E%3Cpath d='M400 150 424 376 650 400 424 424 400 650 376 424 150 400 376 376Z' stroke-width='1.2'/%3E%3C/svg%3E");
 }
 html[data-外观="深"]{
   color-scheme:dark;
@@ -35,16 +34,24 @@ html[data-外观="深"]{
   --徽:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44' fill='none' stroke='%23D8C08A' stroke-width='1.5'%3E%3Cpath d='M22 2 42 22 22 42 2 22Z'/%3E%3Cpath d='M22 9 35 22 22 35 9 22Z' stroke-opacity='.5'/%3E%3Cpath d='M22 14 24 20 30 22 24 24 22 30 20 24 14 22 20 20Z' fill='%23D8C08A'/%3E%3C/svg%3E");
 }
 
-/* ———— 背景：白昼是羊皮纸、罗盘纹和一幅挂着的肖像（拼图③）；星夜是满幅背景立绘，压一层夜色保证卡片可读 ———— */
-body{background:var(--底);color:var(--字);font:14px/1.6 var(--字体)}
-body:before,body:after{content:"";position:fixed;pointer-events:none;z-index:0}
-body:before{right:-180px;top:50%;width:800px;height:800px;margin-top:-400px;background:var(--罗盘) center/contain no-repeat}
-body:after{right:56px;bottom:100px;width:300px;height:334px;box-sizing:border-box;border:2px solid var(--金);
-  background:#161D2E url("立绘.webp") -17px -333px/667px 667px no-repeat;
-  box-shadow:0 0 0 6px var(--面),0 0 0 7px var(--金线),0 30px 60px -30px var(--影)}
-html[data-外观="深"] body{background:var(--底) url("背景.webp") 72% center/cover no-repeat fixed}
-html[data-外观="深"] body:before{inset:0;width:auto;height:auto;margin:0;background:#0E122033}
-html[data-外观="深"] body:after{display:none}
+/* ———— 背景：当前视图角色的满幅立绘，白昼用日景、星夜用夜景，再压一层底色保证画布上的文字可读 ————
+   --脸x/--脸y 是拼图①的脸中心，--侧x/--侧y 是拼图③的脸中心，--小x/--小y 是拼图④的脸中心，都按 1024 的拼图坐标。
+   url 写绝对路径：自定义属性里的相对地址在不同浏览器里解析基准不同。 */
+body{--景罩:#EFE6D440;--拼图:url("/界面/主题/幻想/拼图-路线.webp");--脸x:247;--脸y:190;--侧x:190;--侧y:617;--小x:751;--小y:614;
+  background:var(--底) url("背景-路线-昼.webp") 72% center/cover no-repeat fixed;color:var(--字);font:14px/1.6 var(--字体)}
+body[data-幻想视图="策划"]{--拼图:url("/界面/主题/幻想/拼图-策划.webp");--脸x:256;--脸y:200;--侧x:196;--侧y:612;--小x:751;--小y:632;background-image:url("背景-策划-昼.webp")}
+body[data-幻想视图="内容"]{--拼图:url("/界面/主题/幻想/拼图-内容.webp");--脸x:240;--脸y:185;--侧x:213;--侧y:627;--小x:742;--小y:640;background-image:url("背景-内容-昼.webp")}
+body[data-幻想视图="创意"]{--拼图:url("/界面/主题/幻想/拼图-创意.webp");--脸x:256;--脸y:198;--侧x:205;--侧y:617;--小x:751;--小y:640;background-image:url("背景-创意-昼.webp")}
+body[data-幻想视图="资产"]{--拼图:url("/界面/主题/幻想/拼图-资产.webp");--脸x:240;--脸y:190;--侧x:205;--侧y:627;--小x:751;--小y:640;background-image:url("背景-资产-昼.webp")}
+html[data-外观="深"] body{--景罩:#0E122033;background-image:url("背景-路线-夜.webp")}
+html[data-外观="深"] body[data-幻想视图="策划"]{background-image:url("背景-策划-夜.webp")}
+html[data-外观="深"] body[data-幻想视图="内容"]{background-image:url("背景-内容-夜.webp")}
+html[data-外观="深"] body[data-幻想视图="创意"]{background-image:url("背景-创意-夜.webp")}
+html[data-外观="深"] body[data-幻想视图="资产"]{background-image:url("背景-资产-夜.webp")}
+body:before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:var(--景罩)}
+/* 换视图时 主题.js 把旧背景复制到这一层淡出；罩色与 body:before 相同，淡出时亮度不跳。 */
+.幻想旧景{position:fixed;inset:0;z-index:0;pointer-events:none;background:72% center/cover no-repeat}
+.幻想旧景:after{content:"";position:absolute;inset:0;background:var(--景罩)}
 .幻想星尘{position:fixed;inset:0;z-index:0;pointer-events:none}
 .幻想星尘 i{position:absolute;width:var(--星大);height:var(--星大);background:var(--星尘);opacity:.5;
   clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%)}
@@ -240,9 +247,9 @@ body.幻想阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
 #屉{display:none;touch-action:pan-y}
 #屉.开{display:flex;flex-direction:column;height:var(--展开高);max-height:var(--展开高)}
 .详情头{position:relative;flex-shrink:0;min-height:104px;box-sizing:border-box;padding:14px 32px 14px 26px;display:flex;align-items:center;gap:20px;border-bottom:1px solid var(--边)}
-/* 头像取拼图①（左上格）的脸，圆形金框。 */
+/* 头像取当前视图角色拼图①的脸，圆形金框；拼图缩到 288px（×.28125），脸中心对准 72px 圆心。 */
 .头像{width:72px;height:72px;flex-shrink:0;box-sizing:border-box;border-radius:50%;border:2px solid var(--金);box-shadow:0 0 0 4px var(--面),0 0 0 5px var(--金线);
-  background:#222B42 url("立绘.webp") -36px -13px/288px 288px no-repeat}
+  background:#222B42 var(--拼图) calc(34px - var(--脸x) * .28125px) calc(34px - var(--脸y) * .28125px)/288px 288px no-repeat}
 .详情题{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
 .详情眉{display:flex;align-items:center;gap:10px;min-width:0}
 .详情头 .类型签{flex-shrink:0;padding:2px 10px;background:var(--签色,var(--卡色));color:var(--色上);font-size:12px;font-weight:700;white-space:nowrap}
@@ -375,10 +382,10 @@ body.幻想阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
 .检查项 button{margin-top:12px;height:32px;padding:0 14px;border:1px solid var(--金线);font-size:12px;font-weight:700}
 .检查项 button:hover{border-color:var(--金)}
 
-/* 项目窗：标题左边是拼图③（侧身）裁出的头像。 */
+/* 项目窗：标题左边是拼图③（侧身）的头像，拼图缩到 205px（×.2）。 */
 #项目窗{margin:auto;width:min(560px,calc(100vw - 32px));max-height:80dvh}
 .项目窗头:before{content:"";flex-shrink:0;width:44px;height:44px;box-sizing:border-box;border-radius:50%;border:1.5px solid var(--金);
-  background:#222B42 url("立绘.webp") -20px -94px/180px 180px no-repeat}
+  background:#222B42 var(--拼图) calc(20.5px - var(--侧x) * .2px) calc(20.5px - var(--侧y) * .2px)/205px 205px no-repeat}
 #关闭项目窗{margin-left:auto}
 .项目窗正文{padding:14px 16px 6px;border-bottom:14px solid transparent;overflow:auto;overscroll-behavior:contain}
 #项目列表{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;margin:0;padding:0;list-style:none}
@@ -467,14 +474,14 @@ body.幻想阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
 #角 #回{margin-left:4px;padding:0 16px;background:var(--主钮底);color:var(--主钮字);font-size:13px;font-weight:700}
 #角 #回:hover{background:var(--主钮底);color:var(--主钮字)}
 
-/* 提示：旁边站着拼图④的 Q 版小人。 */
+/* 提示：旁边是拼图④的 Q 版小人，拼图缩到 174px（×.17）。 */
 #提示{position:fixed;left:50%;bottom:88px;z-index:99;transform:translateX(-50%);translate:0 8px;display:flex;align-items:center;gap:10px;padding:6px 18px 6px 6px;background:var(--面);border:1px solid var(--金);color:var(--字);font-size:13px;font-weight:600;box-shadow:0 20px 40px -20px var(--影);opacity:0;transition:opacity .2s,translate .35s var(--顺);pointer-events:none}
-#提示:before{content:"";flex-shrink:0;width:34px;height:34px;box-sizing:border-box;border-radius:50%;border:1px solid var(--金线);background:#222B42 url("立绘.webp") -70px -55px/128px 128px no-repeat}
+#提示:before{content:"";flex-shrink:0;width:34px;height:34px;box-sizing:border-box;border-radius:50%;border:1px solid var(--金线);background:#222B42 var(--拼图) calc(16px - var(--小x) * .17px) calc(16px - var(--小y) * .17px)/174px 174px no-repeat}
 #提示.开{opacity:1;translate:0 0}
 
-/* 空态：上方是拼图②（捧星图）。 */
+/* 空态：上方是当前视图角色的拼图②（持物半身）。 */
 .空{width:420px;padding:32px 36px 36px;background:var(--面);border:1px solid var(--金线);box-shadow:inset 0 0 0 4px var(--面),inset 0 0 0 5px var(--金淡);font-size:13px;line-height:1.9;color:var(--字2)}
-.空:before{content:"";display:block;width:160px;height:160px;margin:0 auto 18px;border:1px solid var(--金线);background:#161D2E url("立绘.webp") -160px 0/320px 320px no-repeat}
+.空:before{content:"";display:block;width:160px;height:160px;margin:0 auto 18px;border:1px solid var(--金线);background:#161D2E var(--拼图) -160px 0/320px 320px no-repeat}
 .空 b{display:block;margin-bottom:10px;font:700 22px var(--衬线);color:var(--字)}
 .空位{position:absolute;left:40px;top:40px}
 .危险{color:var(--绯)}
@@ -492,7 +499,6 @@ body.幻想阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
   .品牌>span,.导航计数{display:none}
   #签 button{padding:0 11px}
   #顶{gap:10px}
-  body:after{display:none}
 }
 @media(max-width:900px) and (min-width:701px){
   #顶{height:auto;display:grid;grid-template-columns:auto minmax(0,1fr) auto auto auto auto auto;grid-template-rows:44px 48px;gap:8px 10px}
@@ -530,7 +536,7 @@ body.幻想阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
   #缩{min-width:38px;font-size:12px}
   #角 #回{padding:0 12px;margin-left:2px}
   .详情头{padding:12px 16px;flex-wrap:wrap;gap:10px 14px}
-  .头像{width:52px;height:52px;background-position:-26px -9px;background-size:208px 208px}
+  .头像{width:52px;height:52px;background-size:208px 208px;background-position:calc(24px - var(--脸x) * .203125px) calc(24px - var(--脸y) * .203125px)}
   #屉 h3{font-size:21px}
   .收起 kbd{display:none}
   .详情体{padding:16px}

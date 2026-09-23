@@ -1,5 +1,6 @@
 import 创建模板 from './模板.js';
-/* 幻想主题：星夜与白昼两套配色，金色细边、四角菱饰、衬线标题，背景是原创立绘（背景.webp、立绘.webp）。
+/* 幻想主题：星夜与白昼两套配色，金色细边、四角菱饰、衬线标题。
+   五个视图各有一位原创角色：背景-<视图>-夜/昼.webp 是满幅背景，拼图-<视图>.webp 是她的 2×2 拼图（头像、空态等按格裁用）。
    视觉在 样式.css（按 html[data-外观] 切配色），本文件负责布局、模板与动效。 */
 export default function 创建主题(api){
 const {$, 转义, 图后缀, 可动, 分组数据, 更新关联} = api;
@@ -57,11 +58,13 @@ function 装配界面(){
   api.清理(() => {
     document.querySelectorAll('.卡,.步').forEach(停卡片动效);
     document.body.classList.remove('幻想阅读','远','中');
+    delete document.body.dataset.幻想视图;
     $('#阅读幕').classList.remove('开'); $('#阅读幕').removeAttribute('style');
     $('#文件预览').style.removeProperty('--预览顶'); $('#文件预览').style.removeProperty('--预览高');
   });
   装配扫描星();
   装配星尘();
+  api.延时(预载背景, 1500);
 }
 
 // 重新扫描：按钮换成四角星，核心每次扫描（不论入口）都标 data-扫描中，星就转一整圈；扫描没完就接着转。
@@ -121,10 +124,32 @@ function 定位文件预览(){
   $('#文件预览').style.setProperty('--预览顶', 区.顶 + 'px');
 }
 
-// 导航金牌：平滑滑到选中项，两侧的小菱饰跟着走。
+// 每个视图有自己的角色：body[data-幻想视图] 决定背景和头像取哪张图（样式.css）。换视图时旧背景淡出，新背景露出来。
+function 换角色(视图){
+  const 旧 = document.body.dataset.幻想视图;
+  if (旧 === 视图) return;
+  if (旧 && 可动()) {
+    const 景 = document.createElement('div'); 景.className = '幻想旧景'; 景.setAttribute('aria-hidden', 'true');
+    景.style.backgroundImage = getComputedStyle(document.body).backgroundImage;
+    api.装饰(景);
+    api.动画(景, [{opacity:1}, {opacity:0}], {duration:560, easing:'ease-out', fill:'forwards'})
+      .finished.then(() => 景.remove(), () => 景.remove());
+  }
+  document.body.dataset.幻想视图 = 视图;
+}
+
+// 空闲时预载当前外观下其余视图的背景，切过去时不闪底色。
+function 预载背景(){
+  const {外观} = api.读取状态();
+  ['路线','策划','内容','创意','资产'].forEach(v =>
+    new Image().src = new URL(`背景-${v}-${外观 === '深' ? '夜' : '昼'}.webp`, import.meta.url).href);
+}
+
+// 导航金牌：平滑滑到选中项。
 function 定位导航(即刻){
   const 签 = $('#签'), 块 = 签?.querySelector('.签块'), 钮 = 签?.querySelector('button.开');
   if (!块 || !钮) return;
+  换角色(钮.dataset.v);
   const 序 = [...签.querySelectorAll('button')].indexOf(钮);
   const 动 = 可动() && !即刻 && 签序 >= 0 && 序 !== 签序;
   块.style.transition = 动 ? `left .42s ${顺}, width .42s ${顺}` : 'none';
@@ -317,6 +342,7 @@ function 画布入场(){
 
 // 同一主题内深浅切换：新外观从主题按钮处圆形展开，旧底色被推出画面；圆的边缘带一道金线。
 function 外观变化(外观, 旧外观){
+  api.延时(预载背景, 800);
   if (!可动() || !旧外观) return;
   const 旧底 = 旧外观 === '深' ? '#0E1220' : '#EFE6D4';
   const 框 = $('#主题选择')?.getBoundingClientRect();
