@@ -106,8 +106,8 @@ function 未认领列表({组}){
 function 项目列表({列表}){
   return 列表.map((p, i) => `<li><button type="button" class="项目项${p.当前 ? ' 当前' : ''}" data-i="${i}"${p.存在 ? '' : ' disabled'}>
     ${小形(p.类型 === '游戏' ? '世界' : p.当前 ? '总览' : '条目')}
-    <span class="项目文"><b>${转义(p.名称)}</b><small>${转义(p.路径)}</small></span>
-    <span class="项目签">${p.当前 ? '当前' : p.存在 ? 转义(p.类型 || '项目') : '找不到'}</span></button></li>`).join('');
+    <span class="项目文"><b>${转义(p.名称)}</b><small>${p.端口 ? `:${p.端口} · ` : ''}${转义(p.路径)}</small></span>
+    <span class="项目签${p.运行中 && !p.当前 ? ' 运行' : ''}">${p.当前 ? '当前' : !p.存在 ? '找不到' : p.运行中 ? '运行中' : 转义(p.类型 || '项目')}</span></button></li>`).join('');
 }
 
 function 搜索结果({前}){

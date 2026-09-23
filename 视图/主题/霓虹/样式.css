@@ -361,6 +361,7 @@ body.霓虹阅读 .盒.聚起>.卡:not(.展开),body.霓虹阅读 .盒.聚起>.�
 .项目文 small{font:11px var(--等宽);color:var(--字3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .项目签{flex-shrink:0;font:11px var(--等宽);letter-spacing:.08em;color:var(--字3)}
 .项目项.当前 .项目签{color:var(--主)}
+.项目签.运行{color:var(--好)}
 .项目窗钮{display:flex;gap:8px;margin-top:14px}
 .项目窗钮 button{flex:1;height:36px;border:1px solid var(--边);color:var(--字2);font-size:13px}
 .项目窗钮 button:hover{border-color:color-mix(in srgb,var(--主) 50%,transparent);color:var(--字)}

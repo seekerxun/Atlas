@@ -74,8 +74,8 @@ function 步骤详情({r, s, 路线名, 步id, 路线文件}){
 
 function 项目列表({列表}){
   return 列表.map((p, i) => `<li><button type="button" class="项目项${p.当前 ? ' 当前' : ''}" data-i="${i}"${p.存在 ? '' : ' disabled'}>
-    <span class="项目文"><b>${转义(p.名称)}</b><small>${转义(p.路径)}</small></span>
-    <span class="项目签">${p.当前 ? '当前' : p.存在 ? 转义(p.类型 || '项目') : '找不到'}</span></button></li>`).join('');
+    <span class="项目文"><b>${转义(p.名称)}</b><small>${p.端口 ? `:${p.端口} · ` : ''}${转义(p.路径)}</small></span>
+    <span class="项目签${p.运行中 && !p.当前 ? ' 运行' : ''}">${p.当前 ? '当前' : !p.存在 ? '找不到' : p.运行中 ? '运行中' : 转义(p.类型 || '项目')}</span></button></li>`).join('');
 }
 
 function 检查列表({发现, 按路径}){

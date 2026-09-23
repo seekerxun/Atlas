@@ -11,12 +11,13 @@
   POST /删路线           删掉一条路线的 yml
   POST /还原             把某个文件写回指定内容（撤销/重做就靠它）
   GET  /候选             画布上选文档用的候选列表
-  GET  /项目             当前项目、注册表里的项目、可用模板
-  POST /打开项目         把这个服务切到另一个项目（端口不变）
-  POST /新建项目         从模板新建项目、登记并切过去
+  GET  /身份             这个服务管的是哪个项目
+  GET  /项目             当前项目、注册表里的项目（含端口和是否在运行）、可用模板
+  POST /打开项目         保证那个项目的画布在它自己的端口上运行，返回网址
+  POST /新建项目         从模板新建项目、登记、起它的画布，返回网址
 
-一个服务同一时间只管一个项目，端口固定；打开别的项目是在同一个端口里切换，不另起端口。
-切换后，旧页面的写请求会因为 X-Atlas-根 对不上而被拒，绝不会写进另一个项目。
+一个服务只管启动时所在的项目。每个项目的端口写在它自己的 .devdock.json（DevDock 同一份配置），
+打开别的项目是在那个端口上另起服务，当前服务不切换。写请求带 X-Atlas-根，对不上就拒收。
 
 每个会写盘的接口都返回改之前的全文，画布把它压进撤销栈；撤销就是把那份全文写回去。
 写回前一律比对 mtime：对不上说明别人动过，中止，绝不覆盖。
@@ -130,6 +131,8 @@ def 项目清单(根: Path) -> dict:
         信息 = projects.项目信息(p)
         信息["当前"] = p == 根.resolve()
         信息["备注"] = str(x.get("备注") or "")
+        信息["端口"] = projects.画布端口(p) if 信息["存在"] else None
+        信息["运行中"] = bool(信息["端口"]) and projects.端口在用(信息["端口"])
         列表.append(信息)
     return {"当前": str(根), "列表": 列表, "模板": projects.模板们(), "建议位置": str(根.resolve().parent)}
 
@@ -200,6 +203,9 @@ class 处理器(BaseHTTPRequestHandler):
             except Exception as e:
                 self._json({"错误": f"{type(e).__name__}: {e}"}, 500)
             return
+        if 路径 == "/身份":
+            self._json({"根": str(self.根)})
+            return
         if 路径 == "/项目":
             self._json(项目清单(self.根))
             return
@@ -241,7 +247,7 @@ class 处理器(BaseHTTPRequestHandler):
                 p = Path(str(体.get("路径") or "")).expanduser()
                 if not p.is_absolute() or not projects.是项目(p):
                     raise RuntimeError("这个文件夹不是 Atlas 项目：要填完整路径，且文件夹里有 项目.yml。")
-                self._切到(p.resolve())
+                self._json({"好": True, "网址": projects.启动画布(p.resolve())})
                 return
             if 路径 == "/新建项目":
                 名称 = str(体.get("名称") or "").strip()
@@ -254,11 +260,11 @@ class 处理器(BaseHTTPRequestHandler):
                     目标 = projects.新建项目(str(体.get("模板") or ""), 位置 / 名称, 名称)
                 except (ValueError, FileExistsError) as e:
                     raise RuntimeError(str(e))
-                self._切到(目标)
+                self._json({"好": True, "网址": projects.启动画布(目标, 名称)})
                 return
-            # 其余接口都写当前项目；页面带来的根和当前根对不上，说明项目已被别的页面切走。
+            # 其余接口都写当前项目；页面带来的根和当前根对不上（旧页面、别的端口的页面），拒收。
             if unquote(self.headers.get("X-Atlas-根") or "") != str(self.根):
-                self._json({"错误": "项目已经切换过，这个页面的内容过期了。刷新后再操作。", "已切换": True}, 409)
+                self._json({"错误": "这个页面和服务管的不是同一个项目，刷新后再操作。"}, 409)
                 return
             if 路径 == "/布局":
                 写布局(self.根, 体)
@@ -312,14 +318,11 @@ class 处理器(BaseHTTPRequestHandler):
         except Exception as e:
             self._json({"错误": str(e)}, 409)
 
-    def _切到(self, 根: Path):
-        type(self).根 = 根
-        projects.登记(根, projects.项目信息(根)["名称"])
-        self._json({"好": True, "路径": str(根)})
-
 
 def 起服务(根: Path, 端口: int = 7391, 打开=True):
     处理器.根 = 根
+    # 起过画布的项目都进注册表，项目窗里才找得到它。
+    projects.登记(根, projects.项目信息(根)["名称"])
     srv = ThreadingHTTPServer(("127.0.0.1", 端口), 处理器)
     地址 = f"http://127.0.0.1:{端口}/"
     print(f"画布开在 {地址}（只绑本机，Ctrl+C 停）")

@@ -1,9 +1,10 @@
-"""项目的新建、登记和列举。命令行 `atlas 新建` 和画布的「新建 / 打开项目」共用。
+"""项目的新建、登记、列举和画布服务启动。命令行 `atlas 新建` 和画布的「新建 / 打开项目」共用。
 
 注册表只存路径，项目身份（名称、类型）一律读各项目自己的 项目.yml。
 """
 from __future__ import annotations
-import shutil
+import json, shutil, socket, subprocess, sys, time
+import urllib.request
 from pathlib import Path
 
 import miniyaml as y
@@ -76,5 +77,117 @@ def 新建项目(模板: str, 目标: Path, 名称: str = "") -> Path:
                 p.write_text(新, encoding="utf-8")
     for d in 标准目录:
         (目标 / d).mkdir(parents=True, exist_ok=True)
+    确保画布端口(目标, 名称)
     登记(目标, 名称)
     return 目标
+
+
+# ---------------------------------------------------------------- 画布服务与 DevDock
+# 每个项目的画布端口写在它自己的 .devdock.json 里（DevDock 靠 port 判断运行状态、按 port 停止）。
+# 一个端口只对应一个项目，打开别的项目是在它自己的端口上起服务，不切换当前服务。
+起始端口 = 7391
+DevDock = ".devdock.json"
+
+
+def _atlas目标(配置: dict):
+    for t in 配置.get("targets") or []:
+        参数 = [str(x) for x in ((t.get("startCommand") or {}).get("arguments") or [])]
+        if "serve" in 参数 and any(a.endswith("atlas.py") for a in 参数) and t.get("port"):
+            return t
+    return None
+
+
+def _读配置(路径: Path) -> dict:
+    p = 路径 / DevDock
+    try:
+        return json.loads(p.read_text(encoding="utf-8")) if p.is_file() else {}
+    except Exception:
+        return {}
+
+
+def 画布端口(路径: Path) -> int | None:
+    t = _atlas目标(_读配置(路径))
+    return int(t["port"]) if t else None
+
+
+def 端口在用(端口: int) -> bool:
+    with socket.socket() as s:
+        s.settimeout(0.3)
+        return s.connect_ex(("127.0.0.1", 端口)) == 0
+
+
+def _已占端口() -> set[int]:
+    """LifeSpace 下各项目 .devdock.json 里写死的端口，加上注册表里项目的，都不能再分配。"""
+    目录们 = {p for p in ATLAS.parent.iterdir() if p.is_dir()} | {Path(str(x["路径"])).expanduser() for x in 已登记()}
+    端口们 = set()
+    for d in 目录们:
+        for t in _读配置(d).get("targets") or []:
+            if isinstance(t.get("port"), int):
+                端口们.add(t["port"])
+    return 端口们
+
+
+def 分配端口() -> int:
+    占 = _已占端口()
+    p = 起始端口
+    while p in 占 or 端口在用(p):
+        p += 1
+    return p
+
+
+def _python() -> str:
+    for p in ("/opt/homebrew/bin/python3", "/usr/local/bin/python3"):
+        if Path(p).is_file():
+            return p
+    return sys.executable
+
+
+def 确保画布端口(路径: Path, 名称: str = "") -> int:
+    """有 Atlas 画布运行项就用它的端口；没有就分配一个，写进（或新建）项目的 .devdock.json。"""
+    端口 = 画布端口(路径)
+    if 端口:
+        return 端口
+    端口 = 分配端口()
+    配置 = _读配置(路径) or {"schemaVersion": 1, "name": 名称 or 路径.name,
+                             "detail": "用 Atlas 规范管理的项目；画布看路线、策划、内容、资产", "symbolName": "map"}
+    配置.setdefault("targets", []).append({
+        "name": "Atlas 画布", "detail": "本地画布，只绑 127.0.0.1", "kind": "webPreview",
+        "port": 端口, "url": f"http://127.0.0.1:{端口}",
+        "startCommand": {"executable": _python(),
+                         "arguments": [str(ATLAS / "atlas" / "atlas.py"), "serve", "--端口", str(端口), "--不开浏览器"],
+                         "workingDirectory": "."},
+    })
+    (路径 / DevDock).write_text(json.dumps(配置, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return 端口
+
+
+def 端口上的项目(端口: int) -> str | None:
+    """这个端口上的 Atlas 服务管的是哪个项目；没服务、不是 Atlas 或旧版本返回 None。"""
+    try:
+        with urllib.request.urlopen(f"http://127.0.0.1:{端口}/%E8%BA%AB%E4%BB%BD", timeout=1) as r:
+            return json.loads(r.read()).get("根")
+    except Exception:
+        return None
+
+
+def 启动画布(路径: Path, 名称: str = "") -> str:
+    """保证这个项目的画布在它自己的端口上运行，返回网址。和 DevDock 用同一条命令、同一个工作目录。"""
+    路径 = 路径.resolve()
+    端口 = 确保画布端口(路径, 名称)
+    网址 = f"http://127.0.0.1:{端口}/"
+    if 端口在用(端口):
+        根 = 端口上的项目(端口)
+        if 根 and Path(根).resolve() == 路径:
+            return 网址
+        raise RuntimeError(f"端口 {端口} 已被别的程序占用（{'项目 ' + 根 if 根 else '不是新版 Atlas'}）。"
+                           f"在 DevDock 里停掉它，或改 {路径.name}/{DevDock} 里的端口。")
+    日志 = 路径 / ".atlas" / "serve.log"
+    日志.parent.mkdir(exist_ok=True)
+    with 日志.open("ab") as f:
+        subprocess.Popen([_python(), str(ATLAS / "atlas" / "atlas.py"), "serve", "--端口", str(端口), "--不开浏览器"],
+                         cwd=路径, stdin=subprocess.DEVNULL, stdout=f, stderr=f, start_new_session=True)
+    for _ in range(40):
+        time.sleep(0.2)
+        if 端口上的项目(端口):
+            return 网址
+    raise RuntimeError(f"画布服务没能在端口 {端口} 起来，看 {路径.name}/.atlas/serve.log。")
