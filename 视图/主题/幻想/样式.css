@@ -1,0 +1,547 @@
+/* 幻想的全部外观、字号、尺寸、位置与响应式规则：金色细边、四角菱饰、衬线标题、原创立绘背景。
+   深浅两用：默认浅色「白昼」（羊皮纸 + 挂着的肖像），html[data-外观="深"] 是「星夜」（满幅背景立绘）。
+   立绘在本目录：背景.webp 是满幅背景，立绘.webp 是 2×2 拼图（①胸像 ②捧星图 ③侧身 ④Q 版），按格裁用。 */
+:root{
+  color-scheme:light;
+  --底:#EFE6D4;--面:#FBF6EC;--面透:#FBF6ECF5;--盒底:#FBF6EC80;--行底:#F4ECDC;--护栏底:#F1E6CF;
+  --字:#2E2A24;--字2:#4A4338;--字3:#5E5546;--字4:#7D725F;
+  --金:#A8874B;--强:#7A5F2E;--金线:#A8874B99;--金淡:#A8874B33;--边:#A8874B59;
+  --主钮底:#2E2A24;--主钮字:#F4ECDC;--色上:#FBF6EC;
+  --幕:#2E2A2499;--影:#2E2A24;
+  --琥珀:#C98A3A;--青碧:#3E9C8F;--紫晶:#7F63C0;--绯:#B8513F;--霜蓝:#4A7FB8;
+  --星尘:#A8874B;
+  /* 核心引用：--线 流程边，--主 边终点，--好 拖拽中的临时线。 */
+  --线:#A8874BB3;--主:var(--金);--好:var(--青碧);
+  --衬线:"Noto Serif SC","Songti SC","STSong",serif;
+  --字体:"PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif;
+  --拉丁:"Cinzel","Baskerville","Songti SC",serif;
+  --等宽:ui-monospace,"SF Mono",Menlo,monospace;
+  --顺:cubic-bezier(.2,.8,.3,1);
+  --搜图:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%235E5546' stroke-width='1.8' stroke-linecap='round'%3E%3Ccircle cx='7' cy='7' r='5'/%3E%3Cpath d='m11 11 3.5 3.5'/%3E%3C/svg%3E");
+  --徽:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44' fill='none' stroke='%23A8874B' stroke-width='1.5'%3E%3Cpath d='M22 2 42 22 22 42 2 22Z'/%3E%3Cpath d='M22 9 35 22 22 35 9 22Z' stroke-opacity='.5'/%3E%3Cpath d='M22 14 24 20 30 22 24 24 22 30 20 24 14 22 20 20Z' fill='%23A8874B'/%3E%3C/svg%3E");
+  --罗盘:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 800' fill='none' stroke='%23A8874B' stroke-opacity='.4'%3E%3Ccircle cx='400' cy='400' r='390'/%3E%3Ccircle cx='400' cy='400' r='350' stroke-dasharray='2 10'/%3E%3Ccircle cx='400' cy='400' r='230' stroke-width='1.4'/%3E%3Cpath d='M400 150 424 376 650 400 424 424 400 650 376 424 150 400 376 376Z' stroke-width='1.2'/%3E%3C/svg%3E");
+}
+html[data-外观="深"]{
+  color-scheme:dark;
+  --底:#0E1220;--面:#161D2E;--面透:#161D2EF0;--盒底:#121828B8;--行底:#0E1220A6;--护栏底:#D8C08A1A;
+  --字:#ECE5D8;--字2:#D9D1C2;--字3:#B7AE9C;--字4:#8E8674;
+  --金:#D8C08A;--强:#D8C08A;--金线:#D8C08A73;--金淡:#D8C08A2E;--边:#D8C08A4D;
+  --主钮底:#D8C08A;--主钮字:#1A1F2E;--色上:#1A1F2E;
+  --幕:#080A12BD;--影:#000000;
+  --琥珀:#E3A857;--青碧:#5FC3B5;--紫晶:#A98BE0;--绯:#E07A7A;--霜蓝:#7FB2E5;
+  --星尘:#F0DDB0;
+  --线:#D8C08AB3;
+  --搜图:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23B7AE9C' stroke-width='1.8' stroke-linecap='round'%3E%3Ccircle cx='7' cy='7' r='5'/%3E%3Cpath d='m11 11 3.5 3.5'/%3E%3C/svg%3E");
+  --徽:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44' fill='none' stroke='%23D8C08A' stroke-width='1.5'%3E%3Cpath d='M22 2 42 22 22 42 2 22Z'/%3E%3Cpath d='M22 9 35 22 22 35 9 22Z' stroke-opacity='.5'/%3E%3Cpath d='M22 14 24 20 30 22 24 24 22 30 20 24 14 22 20 20Z' fill='%23D8C08A'/%3E%3C/svg%3E");
+}
+
+/* ———— 背景：白昼是羊皮纸、罗盘纹和一幅挂着的肖像（拼图③）；星夜是满幅背景立绘，压一层夜色保证卡片可读 ———— */
+body{background:var(--底);color:var(--字);font:14px/1.6 var(--字体)}
+body:before,body:after{content:"";position:fixed;pointer-events:none;z-index:0}
+body:before{right:-180px;top:50%;width:800px;height:800px;margin-top:-400px;background:var(--罗盘) center/contain no-repeat}
+body:after{right:56px;bottom:100px;width:300px;height:334px;box-sizing:border-box;border:2px solid var(--金);
+  background:#161D2E url("立绘.webp") -17px -333px/667px 667px no-repeat;
+  box-shadow:0 0 0 6px var(--面),0 0 0 7px var(--金线),0 30px 60px -30px var(--影)}
+html[data-外观="深"] body{background:var(--底) url("背景.webp") 72% center/cover no-repeat fixed}
+html[data-外观="深"] body:before{inset:0;width:auto;height:auto;margin:0;background:#0E122033}
+html[data-外观="深"] body:after{display:none}
+.幻想星尘{position:fixed;inset:0;z-index:0;pointer-events:none}
+.幻想星尘 i{position:absolute;width:var(--星大);height:var(--星大);background:var(--星尘);opacity:.5;
+  clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%)}
+html:not([data-外观="深"]) .幻想星尘 i{opacity:.35}
+
+button,input,select{font:inherit;color:inherit}
+button{background:none;border:0;cursor:pointer}
+a{color:var(--强);text-decoration:none;font-weight:600}
+a:hover{text-decoration:underline}
+button:focus-visible,a:focus-visible,[tabindex]:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--金);outline-offset:3px}
+button:disabled{opacity:.35;cursor:default}
+::selection{background:color-mix(in srgb,var(--金) 45%,transparent)}
+*{scrollbar-width:thin;scrollbar-color:var(--金线) transparent}
+kbd{font-family:var(--拉丁)}
+
+/* 四角菱饰：卡片、步骤和面板共用。 */
+.饰{position:absolute;width:7px;height:7px;background:var(--金);transform:rotate(45deg);pointer-events:none;transition:background-color .25s}
+.饰-左上{left:-4px;top:-4px}.饰-右上{right:-4px;top:-4px}.饰-左下{left:-4px;bottom:-4px}.饰-右下{right:-4px;bottom:-4px}
+.饰-底{left:50%;bottom:-5px;margin-left:-4px;width:9px;height:9px}
+
+/* ———— 顶栏 ———— */
+#顶{position:fixed;top:18px;left:24px;right:24px;height:52px;display:flex;align-items:center;gap:14px;z-index:30;pointer-events:none}
+#顶>*{pointer-events:auto}
+.品牌{display:flex;align-items:center;gap:12px;min-width:0;padding:0 12px 0 0;cursor:pointer}
+.品牌 svg{display:none}
+.品牌:before{content:"";flex-shrink:0;width:44px;height:44px;background:var(--徽) center/contain no-repeat;transition:rotate .6s var(--顺)}
+.品牌:hover:before{rotate:90deg}
+.品牌>span{display:flex;flex-direction:column;line-height:1.15;min-width:0}
+.品牌 small{order:2;font:500 10.5px var(--拉丁);letter-spacing:.2em;color:var(--字3)}
+.品牌 #名{font:700 18px var(--衬线)}
+
+#签{position:relative;isolation:isolate;display:flex;gap:2px;height:46px;box-sizing:border-box;padding:3px;background:var(--面透);border:1px solid var(--金线)}
+.签块{position:absolute;top:3px;bottom:3px;left:3px;width:0;background:var(--主钮底);z-index:-1}
+#签 button{height:38px;padding:0 14px 0 12px;display:flex;align-items:center;gap:8px;font-size:14px;white-space:nowrap;transition:color .25s}
+#签 button:not(.开):hover{color:var(--强)}
+#签 button.开{color:var(--主钮字);font-family:var(--衬线);font-weight:700}
+.导航图标{width:15px;height:15px;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}
+.导航图标 .实{fill:currentColor;stroke:none}
+#签 button:not(.开) .导航图标{color:var(--字3)}
+.导航计数{font:500 12px var(--拉丁);color:var(--字4)}
+#签 button.开 .导航计数{color:inherit;opacity:.75}
+
+#体检{margin-left:auto;height:40px;padding:0 14px 0 12px;display:flex;align-items:center;gap:8px;background:var(--面透);border:1px solid var(--金线);font-size:13px;white-space:nowrap}
+#体检:before{content:"";width:11px;height:11px;flex-shrink:0;background:var(--青碧);transform:rotate(45deg)}
+#体检[data-状态="警告"]:before{background:var(--琥珀)}
+#体检[data-状态="错误"]:before{background:var(--绯)}
+#体检:hover{border-color:var(--金)}
+#新路线{height:40px;padding:0 16px;background:var(--主钮底);color:var(--主钮字);font-size:13px;font-weight:700;white-space:nowrap}
+
+#搜{position:relative;width:220px}
+#搜 input{width:100%;height:40px;box-sizing:border-box;padding:0 40px 0 36px;border:1px solid var(--金线);background:var(--面透) var(--搜图) no-repeat 12px center/15px;color:var(--字);font-size:13px;transition:border-color .2s}
+#搜 input::placeholder{color:var(--字3)}
+#搜 input:focus{outline:none;border-color:var(--金)}
+#搜 kbd{position:absolute;right:10px;top:10px;padding:0 7px;border:1px solid var(--边);font-size:11px;line-height:18px;color:var(--字3);pointer-events:none}
+#搜果{position:absolute;top:48px;right:0;width:380px;max-width:calc(100vw - 24px);max-height:60vh;overflow:auto;display:none;padding:0 6px;background:var(--面);border:1px solid var(--金线);border-block:12px solid transparent;box-shadow:0 0 0 1px var(--金线),0 24px 50px -24px var(--影)}
+#搜果[style*="block"]{animation:幻想浮现 .3s var(--顺)}
+#搜果>div{padding:10px 14px;cursor:pointer;font-size:13px}
+#搜果>div:hover{background:var(--行底)}
+#搜果 b{font-family:var(--衬线)}
+.搜索副文{display:block;margin-top:2px;font-size:11.5px;color:var(--字3);overflow-wrap:anywhere}
+
+/* 主题选择：基础.css 统一成小图标，这里只给方钮外观。 */
+#主题控件{--主题钮:40px;background:var(--面透);border:1px solid var(--金线);color:var(--强);transition:border-color .2s}
+#主题控件:hover{border-color:var(--金)}
+#主题面板{padding:14px;border:1px solid var(--金线);border-radius:0;background:var(--面);box-shadow:0 30px 60px -24px var(--影)}
+#主题面板:popover-open{animation:幻想浮现 .3s var(--顺)}
+#主题面板 .主题模式{border-color:var(--边);border-radius:0}
+#主题面板 .主题组名{font-family:var(--衬线);font-weight:700}
+#主题面板 .主题项{border-radius:0}
+#主题面板 .主题项[aria-pressed="true"]{border-color:var(--金)}
+#刷{flex-shrink:0;width:40px;height:40px;background:var(--主钮底);color:var(--主钮字);font-size:18px;line-height:1}
+#刷 svg{display:block;width:18px;height:18px;margin:auto;fill:currentColor}
+
+#导航{display:none}
+
+/* ———— 画布 ———— */
+#台{z-index:1;cursor:grab}
+#台.拖{cursor:grabbing}
+#世界{will-change:transform}
+#线{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
+
+.盒{position:absolute;background:var(--盒底);border:1px solid var(--金淡)}
+.盒>.头{position:absolute;top:20px;left:22px;max-width:calc(100% - 44px);display:inline-flex;align-items:center;gap:10px;height:34px;padding:0 14px 0 12px;background:var(--面);border:1px solid var(--组色,var(--金));font-size:16px}
+.头饰{flex-shrink:0;width:7px;height:7px;background:var(--组色,var(--金));transform:rotate(45deg)}
+.盒>.头 b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:700 1em var(--衬线)}
+.盒>.头 span{flex-shrink:0;font:700 .8125em var(--拉丁);color:var(--强)}
+.盒>.类标{position:absolute;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--字2);white-space:nowrap}
+
+.小章{display:inline-block;flex-shrink:0;width:12px;height:12px;fill:var(--章色,var(--字3))}
+.小章.缺{width:10px;height:10px;background:var(--绯);border-radius:50%}
+
+/* ———— 条目卡 ———— */
+.卡{--卡色:var(--琥珀);position:absolute;display:flex;flex-direction:column;gap:8px;padding:18px 18px 14px;background:var(--面透);border:1px solid var(--金线);
+  box-shadow:inset 0 0 0 4px var(--面),inset 0 0 0 5px var(--金淡);cursor:pointer;transition:translate .3s var(--顺),box-shadow .25s,border-color .25s,opacity .25s}
+.卡 .卡眉{display:flex;align-items:center;gap:8px;min-height:20px;font-size:12px;color:var(--字3)}
+.类型名{font-weight:700;color:var(--字);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.卡眉 .状态签{margin-left:auto}
+.卡 h4{margin:0;font:700 19px/1.3 var(--衬线);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.卡 .要{font-size:12.5px;line-height:1.6;color:var(--字3);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.图条{display:flex;gap:6px}
+.图条 img{width:46px;height:38px;object-fit:cover;border:1px solid var(--金淡);background:var(--底)}
+.卡 .脚{margin-top:auto;padding-top:8px;border-top:1px solid var(--金淡);display:flex;align-items:center;gap:8px;min-height:20px;overflow:hidden;font-size:11px;color:var(--字4)}
+.编号{font:500 11px var(--拉丁);letter-spacing:.06em;white-space:nowrap}
+.小签{padding:1px 8px;border:1px solid var(--边);font-size:11px;color:var(--字2);white-space:nowrap}
+.小签.路{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.状态签{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--字3);white-space:nowrap}
+.状态签 svg{width:12px;height:12px;flex-shrink:0}
+.状态签 .星框{fill:none;stroke:var(--金);stroke-width:.9}
+.状态签 .星芯{fill:var(--金)}
+.状态签.星空 .星芯{display:none}
+.状态签.星半 .星芯{clip-path:inset(0 50% 0 0)}
+
+/* 核心标记状态：悬 = 悬停 250ms 后，选 = 选中，邻 = 关联，暗 = 非关联。 */
+.卡:hover,.卡.悬{translate:0 -3px;border-color:var(--金);box-shadow:inset 0 0 0 4px var(--面),inset 0 0 0 5px var(--金线),0 16px 30px -18px var(--影)}
+.卡:hover .饰,.卡.悬 .饰{background:var(--卡色)}
+.卡.选{outline:2px solid var(--金);outline-offset:4px}
+.卡.邻{outline:2px solid var(--卡色);outline-offset:4px}
+.卡.暗{opacity:.3}
+.卡.可放,.步.可放{outline:2px dashed var(--青碧);outline-offset:4px}
+
+/* ———— 路线步骤 ———— */
+.步{--卡色:var(--琥珀);position:absolute;width:240px;box-sizing:border-box;padding:18px;background:var(--面透);border:1px solid var(--金线);
+  box-shadow:inset 0 0 0 4px var(--面),inset 0 0 0 5px var(--金淡);display:flex;flex-direction:column;gap:12px;cursor:grab;transition:border-color .25s,box-shadow .25s}
+.步:hover{border-color:var(--金)}
+.步.选{outline:2px solid var(--金);outline-offset:4px}
+.步.靶{outline:2px solid var(--青碧);outline-offset:4px}
+.步 .序{display:flex;align-items:center;gap:12px}
+.序号{flex-shrink:0;width:42px;height:42px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border:1px solid var(--金);
+  box-shadow:inset 0 0 0 3px var(--面),inset 0 -6px 0 0 var(--序色,var(--金));font:700 16px var(--拉丁);color:var(--强)}
+.步 h4{margin:0;font:700 17px/1.3 var(--衬线);overflow-wrap:anywhere}
+.步 .提{padding:10px 12px;background:var(--护栏底);font-size:12.5px;line-height:1.55}
+.提签{display:block;margin-bottom:2px;font-size:11px;font-weight:700;color:var(--强)}
+.步骤清单{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
+.步 li{display:flex;align-items:center;gap:9px;min-width:0;font-size:13px}
+.步 li>span:last-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.步 li.码{font:12.5px var(--等宽)}
+.图标{display:inline-flex;flex-shrink:0;color:var(--字3)}
+.图标 svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.图标.产出{color:var(--强)}
+.步 .柄{position:absolute;right:-9px;top:50%;width:16px;height:16px;margin-top:-8px;box-sizing:border-box;background:var(--面);border:2px solid var(--字);transform:rotate(45deg);cursor:crosshair;transition:transform .3s var(--顺),background-color .2s}
+.步 .柄:hover{transform:rotate(45deg) scale(1.3);background:var(--金)}
+.远牌{display:none}
+
+#线 path.边{stroke:var(--线);stroke-width:2;stroke-linecap:round;pointer-events:stroke;cursor:pointer;transition:stroke .15s}
+#线 path.边击{pointer-events:stroke;stroke:transparent;stroke-width:16;fill:none;cursor:pointer}
+#线 path.边:hover,#线 path.边击:hover+path.边{stroke:var(--绯)}
+#线 circle{fill:var(--金);r:5px;transform-box:fill-box;transform-origin:center}
+#线 path:not([class]){stroke-width:2;stroke-linecap:round;stroke-dasharray:6 5}
+
+.路线标题{position:absolute;width:max-content;display:flex;align-items:baseline;gap:16px;white-space:nowrap}
+.路线名{font:700 34px/1.2 var(--衬线)}
+.入口签{align-self:center;padding:2px 10px;background:var(--主钮底);color:var(--主钮字);font-size:12px;font-weight:700}
+.路线说明{font-size:15px;color:var(--字3)}
+.编辑条{position:absolute;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.编辑条 button{height:34px;padding:0 14px;border:1px solid var(--金线);background:var(--面);font-size:13px;font-weight:700}
+.编辑条 button:hover{border-color:var(--金)}
+.编辑条 button.主钮{background:var(--主钮底);color:var(--主钮字);border-color:transparent}
+.编辑条 button.危险{color:var(--绯)}
+.编辑条>span{margin-left:8px;font-size:12px;color:var(--字3)}
+
+/* ———— 语义缩放 ————
+   远景：条目卡只留类型和标题；步骤的大框隐去，只在垂直中线放一块铭牌，连线端点正好落在铭牌两侧。 */
+body.远{--远字:clamp(22px,calc(15px / var(--缩,1)),34px);--远号:clamp(14px,calc(10px / var(--缩,1)),22px)}
+body.中 .卡:not(.展开) .图条{display:none}
+body.远 .卡:not(.展开) :is(.要,.脚,.图条,.状态签),body.远 .盒>.类标,body.远 :is(.编辑条,.路线说明){display:none}
+body.远 .卡:not(.展开){justify-content:center;gap:12px}
+body.远 .卡:not(.展开) .卡眉{font-size:var(--远号)}
+body.远 .卡:not(.展开) .小章{width:.9em;height:.9em}
+body.远 .卡:not(.展开) h4{font-size:var(--远字);line-height:1.2;white-space:normal;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+body.远 .盒>.头{font-size:clamp(16px,calc(10px / var(--缩,1)),21px);height:2.1em}
+body.远 .路线名{font-size:clamp(34px,calc(22px / var(--缩,1)),62px)}
+body.远 .步:not(.展开){background:none;border-color:transparent;box-shadow:none}
+body.远 .步:not(.展开)>:not(.柄,.远牌){visibility:hidden}
+body.远 .步:not(.展开) .远牌{display:flex}
+.远牌{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);align-items:center;gap:.5em;padding:16px 18px;background:var(--面);border:1px solid var(--金线);font-size:var(--远字);pointer-events:none;transition:border-color .25s}
+.远牌 .序号{font-size:.6em;width:2.4em;height:2.4em}
+.远题{font:700 1em/1.2 var(--衬线);overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+body.远 .步:not(.展开):hover .远牌{border-color:var(--金)}
+body.远 .步.选:not(.展开) .远牌{outline:2px solid var(--金);outline-offset:4px}
+body.远 .步.靶 .远牌{outline:2px solid var(--青碧);outline-offset:4px}
+
+/* ———— 展开阅读：详情节点属于原卡片，反向补偿画布缩放 ———— */
+.盒.聚起{z-index:40}
+.卡.展开,.步.展开{z-index:40;display:block;width:var(--展开宽)!important;height:auto!important;min-height:0!important;padding:0;overflow:hidden;transform-origin:0 0;
+  background:var(--面);border:1px solid var(--金);box-shadow:inset 0 0 0 6px var(--面),inset 0 0 0 7px var(--金淡),0 40px 90px -30px var(--影);
+  cursor:default;opacity:1;transition:none;translate:0 0;outline:0}
+.展开>:not(#屉){display:none!important}
+body.幻想阅读 .盒.聚起{background:none;border-color:transparent}
+body.幻想阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
+#阅读幕{position:absolute;z-index:35;pointer-events:none;opacity:0;transition:opacity .25s;background:var(--幕)}
+#阅读幕.开{opacity:1}
+
+#屉{display:none;touch-action:pan-y}
+#屉.开{display:flex;flex-direction:column;height:var(--展开高);max-height:var(--展开高)}
+.详情头{position:relative;flex-shrink:0;min-height:104px;box-sizing:border-box;padding:14px 32px 14px 26px;display:flex;align-items:center;gap:20px;border-bottom:1px solid var(--边)}
+/* 头像取拼图①（左上格）的脸，圆形金框。 */
+.头像{width:72px;height:72px;flex-shrink:0;box-sizing:border-box;border-radius:50%;border:2px solid var(--金);box-shadow:0 0 0 4px var(--面),0 0 0 5px var(--金线);
+  background:#222B42 url("立绘.webp") -36px -13px/288px 288px no-repeat}
+.详情题{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.详情眉{display:flex;align-items:center;gap:10px;min-width:0}
+.详情头 .类型签{flex-shrink:0;padding:2px 10px;background:var(--签色,var(--卡色));color:var(--色上);font-size:12px;font-weight:700;white-space:nowrap}
+#屉 .详情头 .路{min-width:0;font-size:12.5px;color:var(--字4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#屉 h3{min-width:0;margin:0;font:700 28px/1.25 var(--衬线);overflow-wrap:anywhere}
+.收起{flex-shrink:0;height:40px;padding:0 8px 0 18px;display:flex;align-items:center;gap:10px;border:1px solid var(--金线);font-size:14px;font-weight:700}
+.收起:hover{border-color:var(--金)}
+.收起 kbd{padding:2px 9px;background:var(--主钮底);color:var(--主钮字);font-size:11px}
+.详情体{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:30px 40px 32px}
+.详情体>.路{margin-bottom:12px;font-size:12.5px;color:var(--字4)}
+.编辑入口{margin-left:6px;color:var(--强);font-weight:700;cursor:pointer}
+.步骤护栏{margin-bottom:8px;padding:10px 12px;background:var(--护栏底);border:1px solid transparent;font-size:13px;line-height:1.6;cursor:pointer}
+.步骤护栏:hover{border-color:var(--金)}
+.详情摘要{margin:0 0 22px;padding:16px 20px;background:color-mix(in srgb,var(--金) 10%,transparent);border:1px solid var(--边);font:500 17px/1.6 var(--衬线)}
+.详情格{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:44px}
+.详情格>*,.详情侧{min-width:0}
+.详情侧{padding-left:28px;border-left:1px solid var(--金淡)}
+#屉 h5{margin:20px 0 10px;font:700 12px var(--衬线);letter-spacing:.2em;color:var(--强)}
+#屉 h5:first-child{margin-top:0}
+
+.行{display:flex;align-items:center;gap:10px;margin-bottom:8px;padding:10px 14px;background:var(--行底);border:1px solid var(--边);font-size:13px;font-weight:500;overflow-wrap:anywhere;transition:border-color .15s,box-shadow .15s,translate .3s var(--顺)}
+.行[onclick]{cursor:pointer}
+.行[onclick]:hover{border-color:var(--金);translate:3px 0}
+.行[data-关联]:hover,.行[data-关联]:focus-visible{border-color:var(--关联色);box-shadow:0 0 0 1px var(--关联色)}
+.行 .尾{margin-left:auto;flex-shrink:0;font-size:11.5px;color:var(--字4)}
+.行 .叉{margin-left:auto;padding:0 4px;color:var(--字3)}
+.行 .尾+.叉{margin-left:8px}
+.行 .叉:hover{color:var(--绯)}
+.行.加项{background:transparent;border-style:dashed;color:var(--字2)}
+.行.命令{font-family:var(--等宽)}
+.提示符{color:var(--强);font-weight:700}
+.行.危险{color:var(--绯);border-color:color-mix(in srgb,var(--绯) 45%,transparent)}
+.空项{padding:4px 2px;color:var(--字3)}
+.属性表{display:grid;grid-template-columns:56px minmax(0,1fr);gap:8px 12px;margin:0;font-size:13px}
+.属性表 dt{color:var(--字4)}
+.属性表 dd{margin:0;overflow-wrap:anywhere}
+.标签组{display:flex;flex-wrap:wrap;gap:6px}
+.卡操作{display:flex;gap:8px;margin-top:18px}
+.卡操作 a,.卡操作 button{flex:1;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid var(--金线);font-size:13px;font-weight:700;color:var(--字)}
+.卡操作 .主钮{background:var(--主钮底);color:var(--主钮字);border-color:transparent}
+.卡操作 a:hover{text-decoration:none;border-color:var(--金)}
+.资产格{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#屉 img.预{display:block;width:100%;max-height:240px;object-fit:cover;border:1px solid var(--金淡);background:var(--底)}
+
+/* ———— 正文（条目正文与文件预览共用） ———— */
+.正文{font-size:14.5px;line-height:1.85;overflow-wrap:anywhere;color:var(--字2)}
+.正文>:first-child{margin-top:0!important}
+.正文 p{margin:0 0 14px}
+.正文 :is(h1,h2,h3,h4){display:flex;align-items:center;gap:10px;margin:26px 0 10px;font-family:var(--衬线);font-weight:700;line-height:1.35;color:var(--字)}
+.正文 h1{font-size:23px}
+.正文 h2{font-size:20px}
+.正文 h3{font-size:17px}
+.正文 :is(h1,h2):before{content:"";flex-shrink:0;width:9px;height:9px;background:var(--卡色,var(--金));transform:rotate(45deg)}
+.正文 h3:before{content:"";flex-shrink:0;width:7px;height:7px;border:1.5px solid var(--卡色,var(--金));transform:rotate(45deg)}
+.正文 ul,.正文 ol{margin:0 0 14px;padding-left:22px}
+.正文 ul{list-style:none}
+.正文 ul>li{position:relative}
+.正文 ul>li:before{content:"";position:absolute;left:-16px;top:.72em;width:5px;height:5px;background:var(--金);transform:rotate(45deg)}
+.正文 ol>li::marker{font-family:var(--拉丁);font-weight:700;color:var(--强)}
+.正文 li{padding:1px 0}
+/* 核心按行输出引用，每行一个 blockquote；相邻的连成一整块，空行只留间距。 */
+.正文 blockquote{margin:0;padding:3px 18px;background:color-mix(in srgb,var(--金) 9%,transparent);border-left:2px solid var(--金)}
+.正文 :not(blockquote)+blockquote,.正文 blockquote:first-child{margin-top:14px;padding-top:12px}
+.正文 blockquote:not(:has(+blockquote)){margin-bottom:14px;padding-bottom:12px}
+.正文 blockquote:empty{height:8px;padding-top:0;padding-bottom:0}
+.正文 code{padding:1px 6px;background:color-mix(in srgb,var(--金) 14%,transparent);font:12.5px/1.7 var(--等宽);color:var(--字)}
+.正文 pre{overflow:auto;white-space:pre;padding:14px 16px;background:var(--行底);border:1px solid var(--边);font-size:12.5px}
+.正文 pre code{padding:0;background:none}
+.正文 .表滚{overflow:auto;margin:0 0 14px;border:1px solid var(--边)}
+.正文 table{border-collapse:collapse;width:100%;font-size:13px}
+.正文 th,.正文 td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--金淡)}
+.正文 tr:last-child td{border-bottom:0}
+.正文 th{font-family:var(--衬线);font-weight:700;color:var(--字);background:color-mix(in srgb,var(--金) 12%,transparent)}
+.正文 hr{height:9px;margin:26px 0;border:0;background:linear-gradient(var(--金淡),var(--金淡)) center/100% 1px no-repeat,
+  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 9'%3E%3Cpath d='M4.5 0 9 4.5 4.5 9 0 4.5Z' fill='%23A8874B'/%3E%3C/svg%3E") center/9px 9px no-repeat}
+.读取{padding:20px 0;color:var(--字3)}
+
+/* ———— 文件挑选、预览、检查、项目窗、询问 ————
+   贴边的滚动区把留白写成透明边框而不是内边距：滚动条只画在内边距盒里。 */
+#挑{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;background:var(--幕);user-select:text}
+#挑.开{display:flex}
+#挑 .框{position:relative;width:min(560px,calc(100vw - 32px));max-height:70vh;display:flex;flex-direction:column;overflow:hidden;background:var(--面);border:1px solid var(--金);box-shadow:inset 0 0 0 5px var(--面),inset 0 0 0 6px var(--金淡),0 40px 80px -30px var(--影)}
+#挑 .框 input{margin:16px;height:44px;box-sizing:border-box;padding:0 16px;border:1px solid var(--金线);background:var(--行底);color:var(--字)}
+#挑 .框 input:focus{outline:none;border-color:var(--金)}
+#挑 .单{overflow:auto;padding:0 8px;border-bottom:14px solid transparent}
+.候选项{display:flex;align-items:center;gap:8px;padding:4px 8px}
+.候选项:hover{background:var(--行底)}
+.候选选择{flex:1;min-width:0;display:flex;align-items:center;gap:10px;padding:6px 4px;text-align:left;font-size:13px}
+.候选选择>span:last-child{min-width:0;overflow-wrap:anywhere}
+.候选选择 b{font-family:var(--衬线)}
+.候选选择 small{display:block;font-size:11.5px;color:var(--字3)}
+.预览按钮{flex-shrink:0;height:30px;padding:0 12px;border:1px solid var(--金线);font-size:12px;font-weight:700}
+.预览按钮:hover{border-color:var(--金)}
+.文件名称{flex:1;min-width:0;text-align:left;font-weight:600;overflow-wrap:anywhere}
+.文件名称:hover{color:var(--强)}
+.步骤标题按钮{font:inherit;color:inherit;text-align:left}
+.步骤标题按钮 span{margin-left:8px;font-family:var(--字体);font-size:13px;color:var(--字3)}
+.步骤标题按钮:hover{color:var(--强)}
+.步骤标题编辑{display:flex;align-items:center;gap:8px;max-width:100%}
+.步骤标题编辑 input{width:100%;min-width:0;height:40px;box-sizing:border-box;padding:0 14px;border:1px solid var(--金);background:var(--行底);font:inherit;font-size:18px}
+.步骤标题编辑 button{height:36px;padding:0 14px;border:1px solid var(--金线);font-family:var(--字体);font-size:12px;font-weight:700;white-space:nowrap}
+.步骤标题编辑 button[type="submit"]{background:var(--主钮底);color:var(--主钮字);border-color:transparent}
+
+#文件预览,#检查详情,#项目窗,#询问{padding:0;overflow:hidden;color:var(--字);background:var(--面);border:1px solid var(--金);border-radius:0;
+  box-shadow:inset 0 0 0 5px var(--面),inset 0 0 0 6px var(--金淡),0 40px 80px -30px var(--影);user-select:text}
+#文件预览{margin:0 auto;top:var(--预览顶,12px);width:min(1320px,90vw);max-width:calc(100vw - 16px);height:var(--预览高,75dvh);max-height:calc(100dvh - 24px)}
+#文件预览[open],#检查详情[open],#项目窗[open]{display:flex;flex-direction:column}
+:is(#文件预览,#检查详情,#项目窗,#询问)::backdrop{background:var(--幕)}
+.文件预览头,.检查头,.项目窗头{display:flex;align-items:center;gap:12px;padding:16px 22px;border-bottom:1px solid var(--边)}
+.文件预览头>div{flex:1;min-width:0}
+#文件预览标题,#检查标题,#项目窗标题{margin:0;font:700 19px var(--衬线);overflow-wrap:anywhere}
+#文件预览路径{font-size:12px;color:var(--字4);overflow-wrap:anywhere}
+#关闭文件预览,#关闭检查,#关闭项目窗{height:36px;padding:0 16px;background:var(--主钮底);color:var(--主钮字);font-size:13px;font-weight:700;white-space:nowrap}
+#文件预览正文{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:20px 28px 6px;border-bottom:14px solid transparent}
+#文件预览正文.源码{white-space:pre;font:13px/1.7 var(--等宽)}
+#检查详情{margin:auto;width:min(620px,calc(100vw - 32px));max-height:80dvh}
+#检查计数{font:13px var(--拉丁);color:var(--字3)}
+#关闭检查{margin-left:auto}
+.检查正文{padding:16px 22px 8px;border-bottom:14px solid transparent;overflow:auto;overscroll-behavior:contain}
+#检查说明{margin:0 0 14px;font-size:13px;color:var(--字2)}
+#检查列表{display:grid;gap:12px;margin:0;padding:0;list-style:none}
+.检查项{padding:14px 16px;background:var(--行底);border:1px solid var(--边);overflow-wrap:anywhere}
+.检查项.错误{border-color:var(--绯)}
+.检查级别{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700}
+.检查级别:before{content:"";width:9px;height:9px;background:var(--琥珀);transform:rotate(45deg)}
+.检查级别.错误:before{background:var(--绯)}
+.检查项 h3{margin:6px 0;font:700 15px var(--衬线)}
+.检查位置{font-size:12px;color:var(--字4)}
+.检查建议{margin:8px 0 0;font-size:13px;color:var(--字2)}
+.检查项 button{margin-top:12px;height:32px;padding:0 14px;border:1px solid var(--金线);font-size:12px;font-weight:700}
+.检查项 button:hover{border-color:var(--金)}
+
+/* 项目窗：标题左边是拼图③（侧身）裁出的头像。 */
+#项目窗{margin:auto;width:min(560px,calc(100vw - 32px));max-height:80dvh}
+.项目窗头:before{content:"";flex-shrink:0;width:44px;height:44px;box-sizing:border-box;border-radius:50%;border:1.5px solid var(--金);
+  background:#222B42 url("立绘.webp") -20px -94px/180px 180px no-repeat}
+#关闭项目窗{margin-left:auto}
+.项目窗正文{padding:14px 16px 6px;border-bottom:14px solid transparent;overflow:auto;overscroll-behavior:contain}
+#项目列表{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;margin:0;padding:0;list-style:none}
+.项目项{width:100%;display:flex;align-items:center;gap:14px;padding:12px 16px;border:1px solid transparent;text-align:left;transition:background-color .2s,border-color .2s,translate .3s var(--顺)}
+.项目项:not(:disabled):hover{background:var(--行底);border-color:var(--边);translate:3px 0}
+.项目项.当前{background:color-mix(in srgb,var(--金) 12%,transparent);border-color:var(--金线)}
+.项目项 .小章{width:14px;height:14px}
+.项目文{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.项目文 b{font:700 15px var(--衬线)}
+.项目文 small{font-size:11.5px;color:var(--字4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.项目签{flex-shrink:0;padding:2px 10px;border:1px solid var(--边);font-size:11.5px;font-weight:700;color:var(--字2)}
+.项目项.当前 .项目签{background:var(--主钮底);color:var(--主钮字);border-color:transparent}
+.项目签.运行{border-color:var(--青碧);color:var(--字)}
+.项目窗钮{display:flex;gap:8px;margin-top:12px}
+.项目窗钮 button{flex:1;height:40px;border:1px solid var(--金线);font-size:13px;font-weight:700}
+.项目窗钮 button:hover{border-color:var(--金)}
+#新建项目{background:var(--主钮底);color:var(--主钮字);border-color:transparent}
+
+/* 页内询问框：替代浏览器 prompt / confirm。 */
+#询问{margin:auto;width:min(460px,calc(100vw - 32px))}
+#询问表{position:relative;display:flex;flex-direction:column;gap:14px;padding:26px 28px 24px}
+#询问标题{margin:0;display:flex;align-items:center;gap:10px;font:700 19px/1.35 var(--衬线)}
+#询问标题:before{content:"";flex-shrink:0;width:9px;height:9px;background:var(--金);transform:rotate(45deg)}
+#询问[data-危险] #询问标题:before{background:var(--绯)}
+#询问说明{margin:0;font-size:13px;color:var(--字3);overflow-wrap:anywhere}
+#询问字段{display:flex;flex-direction:column;gap:12px}
+#询问字段:empty{display:none}
+.询问项{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:var(--字3)}
+.询问项 input{height:44px;box-sizing:border-box;padding:0 16px;border:1px solid var(--金线);background:var(--行底);color:var(--字);font-size:14px;font-weight:500}
+.询问项 input:focus{outline:none;border-color:var(--金)}
+#询问字段 .询问选项 span{border:1px solid var(--金线);border-radius:0;background:var(--行底);color:var(--字2);font-weight:600}
+#询问字段 .询问选项 input:checked+span{background:var(--主钮底);color:var(--主钮字);border-color:transparent}
+.询问钮{display:flex;justify-content:flex-end;gap:8px;margin-top:6px}
+.询问钮 button{height:40px;padding:0 18px;border:1px solid var(--金线);font-size:13px;font-weight:700}
+.询问钮 button:hover{border-color:var(--金)}
+#询问确定{background:var(--主钮底);color:var(--主钮字);border-color:transparent}
+#询问[data-危险] #询问确定{background:var(--绯);color:var(--色上)}
+
+/* 进出场：浮现带轻微上移，退场短促；核心关闭前会先标 data-关闭中 等动画播完。 */
+@keyframes 幻想浮现{from{opacity:0;transform:translateY(12px) scale(.97)}}
+@keyframes 幻想隐去{to{opacity:0;transform:translateY(8px) scale(.98)}}
+@keyframes 幻想幕入{from{opacity:0}}
+@keyframes 幻想幕出{to{opacity:0}}
+@keyframes 幻想项入{from{opacity:0;transform:translateY(8px)}}
+:is(#文件预览,#检查详情,#询问,#项目窗)[open]{animation:幻想浮现 .4s var(--顺)}
+:is(#文件预览,#检查详情,#询问,#项目窗)[open]::backdrop{animation:幻想幕入 .25s ease-out}
+:is(#文件预览,#检查详情,#询问,#项目窗)[data-关闭中]{animation:幻想隐去 .2s ease-in forwards}
+:is(#文件预览,#检查详情,#询问,#项目窗)[data-关闭中]::backdrop{animation:幻想幕出 .2s ease-in forwards}
+#询问[open] .询问项{animation:幻想项入 .4s var(--顺) backwards}
+#询问[open] .询问项:nth-child(1){animation-delay:.08s}
+#询问[open] .询问项:nth-child(2){animation-delay:.14s}
+#询问[open] .询问钮{animation:幻想项入 .4s var(--顺) .18s backwards}
+#挑.开{animation:幻想幕入 .22s ease-out}
+#挑.开 .框{animation:幻想浮现 .4s var(--顺)}
+#挑[data-关闭中]{animation:幻想幕出 .2s ease-in forwards}
+#挑[data-关闭中] .框{animation:幻想隐去 .2s ease-in forwards}
+#检查详情[open] .检查项{animation:幻想项入 .4s var(--顺) .12s backwards}
+#检查详情[open] .检查项:nth-child(2){animation-delay:.17s}
+#检查详情[open] .检查项:nth-child(3){animation-delay:.22s}
+#检查详情[open] .检查项:nth-child(n+4){animation-delay:.27s}
+
+/* ———— 底部悬浮控件 ———— */
+/* 未认领：收起是一枚方牌，展开时宽和高连续长成贴底向上的抽屉，列表撑开后再淡入。 */
+#未{position:fixed;left:24px;bottom:24px;z-index:20;width:auto;max-height:50vh;display:flex;flex-direction:column;overflow:hidden;background:var(--面透);border:1px solid var(--金线);user-select:text;transition:width .4s var(--顺),bottom .4s var(--顺),box-shadow .3s}
+#未 .头{flex-shrink:0;min-height:46px;padding:0 10px 0 14px;display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;white-space:nowrap}
+#未 .头:before{content:"";flex-shrink:0;width:9px;height:9px;box-sizing:border-box;border:1.5px solid var(--金);transform:rotate(45deg);transition:background-color .3s}
+#未 .头 b{font-family:var(--衬线);font-weight:700}
+#未数{flex-shrink:0;min-width:28px;height:26px;box-sizing:border-box;padding:0 8px;background:var(--主钮底);color:var(--主钮字);display:inline-flex;align-items:center;justify-content:center;font:700 13px var(--拉丁)}
+.未认领箭头{margin-left:auto;color:var(--字3);transform:rotate(180deg);transition:transform .35s var(--顺)}
+#未 .体{height:0;box-sizing:border-box;padding:0 8px;overflow:auto;contain:inline-size;border-top:0 solid var(--边);border-bottom:0 solid transparent;opacity:0;visibility:hidden;
+  transition:height .36s var(--顺),padding .36s var(--顺),border-top-width .36s,border-bottom-width .36s var(--顺),opacity .14s,visibility 0s .36s}
+#未.开:not([data-关闭中]){width:360px;box-shadow:0 24px 50px -24px var(--影);transition:width .45s var(--顺),bottom .45s var(--顺),box-shadow .3s}
+#未.开:not([data-关闭中]) .头:before{background:var(--金)}
+#未.开:not([data-关闭中]) .未认领箭头{transform:none}
+#未.开:not([data-关闭中]) .体{height:auto;padding:4px 8px 0;border-top-width:1px;border-bottom-width:12px;opacity:1;visibility:visible;
+  transition:height .45s var(--顺),padding .45s var(--顺),border-top-width .2s,border-bottom-width .45s var(--顺),opacity .24s .16s,visibility 0s}
+#未 .组{padding:10px 8px 4px;font:700 12px var(--衬线);letter-spacing:.1em;color:var(--强)}
+#未 .项{padding:8px 10px;font:12px var(--等宽);color:var(--字2);cursor:grab;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#未 .项:hover{background:var(--行底);color:var(--字)}
+
+#角{position:fixed;right:24px;bottom:24px;z-index:25;height:48px;box-sizing:border-box;padding:0 5px;display:flex;align-items:center;gap:2px;background:var(--面透);border:1px solid var(--金线)}
+#角 button{min-width:38px;height:38px;font-size:17px;transition:background-color .2s,color .2s}
+#角 button:not(:disabled):hover{background:var(--行底);color:var(--强)}
+#缩{min-width:50px;text-align:center;font:600 13px var(--拉丁)}
+#角 .分隔{width:1px;height:22px;margin:0 4px;background:var(--边)}
+#角 #回{margin-left:4px;padding:0 16px;background:var(--主钮底);color:var(--主钮字);font-size:13px;font-weight:700}
+#角 #回:hover{background:var(--主钮底);color:var(--主钮字)}
+
+/* 提示：旁边站着拼图④的 Q 版小人。 */
+#提示{position:fixed;left:50%;bottom:88px;z-index:99;transform:translateX(-50%);translate:0 8px;display:flex;align-items:center;gap:10px;padding:6px 18px 6px 6px;background:var(--面);border:1px solid var(--金);color:var(--字);font-size:13px;font-weight:600;box-shadow:0 20px 40px -20px var(--影);opacity:0;transition:opacity .2s,translate .35s var(--顺);pointer-events:none}
+#提示:before{content:"";flex-shrink:0;width:34px;height:34px;box-sizing:border-box;border-radius:50%;border:1px solid var(--金线);background:#222B42 url("立绘.webp") -70px -55px/128px 128px no-repeat}
+#提示.开{opacity:1;translate:0 0}
+
+/* 空态：上方是拼图②（捧星图）。 */
+.空{width:420px;padding:32px 36px 36px;background:var(--面);border:1px solid var(--金线);box-shadow:inset 0 0 0 4px var(--面),inset 0 0 0 5px var(--金淡);font-size:13px;line-height:1.9;color:var(--字2)}
+.空:before{content:"";display:block;width:160px;height:160px;margin:0 auto 18px;border:1px solid var(--金线);background:#161D2E url("立绘.webp") -160px 0/320px 320px no-repeat}
+.空 b{display:block;margin-bottom:10px;font:700 22px var(--衬线);color:var(--字)}
+.空位{position:absolute;left:40px;top:40px}
+.危险{color:var(--绯)}
+.次文{padding:10px 12px;color:var(--字3)}
+
+/* ———— 动效装饰（由 主题.js 挂载，卸载时回收） ———— */
+.幻想外观圈{position:fixed;z-index:1000;width:0;height:0;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none}
+.幻想过渡片{position:fixed;z-index:70;pointer-events:none;box-sizing:border-box;background:var(--面);border:1px solid var(--金);box-shadow:inset 0 0 0 5px var(--面),inset 0 0 0 6px var(--金淡),0 30px 60px -30px var(--影)}
+.幻想星环{position:fixed;z-index:71;width:520px;height:520px;margin:-260px 0 0 -260px;border-radius:50%;pointer-events:none;
+  border:1px solid var(--金);box-shadow:0 0 0 14px color-mix(in srgb,var(--金) 12%,transparent),inset 0 0 40px color-mix(in srgb,var(--金) 25%,transparent)}
+
+/* ———— 响应式 ———— */
+@media(max-width:1280px){#搜{width:180px}}
+@media(max-width:1120px){
+  .品牌>span,.导航计数{display:none}
+  #签 button{padding:0 11px}
+  #顶{gap:10px}
+  body:after{display:none}
+}
+@media(max-width:900px) and (min-width:701px){
+  #顶{height:auto;display:grid;grid-template-columns:auto minmax(0,1fr) auto auto auto auto auto;grid-template-rows:44px 48px;gap:8px 10px}
+  .品牌{grid-row:1;grid-column:1}
+  #体检{grid-row:1;grid-column:3;margin:0}
+  #新路线{grid-row:1;grid-column:4}
+  #搜{grid-row:1;grid-column:5}
+  #主题控件{grid-row:1;grid-column:6}
+  #刷{grid-row:1;grid-column:7}
+  #签{grid-row:2;grid-column:1/-1;justify-self:start}
+}
+@media(max-width:700px){
+  #顶{top:10px;left:10px;right:10px;height:auto;display:grid;grid-template-columns:minmax(0,1fr) auto auto;grid-template-rows:44px 44px 46px;gap:8px}
+  .品牌{grid-row:1;grid-column:1/3}
+  .品牌>span{display:flex}
+  .品牌:before{width:38px;height:38px}
+  #体检{grid-row:1;grid-column:3;margin:0;height:36px}
+  #新路线{display:none!important}
+  #搜{grid-row:2;grid-column:1;width:100%}
+  #搜 input{height:44px;font-size:14px}
+  #搜 kbd{display:none}
+  #主题控件{grid-row:2;grid-column:2;--主题钮:44px}
+  #刷{grid-row:2;grid-column:3;width:44px;height:44px}
+  #签{grid-row:3;grid-column:1/-1;display:grid;grid-template-columns:repeat(5,minmax(0,1fr))}
+  #签 button{justify-content:center;gap:5px;padding:0 4px;font-size:13px}
+  .导航计数{display:none}
+  #未{left:10px;bottom:14px}
+  #未 .头{padding:0 8px 0 12px;gap:8px}
+  #未 .头 b,.未认领箭头{display:none}
+  #未.开:not([data-关闭中]){width:calc(100vw - 20px);bottom:70px}
+  #未.开:not([data-关闭中]) .头 b{display:inline}
+  #角{right:10px;bottom:14px;padding:0 3px;gap:0}
+  #角 .分隔{display:none}
+  #角 button{min-width:32px;font-size:16px}
+  #缩{min-width:38px;font-size:12px}
+  #角 #回{padding:0 12px;margin-left:2px}
+  .详情头{padding:12px 16px;flex-wrap:wrap;gap:10px 14px}
+  .头像{width:52px;height:52px;background-position:-26px -9px;background-size:208px 208px}
+  #屉 h3{font-size:21px}
+  .收起 kbd{display:none}
+  .详情体{padding:16px}
+  .详情格{grid-template-columns:1fr;gap:24px}
+  .详情侧{padding-left:0;border-left:0}
+  .空{width:300px;padding:26px}
+  #文件预览{width:calc(100vw - 16px)}
+  .文件预览头,.检查头,.项目窗头{padding:12px 16px}
+  #文件预览正文,.检查正文{padding:16px 16px 2px}
+}
+
+@media(prefers-reduced-motion:reduce){
+  *,*:before,*:after{transition:none!important;animation:none!important}
+}
