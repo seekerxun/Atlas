@@ -55,6 +55,26 @@ function 装配界面(){
   });
   装配检查形变();
   装配搜索形变();
+  装配扫描转圈();
+}
+
+// 重新扫描：字符 ↻ 的墨迹不居中，换成居中的矢量箭头；核心每次扫描（不论入口）都标 data-扫描中，箭头就转一整圈，
+// 扫描超过一圈的时长就接着转，停下时总落在整圈上。
+function 装配扫描转圈(){
+  const 钮 = $('#刷');
+  if (!钮) return;
+  const 原文 = 钮.textContent;
+  钮.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>';
+  const 箭 = 钮.firstChild;
+  let 转 = null;
+  const 一圈 = () => {
+    转 = api.动画(箭, [{rotate:'0deg'}, {rotate:'360deg'}], {duration:620, easing:'cubic-bezier(.55,0,.3,1.18)'});
+    转.finished.then(() => { 转 = null; if (钮.hasAttribute('data-扫描中') && 可动()) 一圈(); }, () => {});
+  };
+  // 扫描很快时加上和去掉属性会落在同一批记录里，所以看「曾被加上」而不是看当前状态。
+  const 观 = new MutationObserver(记录 => { if (!转 && 可动() && 记录.some(r => r.oldValue === null)) 一圈(); });
+  观.observe(钮, {attributes:true, attributeFilter:['data-扫描中'], attributeOldValue:true});
+  api.清理(() => { 观.disconnect(); 转?.cancel(); 钮.textContent = 原文; });
 }
 
 // 搜索圆钮像一团软胶：拉成输入框时高度先被抻扁、再鼓一下回原高；缩回圆钮时反过来先鼓起再落定。

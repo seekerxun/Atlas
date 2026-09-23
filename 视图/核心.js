@@ -212,7 +212,12 @@ function 提示(s){ const t = $('#提示'); t.textContent = s; t.classList.add('
 
 
 // ---------------------------------------------------------------- 取数
+// 每次取数都是服务端的一次重新扫描，不论从哪个入口触发；扫描期间 #刷 带 data-扫描中，主题据此播放扫描动画。
 async function 取数(){
+  const 钮 = $('#刷'); 钮.setAttribute('data-扫描中', '');
+  try { await 读数据(); } finally { 钮.removeAttribute('data-扫描中'); }
+}
+async function 读数据(){
   const r = await fetch('/数据');
   数据 = await r.json();
   if (数据.错误) { document.body.innerHTML = '<div class="空">' + 转义(数据.错误) + '</div>'; return; }

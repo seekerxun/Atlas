@@ -85,7 +85,7 @@ kbd{font-family:var(--数字)}
 #搜 input:focus{outline:none;border-color:var(--字);box-shadow:0 0 0 3px color-mix(in srgb,var(--赭黄) 45%,transparent)}
 #搜 kbd{position:absolute;right:12px;top:11px;padding:0 8px;border-radius:999px;background:var(--底);font-size:11px;line-height:20px;color:var(--字3);pointer-events:none;opacity:0;transition:opacity .2s}
 #搜:focus-within kbd{opacity:1;transition-delay:.2s}
-#搜果{position:absolute;top:50px;right:0;transform-origin:top right;width:380px;max-width:calc(100vw - 24px);max-height:60vh;overflow:auto;display:none;padding:6px;border-radius:22px;background:var(--面);border:1px solid var(--边);box-shadow:0 24px 50px -24px color-mix(in srgb,var(--影) 60%,transparent)}
+#搜果{position:absolute;top:50px;right:0;transform-origin:top right;width:380px;max-width:calc(100vw - 24px);max-height:60vh;overflow:auto;display:none;padding:0 6px;border-radius:22px;background:var(--面);border:0;border-block:14px solid transparent;box-shadow:0 0 0 1px var(--边),0 24px 50px -24px color-mix(in srgb,var(--影) 60%,transparent)}
 #搜果[style*="block"]{animation:矢量下拉 .34s var(--弹)}
 #搜果>div{padding:10px 14px;border-radius:14px;cursor:pointer;font-size:13px}
 #搜果>div:hover{background:var(--底)}
@@ -98,6 +98,7 @@ kbd{font-family:var(--数字)}
 #主题选择 option{background:var(--面);color:var(--字)}
 #刷{flex-shrink:0;width:42px;height:42px;border-radius:50%;background:var(--字);color:var(--底);font-size:18px;font-weight:700;line-height:1;transition:transform .45s var(--弹)}
 #刷:hover{transform:rotate(-90deg)}
+#刷 svg{display:block;width:19px;height:19px;margin:auto;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
 
 /* 导航按钮已显示条目数，视图名一行不再浮在画布上。 */
 #导航{display:none}
@@ -298,13 +299,14 @@ body.矢量阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
 .正文 hr{height:6px;margin:24px 0;border:0;background:radial-gradient(circle,var(--边) 3px,transparent 3.5px) center/18px 6px repeat-x}
 .读取{padding:20px 0;color:var(--字3)}
 
-/* ———— 文件挑选、预览、检查与步骤编辑 ———— */
+/* ———— 文件挑选、预览、检查与步骤编辑 ————
+   贴着圆角的滚动区把留白写成透明边框而不是内边距：滚动条只画在内边距盒里，这样就不会伸进圆角、露出框外。 */
 #挑{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;background:var(--幕);user-select:text}
 #挑.开{display:flex}
 #挑 .框{width:min(560px,calc(100vw - 32px));max-height:70vh;display:flex;flex-direction:column;overflow:hidden;border-radius:28px;background:var(--面);box-shadow:0 40px 80px -30px color-mix(in srgb,var(--影) 70%,transparent)}
 #挑 .框 input{margin:16px;height:44px;box-sizing:border-box;padding:0 18px;border:1px solid var(--边);border-radius:999px;background:var(--底);color:var(--字)}
 #挑 .框 input:focus{outline:none;border-color:var(--字)}
-#挑 .单{overflow:auto;padding:0 8px 12px}
+#挑 .单{overflow:auto;padding:0 8px;border-bottom:14px solid transparent}
 .候选项{display:flex;align-items:center;gap:8px;padding:4px 8px;border-radius:14px}
 .候选项:hover{background:var(--底)}
 .候选选择{flex:1;min-width:0;display:flex;align-items:center;gap:10px;padding:6px 4px;text-align:left;font-size:13px}
@@ -332,12 +334,12 @@ body.矢量阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
 #文件预览标题,#检查标题{margin:0;font-size:18px;font-weight:700;overflow-wrap:anywhere}
 #文件预览路径{font:12px var(--数字);color:var(--字3);overflow-wrap:anywhere}
 #关闭文件预览,#关闭检查{height:36px;padding:0 16px;border-radius:999px;background:var(--字);color:var(--底);font-size:13px;font-weight:700;white-space:nowrap}
-#文件预览正文{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:20px 28px}
+#文件预览正文{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:20px 28px 6px;border-bottom:14px solid transparent}
 #文件预览正文.源码{white-space:pre;font:13px/1.7 var(--等宽)}
 #检查详情{margin:auto;width:min(620px,calc(100vw - 32px));max-height:80dvh}
 #检查计数{font:13px var(--数字);color:var(--字3)}
 #关闭检查{margin-left:auto}
-.检查正文{padding:16px 22px 22px;overflow:auto;overscroll-behavior:contain}
+.检查正文{padding:16px 22px 8px;border-bottom:14px solid transparent;overflow:auto;overscroll-behavior:contain}
 #检查说明{margin:0 0 14px;font-size:13px;color:var(--字2)}
 #检查列表{display:grid;gap:12px;margin:0;padding:0;list-style:none}
 .检查项{padding:14px 16px;border-radius:18px;background:var(--底);border:1px solid var(--边);overflow-wrap:anywhere}
@@ -418,13 +420,13 @@ body.矢量阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
 /* 抽屉贴底、向上展开：收起时箭头朝上，展开后朝下。 */
 .未认领箭头{margin-left:auto;color:var(--字3);transform:rotate(180deg);transition:transform .35s var(--顺)}
 /* 列表不参与胶囊的宽度计算，否则长路径会把收起态撑宽。 */
-#未 .体{height:0;box-sizing:border-box;padding:0 8px;overflow:auto;contain:inline-size;border-top:0 solid var(--边);opacity:0;visibility:hidden;
-  transition:height .36s var(--顺),padding .36s var(--顺),border-top-width .36s,opacity .14s,visibility 0s .36s}
+#未 .体{height:0;box-sizing:border-box;padding:0 8px;overflow:auto;contain:inline-size;border-top:0 solid var(--边);border-bottom:0 solid transparent;opacity:0;visibility:hidden;
+  transition:height .36s var(--顺),padding .36s var(--顺),border-top-width .36s,border-bottom-width .36s var(--顺),opacity .14s,visibility 0s .36s}
 #未.开:not([data-关闭中]){width:360px;box-shadow:0 24px 50px -24px color-mix(in srgb,var(--影) 60%,transparent);transition:width .5s var(--弹),bottom .5s var(--弹),box-shadow .3s}
 #未.开:not([data-关闭中]) .头:before{transform:rotate(180deg);transition-timing-function:var(--弹)}
 #未.开:not([data-关闭中]) .未认领箭头{transform:none;transition-timing-function:var(--弹)}
-#未.开:not([data-关闭中]) .体{height:auto;padding:4px 8px 10px;border-top-width:1px;opacity:1;visibility:visible;
-  transition:height .52s var(--弹),padding .52s var(--弹),border-top-width .2s,opacity .24s .16s,visibility 0s}
+#未.开:not([data-关闭中]) .体{height:auto;padding:4px 8px 0;border-top-width:1px;border-bottom-width:12px;opacity:1;visibility:visible;
+  transition:height .52s var(--弹),padding .52s var(--弹),border-top-width .2s,border-bottom-width .52s var(--弹),opacity .24s .16s,visibility 0s}
 #未 .组{padding:10px 8px 4px;font-size:12px;font-weight:700;color:var(--字3)}
 #未 .项{padding:8px 10px;border-radius:12px;font:12px var(--数字);color:var(--字2);cursor:grab;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #未 .项:hover{background:var(--底);color:var(--字)}
@@ -505,7 +507,7 @@ body.矢量阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
   .空{width:300px;padding:28px}
   #文件预览{width:calc(100vw - 16px)}
   .文件预览头,.检查头{padding:12px 16px}
-  #文件预览正文,.检查正文{padding:16px}
+  #文件预览正文,.检查正文{padding:16px 16px 2px}
 }
 
 @media(prefers-reduced-motion:reduce){
