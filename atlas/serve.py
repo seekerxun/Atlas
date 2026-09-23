@@ -17,7 +17,7 @@
   POST /新建项目         从模板新建项目、登记、起它的画布，返回网址
 
 一个服务只管启动时所在的项目。每个项目的端口写在它自己的 .devdock.json（DevDock 同一份配置），
-打开别的项目是在那个端口上另起服务，当前服务不切换。写请求带 X-Atlas-根，对不上就拒收。
+打开别的项目是在那个端口上另起服务，当前服务不切换。写请求带 X-Atlas-Root，对不上就拒收。
 
 每个会写盘的接口都返回改之前的全文，画布把它压进撤销栈；撤销就是把那份全文写回去。
 写回前一律比对 mtime：对不上说明别人动过，中止，绝不覆盖。
@@ -263,7 +263,7 @@ class 处理器(BaseHTTPRequestHandler):
                 self._json({"好": True, "网址": projects.启动画布(目标, 名称)})
                 return
             # 其余接口都写当前项目；页面带来的根和当前根对不上（旧页面、别的端口的页面），拒收。
-            if unquote(self.headers.get("X-Atlas-根") or "") != str(self.根):
+            if unquote(self.headers.get("X-Atlas-Root") or "") != str(self.根):
                 self._json({"错误": "这个页面和服务管的不是同一个项目，刷新后再操作。"}, 409)
                 return
             if 路径 == "/布局":

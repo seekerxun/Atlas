@@ -258,7 +258,7 @@ async function 取数(){
 }
 // 写请求带上页面所属的项目根；服务管的不是这个项目时会拒收，不会写错地方。
 let 项目根 = null;
-const 项目头 = () => ({'X-Atlas-根': encodeURIComponent(项目根 || '')});
+const 项目头 = () => ({'X-Atlas-Root': encodeURIComponent(项目根 || '')});
 async function 读数据(){
   const r = await fetch('/数据');
   数据 = await r.json();
