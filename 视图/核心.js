@@ -269,6 +269,7 @@ async function 读数据(){
   布局 = 数据.布局 || {};
   候选缓存 = null;
   $('#名').textContent = 数据.项目;
+  if (首次) { let 存; try { 存 = localStorage.getItem(视图键()); } catch {} if (视图们.includes(存)) 视图 = 存; }
   if (首次 && !数据.条目.some(n => n.库 === 视图)) 视图 = 数据.路线.length ? '路线' : 视图;
   const 初次 = 首次; 首次 = false;
   for (const k in 按编号) delete 按编号[k];
@@ -422,6 +423,8 @@ document.addEventListener('click', e => {
 
 // ---------------------------------------------------------------- 视图切换
 const 视图们 = ['路线', '策划', '内容', '创意', '资产'];
+// 当前导航按项目记在本机，刷新后回到原来的导航；读不到就按默认规则选。
+const 视图键 = () => 'atlas:视图:' + 项目根;
 
 function 可动(){ return !matchMedia('(prefers-reduced-motion: reduce)').matches; }
 
@@ -466,6 +469,7 @@ function 画(){
   if (切换了) {
     w.classList.remove('切入'); void w.offsetWidth; w.classList.add('切入');
     上次绘制视图 = 视图;
+    try { localStorage.setItem(视图键(), 视图); } catch {}
   }
   w.querySelectorAll('.盒,.卡,.步,.类标,.编辑条,.空').forEach(e => e.remove());
   $('#线').innerHTML = '';
@@ -515,14 +519,16 @@ function 画路线(){
   const w = $('#世界');
   let 基y = 主题.布局.路线起点;
   (数据.路线 || []).forEach(r => {
-    const 位置 = 算路线布局(r, 基y);
-    const 顶 = 位置.length ? Math.min(...位置.map(p => p.y)) : 基y;
-    const 左 = 位置.length ? Math.min(...位置.map(p => p.x)) : 40;
-    基y = Math.max(...位置.map(p => p.y + p.h), 基y) + 主题.布局.路线间距;
+    // 拖过标题的路线在主题排好的位置上整体平移；后面的路线仍按平移前的位置往下排，互不牵连。
+    const 原位 = 算路线布局(r, 基y), 移 = 布局[路线键(r.名称)] || {x: 0, y: 0};
+    const 位置 = 原位.map(p => ({...p, x: p.x + 移.x, y: p.y + 移.y}));
+    const 顶 = (原位.length ? Math.min(...原位.map(p => p.y)) : 基y) + 移.y;
+    const 左 = (原位.length ? Math.min(...原位.map(p => p.x)) : 40) + 移.x;
+    基y = Math.max(...原位.map(p => p.y + p.h), 基y) + 主题.布局.路线间距;
     w.insertAdjacentHTML('beforeend',
-      `<div class="类标 路线标题" style="left:${左}px;top:${顶 - 主题.布局.路线标题距}px;">
+      `<div class="类标 路线标题" data-路线="${转义(r.名称)}" title="拖动标题可移动整条路线" style="left:${左}px;top:${顶 - 主题.布局.路线标题距}px;">
         ${主题.模板.路线标题({r})}</div>
-       <div class="编辑条" style="left:${左}px;top:${顶 - 主题.布局.路线编辑距}px">
+       <div class="编辑条" data-路线="${转义(r.名称)}" style="left:${左}px;top:${顶 - 主题.布局.路线编辑距}px">
         ${主题.模板.路线工具({r})}</div>`);
     r.步骤.forEach((s, i) => {
       const p = 位置[i]; if (!p) return;
@@ -546,6 +552,16 @@ function 画路线(){
     e.querySelector('.柄').addEventListener('pointerdown', ev => 起连线(ev, e));
   });
   装拖动('.步', 'data-id');
+  装路线拖动();
+}
+
+// 按当前 DOM 里步骤的位置重画全部连线，拖动途中让线跟着走。
+function 重画路线边(){
+  $('#线').innerHTML = '';
+  (数据.路线 || []).forEach(r => 画边(r, r.步骤.map(s => {
+    const e = $('#世界').querySelector(`.步[data-路线="${CSS.escape(r.名称)}"][data-步="${CSS.escape(s.id)}"]`);
+    return e ? {id: e.dataset.id, x: parseFloat(e.style.left), y: parseFloat(e.style.top)} : {id: '', x: 0, y: 0};
+  })));
 }
 
 function 画边(r, 位置){
@@ -1193,11 +1209,14 @@ function 装拖动(选择器, 属性){
         if (Math.abs(dx) + Math.abs(dy) > 3) e._拖过 = true;
         e.style.left = (起.ox + dx) + 'px'; e.style.top = (起.oy + dy) + 'px';
         更新关联();
+        if (视图 === '路线') 重画路线边();
       };
       const 停 = () => {
         e.removeEventListener('pointermove', 动); e.removeEventListener('pointerup', 停);
         if (e._拖过) {
-          布局[id] = {x: parseFloat(e.style.left), y: parseFloat(e.style.top)};
+          // 步骤存的是路线平移前的位置，主题按它排布，核心再整体平移。
+          const 移 = 选择器 === '.步' && 布局[路线键(e.dataset.路线)] || {x: 0, y: 0};
+          布局[id] = {x: parseFloat(e.style.left) - 移.x, y: parseFloat(e.style.top) - 移.y};
           记布局('挪了 ' + id.split(':').pop(), 布局快照,
                 JSON.parse(JSON.stringify(布局)));
           存布局();
@@ -1207,6 +1226,37 @@ function 装拖动(选择器, 属性){
       e.addEventListener('pointermove', 动); e.addEventListener('pointerup', 停);
     });
   });
+}
+
+// 拖路线标题：标题、编辑条和这条路线的全部步骤一起走，松手存成整条路线的平移量。
+const 路线键 = 名 => '路线:' + 名;
+function 装路线拖动(){
+  $('#世界').querySelectorAll('.路线标题').forEach(t => t.addEventListener('pointerdown', ev => {
+    if (ev.button !== 0 || ev.target.closest('button,input,a,[contenteditable]')) return;
+    ev.stopPropagation(); ev.preventDefault(); 停镜头();
+    const 名 = t.dataset.路线, 键 = 路线键(名);
+    const 同路 = [...$('#世界').querySelectorAll('.路线标题,.编辑条,.步')].filter(e => e.dataset.路线 === 名)
+      .map(e => { e._入场动画?.cancel(); if (e.matches('.步')) 停卡片动效(e);
+                  return {e, x: parseFloat(e.style.left), y: parseFloat(e.style.top)}; });
+    const 起 = {x: ev.clientX, y: ev.clientY}, 旧移 = 布局[键] || {x: 0, y: 0};
+    const 布局快照 = JSON.parse(JSON.stringify(布局));
+    let dx = 0, dy = 0, 拖过 = false;
+    t.setPointerCapture(ev.pointerId);
+    const 动 = m => {
+      dx = (m.clientX - 起.x) / 缩; dy = (m.clientY - 起.y) / 缩;
+      if (Math.abs(dx) + Math.abs(dy) > 3) 拖过 = true;
+      同路.forEach(o => { o.e.style.left = (o.x + dx) + 'px'; o.e.style.top = (o.y + dy) + 'px'; });
+      重画路线边();
+    };
+    const 停 = () => {
+      t.removeEventListener('pointermove', 动); t.removeEventListener('pointerup', 停);
+      if (!拖过) return;
+      布局[键] = {x: 旧移.x + dx, y: 旧移.y + dy};
+      记布局('挪了路线 ' + 名, 布局快照, JSON.parse(JSON.stringify(布局)));
+      存布局(); 画();
+    };
+    t.addEventListener('pointermove', 动); t.addEventListener('pointerup', 停);
+  }));
 }
 
 // ---------------------------------------------------------------- 未认领抽屉

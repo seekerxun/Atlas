@@ -3,6 +3,7 @@
 html,body{margin:0;width:100%;height:100%;overflow:hidden}
 #台{position:fixed!important;inset:0!important;overflow:clip;user-select:none;-webkit-user-select:none;touch-action:none}
 #世界{position:absolute;transform-origin:0 0}
+#世界 .路线标题{cursor:grab;touch-action:none}
 #屉{user-select:text;-webkit-user-select:text}
 
 /* 卡片展开阅读：画布整体盖到固定界面（顶栏、未认领、角落控件，主题须让它们低于 60）之上；
