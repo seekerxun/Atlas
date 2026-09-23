@@ -73,9 +73,10 @@ kbd{font-family:var(--数字)}
 #体检:hover{border-color:var(--字)}
 #新路线{height:40px;padding:0 16px;border-radius:999px;background:var(--字);color:var(--底);font-size:13px;font-weight:700;white-space:nowrap}
 
-/* 搜索平时是一枚圆钮，点开（或按 /）才展开成输入框；有内容时保持展开。 */
-#搜{position:relative;width:42px;transition:width .45s var(--弹)}
-#搜:focus-within,#搜:has(input:not(:placeholder-shown)){width:260px}
+/* 搜索平时是一枚圆钮，点开（或按 /）才展开成输入框；有内容时保持展开。
+   形状补间：横向拉长时 主题.js 让它先变扁再回弹，缩回圆时先鼓起再落定；这里只管宽度，收起不回弹以免圆被挤成竖椭圆。 */
+#搜{position:relative;width:42px;transition:width .4s var(--顺)}
+#搜:focus-within,#搜:has(input:not(:placeholder-shown)){width:260px;transition:width .5s var(--弹)}
 #搜 input{width:100%;height:42px;box-sizing:border-box;padding:0 44px 0 42px;border:1px solid var(--边);border-radius:999px;background:var(--面) var(--搜图) no-repeat 13px center/16px;color:var(--字);font-size:13px;cursor:pointer;transition:border-color .2s,box-shadow .2s}
 #搜:not(:focus-within):not(:has(input:not(:placeholder-shown))) input{padding-right:0}
 #搜:not(:focus-within):not(:has(input:not(:placeholder-shown))) input::placeholder{color:transparent}
