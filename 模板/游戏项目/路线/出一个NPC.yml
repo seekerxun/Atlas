@@ -3,18 +3,9 @@ route: 出一个NPC
 desc: 单个 NPC 从设定到可进原型
 
 steps:
-  - id: 读规则
-    title: 吃规则
-    note: 只读这三篇。机制名一律去机制目录查，不要自创
-    docs:
-      - 策划/系统/角色系统
-      - 策划/数值/角色属性
-      - 策划/机制/机制目录
-    next: [写条目]
-
   - id: 写条目
     title: 写 NPC 条目
-    note: 编号写在文件名里，不写进 frontmatter
+    note: 编号写在文件名里，不写进 frontmatter。机制名一律去 策划/机制/机制目录 查，不要自创
     docs:
       - 内容/_模板/NPC
     outputs: ["内容/W-*/NPC/*.md"]
@@ -22,21 +13,19 @@ steps:
 
   - id: 数值
     title: 出数值
+    note: 数值明细留正文；成批数值走 内容/表/ 的 csv
     docs:
-      - 策划/数值/数值标尺
-      - 策划/数值/TTK标尺
-    tools: [工具/numeric-workbench]
+      - 内容/表/说明
     next: [自检]
 
   - id: 人设
     title: 出人设图
-    docs:
-      - 策划/规范/角色美术风格
-    outputs: ["资产/W-*/NPC-*/**"]
+    note: 生成的图先落 产出/，挑中的用 atlas claim 认领到条目
+    outputs: ["产出/**", "资产/W-*/NPC-*/**"]
     next: [自检]
 
   - id: 自检
     title: 自检
-    note: 挂势力、挂机制、挂图，跑 nav check
+    note: 挂势力、挂机制、挂图，跑 atlas check
     docs:
       - AGENTS
