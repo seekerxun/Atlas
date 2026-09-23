@@ -206,8 +206,7 @@ body.远 .盒>.头 span{font-size:clamp(12px,calc(12px / var(--缩,1)),28px)}
 #线 path.边:hover,#线 path.边击:hover+path.边{stroke:var(--错)}
 #线 circle{fill:var(--副);filter:drop-shadow(0 0 5px var(--副))}
 #线 path:not([class]){filter:drop-shadow(0 0 4px var(--好))}
-#线 .霓虹流光{stroke:#fff;stroke-width:2;opacity:.75;stroke-dasharray:6 14;pointer-events:none;animation:霓虹流 1.4s linear infinite}
-@keyframes 霓虹流{to{stroke-dashoffset:-40}}
+#线 .霓虹流光{stroke:#fff;stroke-width:2;opacity:.75;stroke-dasharray:6 14;pointer-events:none}
 
 .路线标题{position:absolute;width:max-content;display:grid;grid-template-columns:auto auto;align-items:baseline;gap:2px 16px;white-space:nowrap}
 .路线码{grid-column:1/-1;font:10px/16px var(--等宽);letter-spacing:.18em;color:var(--副)}

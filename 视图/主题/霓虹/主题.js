@@ -51,6 +51,20 @@ function 补流光(记录){
     光.setAttribute('fill', 'none'); 光.setAttribute('aria-hidden', 'true');
     p.after(光);
   });
+  调流光钟();
+}
+
+// 流光用定时器按 30 帧推进，不用 CSS 无限动画：那样会按显示器刷新率每帧重绘整张 #线（连同每条边的 drop-shadow），高刷屏上很吃 CPU。
+let 流光钟 = 0;
+function 调流光钟(){
+  const 光们 = [...$('#线').querySelectorAll('.霓虹流光')];
+  if (流光钟) { clearInterval(流光钟); 流光钟 = 0; }
+  if (!光们.length || !可动()) return;
+  const 起 = performance.now();
+  流光钟 = setInterval(() => {
+    const 位 = (-40 * ((performance.now() - 起) % 1400) / 1400).toFixed(1);
+    光们.forEach(p => p.style.strokeDashoffset = 位);
+  }, 1000 / 30);
 }
 
 function 装配界面(){
@@ -61,6 +75,7 @@ function 装配界面(){
   观察.observe($('#线'), {childList: true});
   api.清理(() => {
     观察.disconnect();
+    clearInterval(流光钟); 流光钟 = 0;
     $('#线').querySelectorAll('.霓虹流光').forEach(p => p.remove());
     document.querySelectorAll('.卡,.步').forEach(停卡片动效);
     document.body.classList.remove('霓虹阅读','远','中');
