@@ -15,20 +15,28 @@ body[data-启动中] > :not(#启动状态){visibility:hidden}
 #启动状态{position:fixed;top:24px;left:24px;font:14px sans-serif}
 #启动状态[hidden]{display:none}
 
-/* 共享入口顺序：搜索 → 主题 → 重新扫描；主题仍决定控件配色和外观。 */
+/* 共享入口顺序：搜索 → 主题 → 重新扫描；主题仍决定控件配色和外观。
+   主题选择统一是一枚小图标按钮（所有主题都一样）：原生下拉透明地铺满按钮，点图标就弹出核心生成的选项。
+   主题只决定按钮尺寸（--主题钮，默认 40px）、图标尺寸（--主题图标）、底色、边框和图标颜色（currentColor）。 */
 #顶 > #主题控件{
-  position:static;inset:auto;transform:none;order:0;
-  width:auto;min-width:0;max-width:none;flex:0 0 auto;margin:0;white-space:nowrap;
+  position:relative!important;inset:auto!important;transform:none;order:0;
+  flex:0 0 auto!important;display:inline-grid!important;place-items:center;
+  width:var(--主题钮,40px)!important;height:var(--主题钮,40px)!important;
+  min-width:0!important;max-width:none!important;margin:0;padding:0!important;gap:0!important;
 }
+#主题控件 label{display:none!important}
+#主题控件::before{
+  content:"";width:var(--主题图标,18px);height:var(--主题图标,18px);background:currentColor;pointer-events:none;
+  -webkit-mask:var(--主题图形) center/contain no-repeat;mask:var(--主题图形) center/contain no-repeat;
+}
+#主题控件{--主题图形:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M10 1.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17Zm0 2a6.5 6.5 0 0 1 0 13Z'/%3E%3C/svg%3E")}
+#顶 #主题选择{
+  position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+  min-width:0!important;max-width:none!important;margin:0!important;padding:0!important;
+  opacity:0!important;cursor:pointer;font-size:16px;
+}
+#主题控件:has(#主题选择:focus-visible){outline:2px solid currentColor;outline-offset:3px}
 #顶 > .品牌{min-width:0;flex-shrink:1;text-align:left}
 #顶 > .品牌 > span{min-width:0}
 #顶 .品牌 #名{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #顶 > #搜{min-width:0;flex-shrink:1}
-@media(max-width:800px){
-  #顶 > #主题控件{gap:4px;padding:7px 8px}
-  #顶 > #主题控件 label{display:none}
-  #顶 #主题选择{min-width:54px;max-width:70px}
-}
-@media(max-width:700px){
-  #顶 > #主题控件{font-size:11px}
-}

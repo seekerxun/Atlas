@@ -74,9 +74,9 @@ kbd{font-family:var(--等宽)}
 #搜果>div:hover{background:color-mix(in srgb,var(--主) 10%,transparent)}
 .搜索副文{display:block;margin-top:2px;font:11px var(--等宽);color:var(--字3);overflow-wrap:anywhere}
 
-#主题控件{display:flex;align-items:center;gap:8px;font:11px var(--等宽);letter-spacing:.1em;color:var(--字3)}
-#主题选择{height:38px;padding:0 8px;background:var(--深);color:var(--副);border:1px solid color-mix(in srgb,var(--副) 45%,transparent);border-radius:0;font:13px var(--字体);letter-spacing:0;cursor:pointer}
-#主题选择:hover{border-color:var(--副)}
+/* 主题选择：基础.css 统一成小图标，这里只给方钮外观。 */
+#主题控件{--主题钮:38px;--主题图标:17px;background:var(--深);color:var(--副);border:1px solid color-mix(in srgb,var(--副) 45%,transparent)}
+#主题控件:hover{border-color:var(--副);box-shadow:0 0 12px color-mix(in srgb,var(--副) 35%,transparent)}
 #主题选择 optgroup{background:var(--面);color:var(--字3)}
 #主题选择 option{background:var(--面);color:var(--字)}
 #刷{width:38px;height:38px;flex-shrink:0;font-size:18px;line-height:1;color:var(--字2);border:1px solid var(--边)}
@@ -458,8 +458,7 @@ body.霓虹阅读 .盒.聚起>.卡:not(.展开),body.霓虹阅读 .盒.聚起>.�
   #搜 input::placeholder{color:var(--字3)!important}
   #搜 input{height:44px;padding-right:12px;font-size:14px}
   #搜 kbd{display:none}
-  #主题控件{grid-row:2;grid-column:2}
-  #主题选择{height:44px}
+  #主题控件{grid-row:2;grid-column:2;--主题钮:44px}
   #刷{grid-row:2;grid-column:3;width:44px;height:44px}
   #签{grid-row:3;grid-column:1/-1;margin:-8px -12px 0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr))}
   #签 button{justify-content:center;gap:5px;padding:0 4px;font-size:13px}
