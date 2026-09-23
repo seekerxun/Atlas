@@ -44,6 +44,7 @@ function 渲染主题包(pack, state, 外观){
   if (!数据) return;
   画未认领();
   if ($('#检查详情').open) 画检查();
+  if ($('#项目窗').open) 画项目();
   const 搜果显示 = 搜果.style.display;
   搜框.oninput(); 搜果.style.display = 搜果显示;
   重画候选?.();
@@ -181,7 +182,7 @@ function 关弹窗(el, 关 = () => el.close()){
   Promise.race([Promise.all(动.map(a => a.finished.catch(() => {}))), new Promise(r => setTimeout(r, 600))]).then(完);
 }
 function 取消关闭(el){ el._关令 = null; el.removeAttribute('data-关闭中'); }
-['#检查详情', '#文件预览', '#询问'].forEach(s => $(s).addEventListener('cancel', e => {
+['#检查详情', '#文件预览', '#询问', '#项目窗'].forEach(s => $(s).addEventListener('cancel', e => {
   e.preventDefault(); if (s === '#询问') 询问中?.(null); else 关弹窗($(s));
 }));
 
@@ -217,10 +218,16 @@ async function 取数(){
   const 钮 = $('#刷'); 钮.setAttribute('data-扫描中', '');
   try { await 读数据(); } finally { 钮.removeAttribute('data-扫描中'); }
 }
+// 写请求带上页面所属的项目根；服务已被别的页面切到另一个项目时会拒收，不会写错地方。
+let 项目根 = null;
+const 项目头 = () => ({'X-Atlas-根': encodeURIComponent(项目根 || '')});
 async function 读数据(){
   const r = await fetch('/数据');
   数据 = await r.json();
   if (数据.错误) { document.body.innerHTML = '<div class="空">' + 转义(数据.错误) + '</div>'; return; }
+  // 同一个服务被别的页面切到了另一个项目：整页重载，撤销栈、布局和选择都属于旧项目。
+  if (项目根 && 数据.根 !== 项目根) { location.reload(); return; }
+  项目根 = 数据.根;
   布局 = 数据.布局 || {};
   候选缓存 = null;
   $('#名').textContent = 数据.项目;
@@ -261,6 +268,63 @@ function 打开检查(){
   $('#体检').setAttribute('aria-expanded', 'true');
 }
 $('#体检').onclick = 打开检查;
+
+// ---------------------------------------------------------------- 项目
+// 一个服务同一时间只管一个项目，端口不变；打开或新建都是让服务切过去，再整页重载。
+let 项目清单 = null;
+function 画项目(){
+  if (!项目清单) return;
+  $('#项目列表').innerHTML = 主题.模板.项目列表({列表: 项目清单.列表});
+}
+async function 打开项目窗(){
+  try { 项目清单 = await (await fetch('/项目')).json(); }
+  catch { 提示('读取项目列表失败'); return; }
+  画项目();
+  const d = $('#项目窗'); 取消关闭(d);
+  if (!d.open) d.showModal();
+  $('#项目').setAttribute('aria-expanded', 'true');
+}
+// 成功就重载；失败返回错误文字，由调用方放回询问框里重试（提示条会被模态框挡住）。
+async function 切项目(接口, 体){
+  try {
+    const r = await fetch(接口, {method: 'POST', body: JSON.stringify(体)});
+    const j = await r.json();
+    if (!r.ok || j.错误) return j.错误 || '操作失败';
+  } catch { return '服务没有响应，确认 atlas serve 还在运行'; }
+  location.reload();
+  return null;
+}
+async function 反复询问(参数, 提交){
+  let 错 = null, 值 = null;
+  for (;;) {
+    const 字段 = 参数.字段.map((f, i) => ({...f, 值: 值 ? 值[i] : f.值}));
+    值 = await 询问({...参数, 字段, 说明: 错 ? `没成功：${错}` : 参数.说明});
+    if (!值) return;
+    错 = await 提交(值.map(x => x.trim()));
+    if (!错) return;
+  }
+}
+$('#项目').onclick = 打开项目窗;
+$('#关闭项目窗').onclick = () => 关弹窗($('#项目窗'));
+$('#项目窗').addEventListener('close', () => $('#项目').setAttribute('aria-expanded', 'false'));
+$('#项目列表').onclick = e => {
+  const b = e.target.closest('button[data-i]');
+  const p = b && 项目清单?.列表[+b.dataset.i];
+  if (!p || b.disabled) return;
+  if (p.当前) { 关弹窗($('#项目窗')); return; }
+  切项目('/打开项目', {路径: p.路径}).then(错 => 错 && 询问({标题: '没能打开', 说明: 错, 确定: '知道了'}));
+};
+$('#新建项目').onclick = () => {
+  const 模板 = 项目清单?.模板 || [];
+  反复询问({标题: '新建项目', 确定: '新建',
+    说明: `在「位置」下新建一个以名称命名的文件夹，带好 AGENTS.md、路线和目录骨架，直接支持 atlas。模板可选：${模板.join('、')}。`,
+    字段: [{名: '名称', 占位: '比如 夏日MV'}, {名: '位置', 值: 项目清单?.建议位置 || ''},
+           {名: '模板', 值: 模板.includes('通用项目') ? '通用项目' : 模板[0] || ''}]},
+    ([名称, 位置, 模板名]) => 切项目('/新建项目', {名称, 位置, 模板: 模板名}));
+};
+$('#打开路径').onclick = () => 反复询问({标题: '打开项目', 确定: '打开',
+  说明: '填项目文件夹的完整路径，文件夹里要有 项目.yml。', 字段: [{名: '路径', 占位: '/Users/…/我的项目'}]},
+  ([路径]) => 切项目('/打开项目', {路径}));
 $('#关闭检查').onclick = () => 关弹窗($('#检查详情'));
 $('#检查详情').addEventListener('close', () => $('#体检').setAttribute('aria-expanded', 'false'));
 $('#检查列表').onclick = e => {
@@ -494,12 +558,12 @@ function 刷新撤销按钮(){
 async function 走一步(笔, 目标内容, 动词){
   if (笔.类型 === '布局'){
     布局 = JSON.parse(JSON.stringify(目标内容 || {}));
-    await fetch('/布局', {method: 'POST', body: JSON.stringify(布局)});
+    await fetch('/布局', {method: 'POST', headers: 项目头(), body: JSON.stringify(布局)});
     提示(`已${动词}：${笔.说明}`);
     画();
     return true;
   }
-  const res = await fetch('/还原', {method: 'POST', body: JSON.stringify(
+  const res = await fetch('/还原', {method: 'POST', headers: 项目头(), body: JSON.stringify(
     {路径: 笔.路径, 内容: 目标内容, 期望mtime: 笔.mtime})});
   const j = await res.json();
   if (j.错误) { 提示(`${动词}不了：${j.错误}`); return false; }
@@ -531,7 +595,7 @@ async function 新建路线(){
   const [名, 说] = 答;
   const 文件名 = 名.trim() + '.yml';
   if ((数据.路线 || []).some(r => r.文件名 === 文件名)) { 提示('已经有这条路线了'); return; }
-  const res = await fetch('/路线', {method: 'POST', body: JSON.stringify(
+  const res = await fetch('/路线', {method: 'POST', headers: 项目头(), body: JSON.stringify(
     {文件名, 路线: {route: 名.trim(), desc: 说.trim(),
                   steps: [{id: '第一步', title: '第一步', docs: [], next: []}]}})});
   const j = await res.json();
@@ -549,7 +613,7 @@ async function 存路线(r, 说明){
                    steps: r.步骤.map(s => ({id: s.id, title: s.title, note: s.note,
                                             docs: s.docs, tools: s.tools,
                                             outputs: s.outputs, next: s.next}))}};
-  const res = await fetch('/路线', {method: 'POST', body: JSON.stringify(体)});
+  const res = await fetch('/路线', {method: 'POST', headers: 项目头(), body: JSON.stringify(体)});
   const j = await res.json();
   if (j.错误) { 提示('写回失败：' + j.错误); return false; }
   r.mtime = j.mtime;
@@ -692,7 +756,7 @@ async function 改路线头(路线名){
 async function 删路线(路线名){
   const r = 找路线(路线名); if (!r) return;
   if (!await 询问({标题: `删掉整条「${路线名}」？`, 说明: `文件 ${r.文件名} 会被删除，可以用撤销恢复。`, 确定: '删掉', 危险: true})) return;
-  const res = await fetch('/删路线', {method: 'POST', body: JSON.stringify({文件名: r.文件名})});
+  const res = await fetch('/删路线', {method: 'POST', headers: 项目头(), body: JSON.stringify({文件名: r.文件名})});
   const j = await res.json();
   if (j.错误) { 提示('删不掉：' + j.错误); return; }
   记一笔('删掉路线 ' + 路线名, j.撤销);
@@ -1066,7 +1130,7 @@ $('#屉').addEventListener('pointerdown', e => e.stopPropagation());
 let 存计时 = null;
 function 存布局(){
   clearTimeout(存计时);
-  存计时 = setTimeout(() => fetch('/布局', {method: 'POST', body: JSON.stringify(布局)}), 400);
+  存计时 = setTimeout(() => fetch('/布局', {method: 'POST', headers: 项目头(), body: JSON.stringify(布局)}), 400);
 }
 function 装拖动(选择器, 属性){
   $('#世界').querySelectorAll(选择器).forEach(e => {
@@ -1128,7 +1192,7 @@ document.addEventListener('drop', async e => {
     const 答 = await 询问({标题: '挂成哪一类？', 说明: 文件.split('/').pop(), 字段: [{名: '分类', 值: '未分类', 占位: '人设 / 场景 / 图标 …'}], 确定: '认领'});
     if (!答) return; 分类 = 答[0].trim() || '未分类';
   }
-  const r = await fetch('/认领', {method: 'POST', body: JSON.stringify(
+  const r = await fetch('/认领', {method: 'POST', headers: 项目头(), body: JSON.stringify(
     {条目: 卡.dataset.路径, 文件, 分类})});
   const j = await r.json();
   if (j.错误) { 提示('认领失败：' + j.错误); return; }

@@ -72,6 +72,12 @@ function 步骤详情({r, s, 路线名, 步id, 路线文件}){
       onclick="删步骤('${q(路线名)}','${q(步id)}')">删掉这一步</div></div>`;
 }
 
+function 项目列表({列表}){
+  return 列表.map((p, i) => `<li><button type="button" class="项目项${p.当前 ? ' 当前' : ''}" data-i="${i}"${p.存在 ? '' : ' disabled'}>
+    <span class="项目文"><b>${转义(p.名称)}</b><small>${转义(p.路径)}</small></span>
+    <span class="项目签">${p.当前 ? '当前' : p.存在 ? 转义(p.类型 || '项目') : '找不到'}</span></button></li>`).join('');
+}
+
 function 检查列表({发现, 按路径}){
   return 发现.map((f, i) => `<li class="检查项 ${f.级别 === '错误' ? '错误' : ''}">
     <span class="检查级别 ${f.级别 === '错误' ? '错误' : ''}">${转义(f.级别)} · ${转义(f.码)}</span>
@@ -127,5 +133,5 @@ function 路线工具({r}){ return `<button class="主钮" onclick="${转义(`�
         <button onclick="${转义(`删路线(${JSON.stringify(r.名称)})`)}" class="危险">删掉这条路线</button>
         <span>从右侧圆点拖到另一张卡 = 连线；点线 = 断开</span>`; }
 
-return {路线标题, 路线工具, 条目详情, 步骤详情, 检查列表, 候选列表, 未认领列表, 搜索结果, 步骤卡, 分组头};
+return {路线标题, 路线工具, 条目详情, 步骤详情, 检查列表, 候选列表, 未认领列表, 搜索结果, 步骤卡, 分组头, 项目列表};
 }

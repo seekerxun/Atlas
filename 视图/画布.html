@@ -10,7 +10,7 @@
 <body data-启动中>
 <div id="启动状态" role="status">正在加载界面… <button id="重试启动" hidden>重试</button></div>
 <div id="顶">
-  <div class="品牌"><svg viewBox="0 0 36 36" fill="none" aria-hidden="true"><path d="M5 26 13 7l8 19M9 18h9M22 10l9 19M23 21h5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="28" cy="7" r="2" fill="currentColor"/></svg><div><small>Atlas · 项目图谱</small><div id="名">Atlas</div></div></div>
+  <button type="button" class="品牌" id="项目" aria-haspopup="dialog" aria-controls="项目窗" title="打开或新建项目"><svg viewBox="0 0 36 36" fill="none" aria-hidden="true"><path d="M5 26 13 7l8 19M9 18h9M22 10l9 19M23 21h5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="28" cy="7" r="2" fill="currentColor"/></svg><span><small>Atlas · 项目图谱</small><span id="名">Atlas</span></span></button>
   <div id="签"></div>
   <button type="button" class="丸" id="体检" aria-haspopup="dialog" aria-controls="检查详情" aria-expanded="false"></button>
   <button id="新路线" style="display:none">＋ 新路线</button>
@@ -42,6 +42,11 @@
 <dialog id="询问" aria-labelledby="询问标题" aria-describedby="询问说明">
   <form id="询问表"><h2 id="询问标题"></h2><p id="询问说明"></p><div id="询问字段"></div>
     <div class="询问钮"><button type="button" id="询问取消">取消</button><button type="submit" id="询问确定">确定</button></div></form>
+</dialog>
+<dialog id="项目窗" aria-labelledby="项目窗标题">
+  <div class="项目窗头"><h2 id="项目窗标题">项目</h2><button type="button" id="关闭项目窗" autofocus>关闭</button></div>
+  <div class="项目窗正文"><ul id="项目列表"></ul>
+    <div class="项目窗钮"><button type="button" id="新建项目">＋ 新建项目</button><button type="button" id="打开路径">打开其他文件夹…</button></div></div>
 </dialog>
 <dialog id="检查详情" aria-labelledby="检查标题" aria-describedby="检查说明">
   <div class="检查头"><h2 id="检查标题">项目检查</h2><span id="检查计数"></span><button id="关闭检查" type="button" autofocus>关闭</button></div>

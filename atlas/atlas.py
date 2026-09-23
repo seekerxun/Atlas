@@ -8,7 +8,7 @@
   atlas 迁移 --加字段 k=v [--筛选 类型=NPC] [--演习]
   atlas 迁移 --改名 旧=新 [--演习]
   atlas 认领 <文件> <条目> [--分类 人设]
-  atlas 新建 <模板> <路径>
+  atlas 新建 <模板> <路径> [--名称 显示名]   从 模板/ 生成新项目并登记
   atlas 改名 --类型 旧=新 [--演习]        类型值改名（副本 → 世界节点）
   atlas 改名 --条目 <编号或名字>=新名      条目改名，连带修所有引用
   atlas 改名 --词表 机制:旧=新             受控词表里的一个值改名
@@ -288,20 +288,13 @@ def 命令_认领(args):
 
 # ---------------------------------------------------------------- 新建
 def 命令_新建(args):
-    模板 = ATLAS / "模板" / args.模板
-    if not 模板.is_dir():
-        可用 = "、".join(p.name for p in (ATLAS / "模板").iterdir() if p.is_dir())
-        sys.exit(f"没有模板 `{args.模板}`。可用：{可用}")
-    目标 = Path(args.路径).expanduser().resolve()
-    if 目标.exists() and any(目标.iterdir()):
-        sys.exit(f"{目标} 不是空目录，不覆盖。")
-    shutil.copytree(模板, 目标, dirs_exist_ok=True)
-    print(f"{C['绿']}✓{C['_']} 已从 `{args.模板}` 生成 {目标}")
-    print("  下一步：改 项目.yml 的 名称 / 主分组 / 内容类型，然后写第一条路线。")
-    reg = ATLAS / "注册表.yml"
-    with reg.open("a", encoding="utf-8") as f:
-        f.write(f"\n  - 路径: {目标}\n    备注: {目标.name}\n")
-    print(f"  已登记进 {reg.name}")
+    import projects
+    try:
+        目标 = projects.新建项目(args.模板, Path(args.路径), args.名称 or "")
+    except (ValueError, FileExistsError) as e:
+        sys.exit(str(e))
+    print(f"{C['绿']}✓{C['_']} 已从 `{args.模板}` 生成 {目标}，并登记进 {projects.注册表.name}")
+    print("  下一步：改 项目.yml 的 主分组 / 内容类型，然后写第一条路线。")
 
 
 # ---------------------------------------------------------------- 改名
@@ -391,7 +384,7 @@ def main():
     q = sub.add_parser("认领")
     q.add_argument("文件"); q.add_argument("条目")
     q.add_argument("--分类"); q.add_argument("--演习", action="store_true")
-    q = sub.add_parser("新建"); q.add_argument("模板"); q.add_argument("路径")
+    q = sub.add_parser("新建"); q.add_argument("模板"); q.add_argument("路径"); q.add_argument("--名称")
     q = sub.add_parser("改名")
     q.add_argument("--类型"); q.add_argument("--条目")
     q.add_argument("--词表"); q.add_argument("--字段")

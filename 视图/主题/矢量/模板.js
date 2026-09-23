@@ -102,6 +102,14 @@ function 未认领列表({组}){
   ).join('') || '<div class="组">都挂上了</div>';
 }
 
+// 项目列表：每个项目一枚色块形状，当前项目用实心圆标出。
+function 项目列表({列表}){
+  return 列表.map((p, i) => `<li><button type="button" class="项目项${p.当前 ? ' 当前' : ''}" data-i="${i}"${p.存在 ? '' : ' disabled'}>
+    ${小形(p.类型 === '游戏' ? '世界' : p.当前 ? '总览' : '条目')}
+    <span class="项目文"><b>${转义(p.名称)}</b><small>${转义(p.路径)}</small></span>
+    <span class="项目签">${p.当前 ? '当前' : p.存在 ? 转义(p.类型 || '项目') : '找不到'}</span></button></li>`).join('');
+}
+
 function 搜索结果({前}){
   return 前.map((h, i) => `<div data-i="${i}"><b>${转义(h.文)}</b>
     <span class="搜索副文">${转义(h.副)}</span></div>`).join('')
@@ -132,5 +140,5 @@ function 路线工具({r}){ return `<button class="主钮" onclick="${转义(`�
         <button onclick="${转义(`删路线(${JSON.stringify(r.名称)})`)}" class="危险">删掉这条路线</button>
         <span>从右侧圆点拖到另一张卡 = 连线；点线 = 断开</span>`; }
 
-return {路线标题, 路线工具, 条目详情, 步骤详情, 检查列表, 候选列表, 未认领列表, 搜索结果, 步骤卡, 分组头, 状态签};
+return {路线标题, 路线工具, 条目详情, 步骤详情, 检查列表, 候选列表, 未认领列表, 搜索结果, 步骤卡, 分组头, 项目列表, 状态签};
 }

@@ -11,6 +11,12 @@
   POST /删路线           删掉一条路线的 yml
   POST /还原             把某个文件写回指定内容（撤销/重做就靠它）
   GET  /候选             画布上选文档用的候选列表
+  GET  /项目             当前项目、注册表里的项目、可用模板
+  POST /打开项目         把这个服务切到另一个项目（端口不变）
+  POST /新建项目         从模板新建项目、登记并切过去
+
+一个服务同一时间只管一个项目，端口固定；打开别的项目是在同一个端口里切换，不另起端口。
+切换后，旧页面的写请求会因为 X-Atlas-根 对不上而被拒，绝不会写进另一个项目。
 
 每个会写盘的接口都返回改之前的全文，画布把它压进撤销栈；撤销就是把那份全文写回去。
 写回前一律比对 mtime：对不上说明别人动过，中止，绝不覆盖。
@@ -22,6 +28,7 @@ from pathlib import Path
 from urllib.parse import unquote, urlparse
 
 import edit
+import projects
 import miniyaml as y
 from lint import 校验, 体检数
 from model import ATLAS
@@ -109,8 +116,22 @@ def 打包(根: Path) -> dict:
         "未归类": idx.未归类, "未认领资产": 未认领资产, "孤儿工具": 孤儿工具,
         "产出": 产出, "词表值": {k: sorted(v) for k, v in idx.词表值.items()},
         "发现": [f.__dict__ for f in 结果], "体检": 体检数(idx, 结果),
-        "统计": idx.统计(), "布局": 读布局(根),
+        "统计": idx.统计(), "布局": 读布局(根), "根": str(根),
     }
+
+
+def 项目清单(根: Path) -> dict:
+    列表, 见过 = [], set()
+    for x in [{"路径": str(根)}, *projects.已登记()]:
+        p = Path(str(x["路径"])).expanduser().resolve()
+        if p in 见过:
+            continue
+        见过.add(p)
+        信息 = projects.项目信息(p)
+        信息["当前"] = p == 根.resolve()
+        信息["备注"] = str(x.get("备注") or "")
+        列表.append(信息)
+    return {"当前": str(根), "列表": 列表, "模板": projects.模板们(), "建议位置": str(根.resolve().parent)}
 
 
 def 读文本(p: Path):
@@ -179,6 +200,9 @@ class 处理器(BaseHTTPRequestHandler):
             except Exception as e:
                 self._json({"错误": f"{type(e).__name__}: {e}"}, 500)
             return
+        if 路径 == "/项目":
+            self._json(项目清单(self.根))
+            return
         if 路径 == "/候选":
             idx = 建索引(self.根)
             self._json(文件候选(idx))
@@ -213,6 +237,29 @@ class 处理器(BaseHTTPRequestHandler):
             self._json({"错误": f"请求不是合法 JSON: {e}"}, 400)
             return
         try:
+            if 路径 == "/打开项目":
+                p = Path(str(体.get("路径") or "")).expanduser()
+                if not p.is_absolute() or not projects.是项目(p):
+                    raise RuntimeError("这个文件夹不是 Atlas 项目：要填完整路径，且文件夹里有 项目.yml。")
+                self._切到(p.resolve())
+                return
+            if 路径 == "/新建项目":
+                名称 = str(体.get("名称") or "").strip()
+                if not 名称 or "/" in 名称 or "\\" in 名称 or 名称.startswith("."):
+                    raise RuntimeError("名称会用作文件夹名，不能为空、不能带斜杠、不能以 . 开头。")
+                位置 = Path(str(体.get("位置") or "")).expanduser()
+                if not 位置.is_absolute() or not 位置.is_dir():
+                    raise RuntimeError("位置要填一个已存在文件夹的完整路径。")
+                try:
+                    目标 = projects.新建项目(str(体.get("模板") or ""), 位置 / 名称, 名称)
+                except (ValueError, FileExistsError) as e:
+                    raise RuntimeError(str(e))
+                self._切到(目标)
+                return
+            # 其余接口都写当前项目；页面带来的根和当前根对不上，说明项目已被别的页面切走。
+            if unquote(self.headers.get("X-Atlas-根") or "") != str(self.根):
+                self._json({"错误": "项目已经切换过，这个页面的内容过期了。刷新后再操作。", "已切换": True}, 409)
+                return
             if 路径 == "/布局":
                 写布局(self.根, 体)
                 self._json({"好": True})
@@ -264,6 +311,11 @@ class 处理器(BaseHTTPRequestHandler):
                 self._json({"错误": "没这个接口"}, 404)
         except Exception as e:
             self._json({"错误": str(e)}, 409)
+
+    def _切到(self, 根: Path):
+        type(self).根 = 根
+        projects.登记(根, projects.项目信息(根)["名称"])
+        self._json({"好": True, "路径": str(根)})
 
 
 def 起服务(根: Path, 端口: int = 7391, 打开=True):

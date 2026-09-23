@@ -43,9 +43,11 @@ kbd{font-family:var(--数字)}
 #顶>*{pointer-events:auto}
 .品牌{display:flex;align-items:center;gap:12px;min-width:0}
 .品牌 svg{flex-shrink:0;width:44px;height:44px;box-sizing:border-box;padding:11px;border-radius:50%;background:var(--字);color:var(--底)}
-.品牌>div{display:flex;flex-direction:column;line-height:1.15;min-width:0}
+.品牌>span{display:flex;flex-direction:column;line-height:1.15;min-width:0}
 .品牌 small{order:2;font:500 11px var(--数字);letter-spacing:.06em;color:var(--字3)}
 .品牌 #名{font-size:17px;font-weight:700}
+.品牌{padding:0 14px 0 0;border-radius:999px;cursor:pointer;transition:background-color .2s}
+.品牌:hover{background:color-mix(in srgb,var(--字) 6%,transparent)}
 
 #签{position:relative;isolation:isolate;display:flex;gap:2px;padding:4px;border-radius:999px;background:var(--面);border:1px solid var(--边)}
 .签块{position:absolute;top:4px;bottom:4px;left:4px;right:auto;border-radius:999px;background:var(--陶土);z-index:-1}
@@ -325,15 +327,15 @@ body.矢量阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
 .步骤标题编辑 button[type="submit"]{background:var(--字);color:var(--底);border-color:transparent}
 
 /* 模态 dialog 默认 overflow:auto，角形旋转入场时伸出右边会闪出滚动条；滚动交给内部正文。 */
-#文件预览,#检查详情{padding:0;overflow:hidden;color:var(--字);background:var(--面);border:0;border-radius:28px;box-shadow:0 40px 80px -30px color-mix(in srgb,var(--影) 70%,transparent);user-select:text}
+#文件预览,#检查详情,#项目窗{padding:0;overflow:hidden;color:var(--字);background:var(--面);border:0;border-radius:28px;box-shadow:0 40px 80px -30px color-mix(in srgb,var(--影) 70%,transparent);user-select:text}
 #文件预览{margin:0 auto;top:var(--预览顶,12px);width:min(1320px,90vw);max-width:calc(100vw - 16px);height:var(--预览高,75dvh);max-height:calc(100dvh - 24px)}
-#文件预览[open],#检查详情[open]{display:flex;flex-direction:column}
-#文件预览::backdrop,#检查详情::backdrop{background:var(--幕)}
-.文件预览头,.检查头{display:flex;align-items:center;gap:12px;padding:16px 22px;border-bottom:1px solid var(--边)}
+#文件预览[open],#检查详情[open],#项目窗[open]{display:flex;flex-direction:column}
+#文件预览::backdrop,#检查详情::backdrop,#项目窗::backdrop{background:var(--幕)}
+.文件预览头,.检查头,.项目窗头{display:flex;align-items:center;gap:12px;padding:16px 22px;border-bottom:1px solid var(--边)}
 .文件预览头>div{flex:1;min-width:0}
-#文件预览标题,#检查标题{margin:0;font-size:18px;font-weight:700;overflow-wrap:anywhere}
+#文件预览标题,#检查标题,#项目窗标题{margin:0;font-size:18px;font-weight:700;overflow-wrap:anywhere}
 #文件预览路径{font:12px var(--数字);color:var(--字3);overflow-wrap:anywhere}
-#关闭文件预览,#关闭检查{height:36px;padding:0 16px;border-radius:999px;background:var(--字);color:var(--底);font-size:13px;font-weight:700;white-space:nowrap}
+#关闭文件预览,#关闭检查,#关闭项目窗{height:36px;padding:0 16px;border-radius:999px;background:var(--字);color:var(--底);font-size:13px;font-weight:700;white-space:nowrap}
 #文件预览正文{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:20px 28px 6px;border-bottom:14px solid transparent}
 #文件预览正文.源码{white-space:pre;font:13px/1.7 var(--等宽)}
 #检查详情{margin:auto;width:min(620px,calc(100vw - 32px));max-height:80dvh}
@@ -351,6 +353,26 @@ body.矢量阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
 .检查位置{font:12px var(--数字);color:var(--字3)}
 .检查建议{margin:8px 0 0;font-size:13px;color:var(--字2)}
 .检查项 button{margin-top:12px;height:32px;padding:0 14px;border-radius:999px;border:1px solid var(--边);font-size:12px;font-weight:700}
+
+.项目窗头{padding-right:80px}
+#项目窗{margin:auto;width:min(560px,calc(100vw - 32px));max-height:80dvh}
+#项目窗:after{content:"";position:absolute;right:0;top:0;width:64px;height:64px;border-bottom-left-radius:64px;background:var(--橄榄);transform-origin:top right;pointer-events:none}
+#关闭项目窗{margin-left:auto}
+.项目窗正文{padding:14px 16px 6px;border-bottom:14px solid transparent;overflow:auto;overscroll-behavior:contain}
+#项目列表{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;margin:0;padding:0;list-style:none}
+.项目项{width:100%;display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:18px;text-align:left;transition:background-color .2s,translate .3s var(--弹)}
+.项目项:not(:disabled):hover{background:var(--底);translate:3px 0}
+.项目项.当前{background:color-mix(in srgb,var(--面),var(--橄榄) 14%)}
+.项目项 .小形{width:14px;height:14px}
+.项目文{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.项目文 b{font-size:15px;font-weight:700}
+.项目文 small{font:11.5px var(--数字);color:var(--字3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.项目签{flex-shrink:0;padding:2px 10px;border-radius:999px;background:color-mix(in srgb,var(--字) 7%,transparent);font-size:11.5px;font-weight:700;color:var(--字2)}
+.项目项.当前 .项目签{background:var(--橄榄);color:var(--上-橄榄)}
+.项目窗钮{display:flex;gap:8px;margin-top:12px}
+.项目窗钮 button{flex:1;height:40px;border-radius:999px;border:1px solid var(--边);font-size:13px;font-weight:700}
+.项目窗钮 button:hover{border-color:var(--字)}
+#新建项目{background:var(--字);color:var(--底);border-color:transparent}
 
 /* 页内询问框：替代浏览器 prompt / confirm。右上角的四分之一圆稍晚转入。 */
 #询问{margin:auto;width:min(460px,calc(100vw - 32px));padding:0;color:var(--字);background:var(--面);border:0;border-radius:28px;overflow:hidden;box-shadow:0 40px 80px -30px color-mix(in srgb,var(--影) 70%,transparent)}
@@ -387,14 +409,14 @@ body.矢量阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
 @keyframes 矢量项入{from{opacity:0;transform:translateY(8px)}}
 @keyframes 矢量下拉{from{opacity:0;transform:translateY(-6px) scale(.94)}}
 /* 检查弹窗的进出场是从检查胶囊长出来的形状补间，由 主题.js 播放；这里只给它的幕布。 */
-:is(#文件预览,#询问)[open]{animation:矢量弹入 .46s var(--弹)}
-:is(#检查详情,#文件预览,#询问)[open]::backdrop{animation:矢量幕入 .25s ease-out}
-:is(#文件预览,#询问)[data-关闭中]{animation:矢量弹出 .2s ease-in forwards}
-:is(#检查详情,#文件预览,#询问)[data-关闭中]::backdrop{animation:矢量幕出 .2s ease-in forwards}
+:is(#文件预览,#询问,#项目窗)[open]{animation:矢量弹入 .46s var(--弹)}
+:is(#检查详情,#文件预览,#询问,#项目窗)[open]::backdrop{animation:矢量幕入 .25s ease-out}
+:is(#文件预览,#询问,#项目窗)[data-关闭中]{animation:矢量弹出 .2s ease-in forwards}
+:is(#检查详情,#文件预览,#询问,#项目窗)[data-关闭中]::backdrop{animation:矢量幕出 .2s ease-in forwards}
 /* 核心只等 CSS 动画：幕布退场与缩回胶囊的补间等长，核心才会等形变播完再关。 */
 #检查详情[data-关闭中]::backdrop{animation-duration:.32s}
 #体检[aria-expanded="true"]{opacity:0}
-:is(#检查详情,#询问)[open]:after,#挑.开 .框:after{animation:矢量形入 .55s var(--弹) .12s backwards}
+:is(#检查详情,#询问,#项目窗)[open]:after,#挑.开 .框:after{animation:矢量形入 .55s var(--弹) .12s backwards}
 #询问[open] .询问项{animation:矢量项入 .4s var(--弹) backwards}
 #询问[open] .询问项:nth-child(1){animation-delay:.08s}
 #询问[open] .询问项:nth-child(2){animation-delay:.14s}
@@ -457,7 +479,7 @@ body.矢量阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
 /* ———— 响应式 ———— */
 @media(max-width:1280px){#搜:focus-within,#搜:has(input:not(:placeholder-shown)){width:220px}}
 @media(max-width:1120px){
-  .品牌>div,.导航计数{display:none}
+  .品牌>span,.导航计数{display:none}
   #签 button{padding:0 12px}
   #顶{gap:12px}
 }
@@ -474,7 +496,7 @@ body.矢量阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
 @media(max-width:700px){
   #顶{top:10px;left:10px;right:10px;height:auto;display:grid;grid-template-columns:minmax(0,1fr) auto auto;grid-template-rows:44px 44px 50px;gap:8px}
   .品牌{grid-row:1;grid-column:1/3}
-  .品牌>div{display:flex}
+  .品牌>span{display:flex}
   .品牌 svg{width:40px;height:40px;padding:10px}
   #体检{grid-row:1;grid-column:3;margin:0;height:36px}
   #新路线{display:none!important}
@@ -506,7 +528,7 @@ body.矢量阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
   .详情格{grid-template-columns:1fr;gap:24px}
   .空{width:300px;padding:28px}
   #文件预览{width:calc(100vw - 16px)}
-  .文件预览头,.检查头{padding:12px 16px}
+  .文件预览头,.检查头,.项目窗头{padding:12px 16px}
   #文件预览正文,.检查正文{padding:16px 16px 2px}
 }
 
