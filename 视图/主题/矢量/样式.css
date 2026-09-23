@@ -321,7 +321,8 @@ body.矢量阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
 .步骤标题编辑 button{height:34px;padding:0 14px;border-radius:999px;border:1px solid var(--边);font-size:12px;font-weight:700;white-space:nowrap}
 .步骤标题编辑 button[type="submit"]{background:var(--字);color:var(--底);border-color:transparent}
 
-#文件预览,#检查详情{padding:0;color:var(--字);background:var(--面);border:0;border-radius:28px;box-shadow:0 40px 80px -30px color-mix(in srgb,var(--影) 70%,transparent);user-select:text}
+/* 模态 dialog 默认 overflow:auto，角形旋转入场时伸出右边会闪出滚动条；滚动交给内部正文。 */
+#文件预览,#检查详情{padding:0;overflow:hidden;color:var(--字);background:var(--面);border:0;border-radius:28px;box-shadow:0 40px 80px -30px color-mix(in srgb,var(--影) 70%,transparent);user-select:text}
 #文件预览{margin:0 auto;top:var(--预览顶,12px);width:min(1320px,90vw);max-width:calc(100vw - 16px);height:var(--预览高,75dvh);max-height:calc(100dvh - 24px)}
 #文件预览[open],#检查详情[open]{display:flex;flex-direction:column}
 #文件预览::backdrop,#检查详情::backdrop{background:var(--幕)}
@@ -382,8 +383,6 @@ body.矢量阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
 @keyframes 矢量形入{from{transform:scale(0) rotate(-90deg)}}
 @keyframes 矢量项入{from{opacity:0;transform:translateY(8px)}}
 @keyframes 矢量下拉{from{opacity:0;transform:translateY(-6px) scale(.94)}}
-@keyframes 矢量抽屉入{from{opacity:0;transform:translateY(12px) scale(.96)}}
-@keyframes 矢量抽屉出{to{opacity:0;transform:translateY(8px) scale(.97)}}
 :is(#检查详情,#文件预览,#询问)[open]{animation:矢量弹入 .46s var(--弹)}
 :is(#检查详情,#文件预览,#询问)[open]::backdrop{animation:矢量幕入 .25s ease-out}
 :is(#检查详情,#文件预览,#询问)[data-关闭中]{animation:矢量弹出 .2s ease-in forwards}
@@ -403,19 +402,23 @@ body.矢量阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
 #检查详情[open] .检查项:nth-child(n+4){animation-delay:.15s}
 
 /* ———— 底部悬浮控件 ———— */
-#未{position:fixed;left:24px;bottom:24px;z-index:20;width:auto;max-height:50vh;display:flex;flex-direction:column;border-radius:24px;background:var(--面);border:1px solid var(--边);user-select:text;transition:width .45s var(--弹),box-shadow .3s}
-#未 .头{min-height:46px;padding:0 10px 0 16px;display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px}
-#未 .头:before{content:"";width:16px;height:8px;border-radius:8px 8px 0 0;background:var(--烟粉);transition:transform .45s var(--弹)}
-#未.开 .头:before{transform:rotate(180deg)}
+/* 未认领是形状补间：胶囊的宽和高连续长成贴底向上的抽屉，半圆两端顺势变成圆角，列表等形状撑开后再淡入。
+   收起反过来且不回弹，胶囊不会缩得比字还窄。核心收起前先标 data-关闭中，这段时间就按收起态补间，移除 .开 时外观已一致。 */
+#未{position:fixed;left:24px;bottom:24px;z-index:20;width:auto;max-height:50vh;display:flex;flex-direction:column;overflow:hidden;border-radius:24px;background:var(--面);border:1px solid var(--边);user-select:text;transition:width .4s var(--顺),bottom .4s var(--顺),box-shadow .3s}
+#未 .头{flex-shrink:0;min-height:46px;padding:0 10px 0 16px;display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;white-space:nowrap}
+#未 .头:before{content:"";flex-shrink:0;width:16px;height:8px;border-radius:8px 8px 0 0;background:var(--烟粉);transition:transform .4s var(--顺)}
 #未 .头 b{font-weight:700}
-#未数{min-width:30px;height:30px;box-sizing:border-box;padding:0 10px;border-radius:999px;background:var(--烟粉);color:var(--上-烟粉);display:inline-flex;align-items:center;justify-content:center;font:700 13px var(--数字)}
+#未数{flex-shrink:0;min-width:30px;height:30px;box-sizing:border-box;padding:0 10px;border-radius:999px;background:var(--烟粉);color:var(--上-烟粉);display:inline-flex;align-items:center;justify-content:center;font:700 13px var(--数字)}
 /* 抽屉贴底、向上展开：收起时箭头朝上，展开后朝下。 */
-.未认领箭头{margin-left:auto;color:var(--字3);transform:rotate(180deg);transition:transform .35s var(--弹)}
-#未.开{width:360px;box-shadow:0 24px 50px -24px color-mix(in srgb,var(--影) 60%,transparent)}
-#未.开 .未认领箭头{transform:none}
-#未 .体{display:none;overflow:auto;padding:4px 8px 10px;border-top:1px solid var(--边)}
-#未.开 .体{display:block;animation:矢量抽屉入 .42s var(--弹)}
-#未[data-关闭中] .体{animation:矢量抽屉出 .2s ease-in forwards}
+.未认领箭头{margin-left:auto;color:var(--字3);transform:rotate(180deg);transition:transform .35s var(--顺)}
+/* 列表不参与胶囊的宽度计算，否则长路径会把收起态撑宽。 */
+#未 .体{height:0;box-sizing:border-box;padding:0 8px;overflow:auto;contain:inline-size;border-top:0 solid var(--边);opacity:0;visibility:hidden;
+  transition:height .36s var(--顺),padding .36s var(--顺),border-top-width .36s,opacity .14s,visibility 0s .36s}
+#未.开:not([data-关闭中]){width:360px;box-shadow:0 24px 50px -24px color-mix(in srgb,var(--影) 60%,transparent);transition:width .5s var(--弹),bottom .5s var(--弹),box-shadow .3s}
+#未.开:not([data-关闭中]) .头:before{transform:rotate(180deg);transition-timing-function:var(--弹)}
+#未.开:not([data-关闭中]) .未认领箭头{transform:none;transition-timing-function:var(--弹)}
+#未.开:not([data-关闭中]) .体{height:auto;padding:4px 8px 10px;border-top-width:1px;opacity:1;visibility:visible;
+  transition:height .52s var(--弹),padding .52s var(--弹),border-top-width .2s,opacity .24s .16s,visibility 0s}
 #未 .组{padding:10px 8px 4px;font-size:12px;font-weight:700;color:var(--字3)}
 #未 .项{padding:8px 10px;border-radius:12px;font:12px var(--数字);color:var(--字2);cursor:grab;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #未 .项:hover{background:var(--底);color:var(--字)}
@@ -480,8 +483,8 @@ body.矢量阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
   #未{left:10px;bottom:14px}
   #未 .头{padding:0 8px 0 12px;gap:8px}
   #未 .头 b,.未认领箭头{display:none}
-  #未.开{width:calc(100vw - 20px);bottom:70px}
-  #未.开 .头 b{display:inline}
+  #未.开:not([data-关闭中]){width:calc(100vw - 20px);bottom:70px}
+  #未.开:not([data-关闭中]) .头 b{display:inline}
   #角{right:10px;bottom:14px;padding:0 3px;gap:0}
   #角 .分隔{display:none}
   #角 button{min-width:32px;font-size:16px}
