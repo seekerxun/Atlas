@@ -23,7 +23,7 @@
 写回前一律比对 mtime：对不上说明别人动过，中止，绝不覆盖。
 """
 from __future__ import annotations
-import json, mimetypes, os, threading, webbrowser
+import json, mimetypes, os, re, threading, webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote, urlparse
@@ -93,6 +93,36 @@ def 写布局(根: Path, 数据: dict):
     p.write_text(json.dumps(数据, ensure_ascii=False, indent=1), encoding="utf-8")
 
 
+资产种类 = [("图片", {".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg", ".psd"}), ("视频", {".mp4", ".mov", ".webm"}),
+          ("音频", {".mp3", ".wav", ".m4a"}), ("网页", {".html", ".htm"})]
+
+
+def 资产卡(idx) -> list:
+    """资产视图的卡片：资产/ 下每个文件一张，按实体目录分组（视图规范：按实体编号聚合）。
+    只用于画布呈现；不是 md 条目，不参与校验。卡片带 资产文件=True，核心据此内嵌预览而不是读正文。"""
+    主人: dict = {}
+    for n in idx.条目.values():
+        for a in n.资产展开:
+            主人.setdefault(a, []).append(n)
+    出 = []
+    for a in idx.资产:
+        parts = a.split("/")
+        if parts[0] != "资产":
+            continue
+        后缀 = Path(a).suffix.lower()
+        种 = next((k for k, v in 资产种类 if 后缀 in v), "文件")
+        挂 = 主人.get(a, [])
+        分组 = " / ".join(parts[1:-1]) or "（根目录）"
+        出.append({
+            "路径": a, "名称": Path(a).stem, "标题": Path(a).name, "编号": "", "库": "资产", "分组": 分组,
+            "类型": 种, "状态": "", "摘要": ("挂在：" + "、".join(n.标题 for n in 挂)) if 挂 else "未认领",
+            "关联": {}, "资产": {}, "资产展开": [a], "被引用": [n.路径 for n in 挂], "软引用": [], "路线": [],
+            "工具": [], "数据": [], "代码": [], "标签": [后缀.lstrip(".")], "扩展": {}, "机制": [],
+            "行数": None, "有frontmatter": False, "豁免": True, "资产文件": True,
+        })
+    return 出
+
+
 def 打包(根: Path) -> dict:
     idx = 建索引(根)
     结果 = 校验(idx)
@@ -108,7 +138,7 @@ def 打包(根: Path) -> dict:
                 产出.append(str(p.relative_to(根)).replace(os.sep, "/"))
     return {
         "项目": idx.cfg.名称, "主分组": idx.cfg.主分组, "文件候选": 文件候选(idx),
-        "条目": [n.to_dict() for n in idx.条目.values()],
+        "条目": [n.to_dict() for n in idx.条目.values()] + 资产卡(idx),
         "路线": [{"名称": r.名称, "路径": r.路径, "说明": r.说明, "入口": r.入口,
                  "文件名": r.路径.split("/")[-1],
                  "mtime": (根 / r.路径).stat().st_mtime,
@@ -230,6 +260,18 @@ class 处理器(BaseHTTPRequestHandler):
             t = mimetypes.guess_type(p.name)[0] or "application/octet-stream"
             if p.suffix.lower() == ".md":
                 t = "text/plain; charset=utf-8"
+            范围 = re.match(r"bytes=(\d*)-(\d*)$", self.headers.get("Range") or "")
+            if 范围:
+                大小 = p.stat().st_size
+                起 = int(范围.group(1)) if 范围.group(1) else max(0, 大小 - int(范围.group(2) or 0))
+                止 = min(int(范围.group(2)), 大小 - 1) if 范围.group(1) and 范围.group(2) else 大小 - 1
+                with open(p, "rb") as f:
+                    f.seek(起); 体 = f.read(止 - 起 + 1)
+                self.send_response(206)
+                self.send_header("Content-Type", t); self.send_header("Accept-Ranges", "bytes")
+                self.send_header("Content-Range", f"bytes {起}-{止}/{大小}"); self.send_header("Content-Length", str(len(体)))
+                self.send_header("Cache-Control", "no-store"); self.end_headers(); self.wfile.write(体)
+                return
             self._发(200, p.read_bytes(), t)
             return
         self._发(404, b"not found", "text/plain")

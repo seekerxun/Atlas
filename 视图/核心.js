@@ -1045,6 +1045,16 @@ function 装入卡(card){
 
 
 
+function 资产预览html(路径){
+  const 址 = '/文件/' + encodeURI(路径), 后 = (路径.split('.').pop() || '').toLowerCase();
+  if (图后缀.test(路径)) return `<p><img class="资产预览" src="${转义(址)}" alt="${转义(路径.split('/').pop())}" style="max-width:100%;height:auto"></p>`;
+  if (['mp4', 'webm', 'mov'].includes(后)) return `<p><video class="资产预览" src="${转义(址)}" controls preload="metadata" style="width:100%;max-height:70vh"></video></p>`;
+  if (['mp3', 'wav', 'm4a'].includes(后)) return `<p><audio class="资产预览" src="${转义(址)}" controls style="width:100%"></audio></p>`;
+  if (['html', 'htm'].includes(后)) return `<p><a href="${转义(址)}" target="_blank" rel="noopener">在新标签页打开这个网页 ↗</a></p>` +
+    `<iframe class="资产预览" src="${转义(址)}" title="${转义(路径)}" style="width:100%;aspect-ratio:16/9;border:0"></iframe>`;
+  return `<p class="读取">这个文件不能在这里预览，<a href="${转义(址)}" target="_blank" rel="noopener">在新标签页打开 ↗</a>。</p>`;
+}
+
 function 开抽屉(n){
   const card = $('#世界').querySelector(`.卡[data-路径="${CSS.escape(n.路径)}"]`);
   if (!card) return;
@@ -1052,6 +1062,8 @@ function 开抽屉(n){
   装入卡(card);
   const 正文 = $('#原');
   if (!正文) { 阅读完成 = Promise.resolve(); 提示('主题条目详情缺少 #原 正文插槽'); return; }
+  // 资产卡不是文档：直接内嵌预览，不把图片、视频当文本读
+  if (n.资产文件) { 正文.innerHTML = 资产预览html(n.路径); 阅读完成 = Promise.resolve(); 定位展开(); return; }
   正文请求 = new AbortController();
   const controller = 正文请求;
   阅读完成 = fetch('/文件/' + encodeURI(n.路径), {signal: controller.signal}).then(r => {
