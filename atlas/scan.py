@@ -66,6 +66,11 @@ def _编号与名称(cfg: 配置, stem: str):
     return "", stem
 
 
+def _在代码目录(cfg: 配置, 路径: str) -> bool:
+    """代码目录里的文件是产品本身（含框架自带的 md），不按条目要求。"""
+    return any(路径 == d or 路径.startswith(d + "/") for d in cfg.代码目录)
+
+
 def 解析条目(cfg: 配置, rel: Path) -> tuple[Node | None, str | None]:
     p = cfg.根 / rel
     text = p.read_text(encoding="utf-8", errors="replace")
@@ -74,7 +79,7 @@ def 解析条目(cfg: 配置, rel: Path) -> tuple[Node | None, str | None]:
     编号, 名称 = _编号与名称(cfg, rel.stem)
     n = Node(路径=str(rel).replace(os.sep, "/"), 编号=编号, 名称=名称,
              库=库, 分组=分组, 行数=text.count("\n") + 1)
-    n.豁免 = rel.name in cfg.豁免 or str(rel) in cfg.豁免
+    n.豁免 = rel.name in cfg.豁免 or str(rel) in cfg.豁免 or _在代码目录(cfg, n.路径)
     if fm原文 is None:
         n.有frontmatter = False
         return n, None
@@ -183,7 +188,7 @@ def 建索引(根: Path) -> 索引:
             continue                      # 倾倒区不扫
         if ext == ".md":
             n, err = 解析条目(cfg, rel)
-            if err:
+            if err and not _在代码目录(cfg, s):
                 idx.解析错误.append((s, err))
             idx.条目[s] = n
         elif ext in TOOL_EXT or (顶 == "工具" and ext not in DATA_EXT | SKIP_EXT):
