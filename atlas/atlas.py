@@ -126,7 +126,7 @@ def 命令_路线(args):
             return
         print(f"{C['粗']}可用路线：{C['_']}")
         for r in idx.路线:
-            篇 = sum(len(s.docs) for s in r.步骤)
+            篇 = len({d for s in r.步骤 for d in s.docs})
             print(f"  {'★ ' if r.入口 else '  '}{C['粗']}{r.名称}{C['_']}  "
                   f"{C['淡']}{len(r.步骤)} 步 / {篇} 篇文档"
                   f"{'  —  ' + r.说明 if r.说明 else ''}{C['_']}")
@@ -137,19 +137,25 @@ def 命令_路线(args):
         sys.exit(f"没有叫 `{args.名字}` 的路线。可用：" + "、".join(r.名称 for r in idx.路线))
     r = 命中[0]
 
-    文件, 行数 = [], 0
+    文件, 行数 = {}, 0   # 文件 → 首次出现的步骤号；同一篇在多步出现只算一次
     out = [f"# 路线：{r.名称}"] + ([f"# {r.说明}"] if r.说明 else []) + [""]
     for i, s in enumerate(r.步骤, 1):
         out.append(f"## 步骤 {i} — {s.title}")
         if s.note:
             out.append(f"#  {s.note}")
+        新条目 = []   # 本步第一次出现的条目，只列它们的图
         for d in s.docs:
             n = idx.条目.get(f"{d}.md")
+            路径 = n.路径 if n else (f"{d}.md" if (根 / f"{d}.md").exists() else d)
+            if 路径 in 文件:
+                out.append(垫(f"读   {路径}", 52) + f"# 同步骤 {文件[路径]}")
+                continue
             if n:
                 out.append(垫(f"读   {n.路径}", 52) + f"# {n.类型} · {n.行数}行"
                            + (f" · {n.摘要}" if n.摘要 else ""))
-                文件.append(n.路径)
+                文件[n.路径] = i
                 行数 += n.行数
+                新条目.append(n)
             elif (根 / f"{d}.md").exists() or (根 / d).exists():
                 p = f"{d}.md" if (根 / f"{d}.md").exists() else d
                 try:
@@ -157,7 +163,7 @@ def 命令_路线(args):
                 except (UnicodeError, OSError):
                     源码行数 = None
                 out.append(f"读   {p}" + (f"  # {源码行数}行" if 源码行数 is not None else ""))
-                文件.append(p)
+                文件[p] = i
                 行数 += 源码行数 or 0
             else:
                 out.append(f"读   ??? `{d}` 不存在")
@@ -165,8 +171,7 @@ def 命令_路线(args):
             out.append(f"工具 {t}")
         for o in s.outputs:
             out.append(f"产出 {o}")
-        图 = [a for d in s.docs for a in (idx.条目.get(f"{d}.md").资产展开
-                                          if idx.条目.get(f"{d}.md") else [])]
+        图 = [a for n in 新条目 for a in n.资产展开]
         for a in 图[:6]:
             out.append(f"图   {a}")
         if len(图) > 6:
