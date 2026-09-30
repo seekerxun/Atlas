@@ -1329,6 +1329,7 @@ function 画未认领(){
   $('#未体').innerHTML = 主题.模板.未认领列表({组});
   $('#未体').querySelectorAll('.项').forEach(e => {
     e.ondragstart = ev => {
+      ev.dataTransfer.setData(认领类型, e.dataset.文件);
       ev.dataTransfer.setData('text/plain', e.dataset.文件);
       document.querySelectorAll('.卡').forEach(c => c.classList.add('可放'));
     };
@@ -1337,11 +1338,15 @@ function 画未认领(){
 }
 $('#未 .头').onclick = () => { const 未 = $('#未');
   if (未.classList.contains('开')) 关弹窗(未, () => 未.classList.remove('开')); else { 取消关闭(未); 未.classList.add('开'); } };
-document.addEventListener('dragover', e => { if (e.target.closest('.卡')) e.preventDefault(); });
+// 认领只接受未认领抽屉发起的拖动：链接、选中的文字、外部文件拖进来一律不认，免得把网址写进 frontmatter。
+const 认领类型 = 'application/x-atlas-file';
+const 是认领拖动 = e => [...(e.dataTransfer?.types || [])].includes(认领类型);
+document.addEventListener('dragover', e => { if (e.target.closest('.卡') && 是认领拖动(e)) e.preventDefault(); });
 document.addEventListener('drop', async e => {
   const 卡 = e.target.closest('.卡'); if (!卡) return;
   e.preventDefault();
-  const 文件 = e.dataTransfer.getData('text/plain'); if (!文件) return;
+  if (!是认领拖动(e)) return;
+  const 文件 = e.dataTransfer.getData(认领类型); if (!文件) return;
   if (文件.startsWith('产出/')) { 提示('产出不能直接认领：值得留的先移到 资产/，再从未认领资产里拖'); return; }
   let 分类 = null;
   if (图后缀.test(文件)) {

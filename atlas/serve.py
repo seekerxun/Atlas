@@ -353,6 +353,10 @@ class 处理器(BaseHTTPRequestHandler):
             elif 路径 == "/认领":
                 条目 = self.根 / 体["条目"]
                 文件 = str(体["文件"])
+                目标 = (self.根 / 文件).resolve()
+                if ("://" in 文件 or Path(文件).is_absolute() or not 目标.is_relative_to(self.根.resolve())
+                        or not 目标.exists()):
+                    raise RuntimeError(f"只能认领仓库里已有的文件：{文件}")
                 字段 = 体.get("字段") or ("工具" if Path(文件).suffix.lower() in
                                         {".py", ".js", ".ts", ".sh", ".html"} else "资产")
                 分类 = 体.get("分类") or (None if 字段 == "工具" else "未分类")
