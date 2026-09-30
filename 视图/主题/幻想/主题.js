@@ -149,7 +149,7 @@ function 预载背景(){
 function 定位导航(即刻){
   const 签 = $('#签'), 块 = 签?.querySelector('.签块'), 钮 = 签?.querySelector('button.开');
   if (!块 || !钮) return;
-  换角色(钮.dataset.v);
+  换角色(钮.dataset.原型 || api.视图原型(钮.dataset.v));
   const 序 = [...签.querySelectorAll('button')].indexOf(钮);
   const 动 = 可动() && !即刻 && 签序 >= 0 && 序 !== 签序;
   块.style.transition = 动 ? `left .42s ${顺}, width .42s ${顺}` : 'none';
@@ -396,7 +396,7 @@ function 初始视野(){
 
 function 导航内容(视图们){
   return '<span class="签块" aria-hidden="true"></span>' + 视图们.map(v =>
-    `<button data-v="${v}"><svg class="导航图标" viewBox="0 0 16 16" aria-hidden="true">${导航图形[v]}</svg><span>${v}</span><span class="导航计数"></span></button>`).join('');
+    `<button data-v="${转义(v)}"><svg class="导航图标" viewBox="0 0 16 16" aria-hidden="true">${导航图形[api.视图原型(v)] || ''}</svg><span>${转义(v)}</span><span class="导航计数"></span></button>`).join('');
 }
 
 function 缩放外观(缩){

@@ -342,7 +342,7 @@ function 初始视野(){
 
 function 导航内容(视图们){
   return '<span class="签块" aria-hidden="true"></span>' + 视图们.map(v =>
-    `<button data-v="${v}"><span>${v}</span><span class="导航计数"></span></button>`).join('');
+    `<button data-v="${转义(v)}"><span>${转义(v)}</span><span class="导航计数"></span></button>`).join('');
 }
 
 function 缩放外观(缩){

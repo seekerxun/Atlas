@@ -5,7 +5,7 @@ from pathlib import Path
 
 import miniyaml as y
 from model import (Node, 步骤, 路线, 配置, TOOL_EXT, ASSET_EXT, DATA_EXT,
-                   SKIP_EXT, SKIP_NAME)
+                   SKIP_EXT, SKIP_NAME, 保留目录)
 
 双链 = re.compile(r"\[\[([^\]|#]+)")
 资产网页 = {".html", ".htm"}
@@ -47,14 +47,16 @@ def _走(根: Path, 忽略: set[str]):
 
 
 def _库与分组(cfg: 配置, rel: Path):
+    """库 = 顶层目录对应的标签名；分组按标签的规则从下一级目录推导。"""
     parts = rel.parts
-    库 = parts[0] if parts[0] in cfg.库表 else ""
-    分组 = ""
-    if 库 == "内容" and len(parts) > 2:
-        分组 = parts[1].lstrip("_") if parts[1].startswith("_") else parts[1]
-    elif 库 == "策划" and len(parts) > 2:
-        分组 = parts[1]
-    elif 库 in ("资产", "产出") and len(parts) > 1:
+    标签 = cfg.按目录.get(parts[0])
+    if 标签 is None:
+        库 = parts[0] if parts[0] in 保留目录 else ""
+        return 库, (parts[1] if 库 == "产出" and len(parts) > 1 else "")
+    库, 规则, 分组 = 标签["名称"], 标签["规则"], ""
+    if 规则 == "文档" and len(parts) > 2:
+        分组 = parts[1].lstrip("_")         # _待定、_公共 这类特殊分组去掉前缀
+    elif 规则 == "素材" and len(parts) > 1:
         分组 = parts[1]
     return 库, 分组
 
@@ -187,8 +189,8 @@ def 建索引(根: Path) -> 索引:
         顶 = rel.parts[0]
         if 顶 == "产出":
             continue                      # 倾倒区不扫
-        if 顶 == "资产" and ext in 资产网页:
-            idx.资产.append(s)            # 资产里的单文件网页（如交互页）是成品，不是工具
+        if 顶 in cfg.素材目录 and ext in 资产网页:
+            idx.资产.append(s)            # 素材目录里的单文件网页（如交互页）是成品，不是工具
             continue
         if ext == ".md":
             n, err = 解析条目(cfg, rel)

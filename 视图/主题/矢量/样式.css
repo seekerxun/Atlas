@@ -51,17 +51,17 @@ kbd{font-family:var(--数字)}
 
 #签{position:relative;isolation:isolate;display:flex;gap:2px;padding:4px;border-radius:999px;background:var(--面);border:1px solid var(--边)}
 .签块{position:absolute;top:4px;bottom:4px;left:4px;right:auto;border-radius:999px;background:var(--陶土);z-index:-1}
-#签:has(button.开[data-v="策划"]) .签块{background:var(--靛蓝)}
-#签:has(button.开[data-v="内容"]) .签块{background:var(--橄榄)}
-#签:has(button.开[data-v="创意"]) .签块{background:var(--赭黄)}
-#签:has(button.开[data-v="资产"]) .签块{background:var(--烟粉)}
+#签:has(button.开[data-原型="策划"]) .签块{background:var(--靛蓝)}
+#签:has(button.开[data-原型="内容"]) .签块{background:var(--橄榄)}
+#签:has(button.开[data-原型="创意"]) .签块{background:var(--赭黄)}
+#签:has(button.开[data-原型="资产"]) .签块{background:var(--烟粉)}
 #签 button{height:42px;padding:0 14px 0 12px;display:flex;align-items:center;gap:8px;border-radius:999px;font-size:14px;font-weight:500;white-space:nowrap;transition:color .25s .08s,background-color .2s}
 #签 button:not(.开):hover{background:color-mix(in srgb,var(--字) 6%,transparent)}
 #签 button.开{font-weight:700;color:var(--上-陶土)}
-#签 button.开[data-v="策划"]{color:var(--上-靛蓝)}
-#签 button.开[data-v="内容"]{color:var(--上-橄榄)}
-#签 button.开[data-v="创意"]{color:var(--上-赭黄)}
-#签 button.开[data-v="资产"]{color:var(--上-烟粉)}
+#签 button.开[data-原型="策划"]{color:var(--上-靛蓝)}
+#签 button.开[data-原型="内容"]{color:var(--上-橄榄)}
+#签 button.开[data-原型="创意"]{color:var(--上-赭黄)}
+#签 button.开[data-原型="资产"]{color:var(--上-烟粉)}
 .导航图标{width:16px;height:16px;flex-shrink:0;fill:currentColor}
 .导航图标 .描{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
 #签 button:not(.开) .导航图标{color:var(--字3)}

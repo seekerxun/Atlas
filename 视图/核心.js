@@ -16,6 +16,7 @@ const 主题API = {
   $, 转义, 图后缀, 可动,
   分组数据: () => 分组数据(), 更新关联: () => 更新关联(),
   读取状态: () => ({数据, 视图, 缩, 位: {...位}, 布局, 展开卡, 外观: 当前外观}),
+  视图规则: v => 视图规则(v), 视图原型: v => 视图原型(v),
 };
 const 主题调用 = name => (...args) => 主题?.[name](...args);
 const 色 = 主题调用('色'), 定位文件预览 = 主题调用('定位文件预览'), 定位导航 = 主题调用('定位导航');
@@ -269,7 +270,10 @@ async function 读数据(){
   布局 = 数据.布局 || {};
   候选缓存 = null;
   $('#名').textContent = 数据.项目;
+  const 新视图们 = ['路线', ...(数据.标签 || []).map(t => t.名称)];
+  if (新视图们.join('|') !== 视图们.join('|')) { 视图们 = 新视图们; $('#签').replaceChildren(); }
   if (首次) { let 存; try { 存 = localStorage.getItem(视图键()); } catch {} if (视图们.includes(存)) 视图 = 存; }
+  if (!视图们.includes(视图)) 视图 = 视图们.find(v => v !== '路线' && 视图规则(v) === '文档') || '路线';
   if (首次 && !数据.条目.some(n => n.库 === 视图)) 视图 = 数据.路线.length ? '路线' : 视图;
   const 初次 = 首次; 首次 = false;
   for (const k in 按编号) delete 按编号[k];
@@ -422,7 +426,17 @@ document.addEventListener('click', e => {
 }, true);
 
 // ---------------------------------------------------------------- 视图切换
-const 视图们 = ['路线', '策划', '内容', '创意', '资产'];
+// 导航 = 路线 + 项目 项目.yml 里声明的标签；每个标签套用 文档 / 草稿 / 素材 三种规则之一。
+let 视图们 = ['路线', '策划', '内容', '创意', '资产'];
+// 主题的图标、配色、背景按五个"原型"准备：默认名字且规则没改的标签用自己的名字，其余按规则取代表。
+const 规则原型 = {流程: '路线', 文档: '内容', 草稿: '创意', 素材: '资产'};
+const 默认规则 = {路线: '流程', 策划: '文档', 内容: '文档', 创意: '草稿', 资产: '素材'};
+function 视图规则(v){
+  if (v === '路线') return '流程';
+  return (数据?.标签 || []).find(t => t.名称 === v)?.规则 || 默认规则[v] || '';
+}
+function 视图目录(v){ return (数据?.标签 || []).find(t => t.名称 === v)?.目录 || v; }
+function 视图原型(v){ const r = 视图规则(v); return 默认规则[v] === r ? v : (规则原型[r] || v); }
 // 当前导航按项目记在本机，刷新后回到原来的导航；读不到就按默认规则选。
 const 视图键 = () => 'atlas:视图:' + 项目根;
 
@@ -433,7 +447,10 @@ function 画签(){
   // 持续复用按钮和滑块，切换时保留滑块的起点与键盘焦点。
   if (!$('#签 button')) {
     $('#签').innerHTML = 主题.导航内容(视图们);
-    $('#签').querySelectorAll('button').forEach(b => b.onclick = () => 切视图(b.dataset.v));
+    $('#签').querySelectorAll('button').forEach(b => {
+      b.onclick = () => 切视图(b.dataset.v);
+      b.dataset.规则 = 视图规则(b.dataset.v); b.dataset.原型 = 视图原型(b.dataset.v);
+    });
   }
   $('#签').querySelectorAll('button').forEach(b => {
     b.classList.toggle('开', b.dataset.v === 视图);
@@ -490,7 +507,7 @@ function 画库(){
   const w = $('#世界'), 盒们 = 算库布局();
   if (!盒们.length) {
     w.insertAdjacentHTML('beforeend', `<div class="空 空位">
-      <b>${视图}库还是空的</b>在项目的「${视图}」目录添加内容，重新扫描后会出现在这里。</div>`);
+      <b>${转义(视图)}库还是空的</b>在项目的「${转义(视图目录(视图))}」目录添加内容，重新扫描后会出现在这里。</div>`);
     return;
   }
   盒们.forEach(b => {
@@ -1096,7 +1113,7 @@ function 切视图(v){
 function 跳(路径){
   const n = 按路径[路径]; if (!n) return;
   收卡(false);
-  if (n.库 && n.库 !== 视图) { 视图 = n.库; 画签(); 画(); }
+  if (n.库 && n.库 !== 视图 && 视图们.includes(n.库)) { 视图 = n.库; 画签(); 画(); }
   聚焦(路径); 选条目(路径);
   if (!展开卡) window.open('/文件/' + encodeURI(路径), '_blank', 'noopener');
 }
@@ -1342,7 +1359,7 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { 搜果.style.display = 'none'; 搜框.blur(); 收卡(); return; }
   if (在输入) return;
   if (e.key === '/' && document.activeElement !== 搜框) { e.preventDefault(); 搜框.focus(); }
-  if (e.key >= '1' && e.key <= '5' && document.activeElement !== 搜框) {
+  if (e.key >= '1' && e.key <= '9' && 视图们[+e.key - 1] && document.activeElement !== 搜框) {
     切视图(视图们[+e.key - 1]);
   }
 });

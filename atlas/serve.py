@@ -98,7 +98,7 @@ def 写布局(根: Path, 数据: dict):
 
 
 def 资产卡(idx) -> list:
-    """资产视图的卡片：资产/ 下每个文件一张，按实体目录分组（视图规范：按实体编号聚合）。
+    """素材视图的卡片：素材目录（默认 资产/）下每个文件一张，按实体目录分组（视图规范：按实体编号聚合）。
     只用于画布呈现；不是 md 条目，不参与校验。卡片带 资产文件=True，核心据此内嵌预览而不是读正文。"""
     主人: dict = {}
     for n in idx.条目.values():
@@ -107,14 +107,15 @@ def 资产卡(idx) -> list:
     出 = []
     for a in idx.资产:
         parts = a.split("/")
-        if parts[0] != "资产":
+        标签 = idx.cfg.按目录.get(parts[0])
+        if not 标签 or 标签["规则"] != "素材":
             continue
         后缀 = Path(a).suffix.lower()
         种 = next((k for k, v in 资产种类 if 后缀 in v), "文件")
         挂 = 主人.get(a, [])
         分组 = " / ".join(parts[1:-1]) or "（根目录）"
         出.append({
-            "路径": a, "名称": Path(a).stem, "标题": Path(a).name, "编号": "", "库": "资产", "分组": 分组,
+            "路径": a, "名称": Path(a).stem, "标题": Path(a).name, "编号": "", "库": 标签["名称"], "分组": 分组,
             "类型": 种, "状态": "", "摘要": ("挂在：" + "、".join(n.标题 for n in 挂)) if 挂 else "未认领",
             "关联": {}, "资产": {}, "资产展开": [a], "被引用": [n.路径 for n in 挂], "软引用": [], "路线": [],
             "工具": [], "数据": [], "代码": [], "标签": [后缀.lstrip(".")], "扩展": {}, "机制": [],
@@ -127,7 +128,7 @@ def 打包(根: Path) -> dict:
     idx = 建索引(根)
     结果 = 校验(idx)
     已挂 = {a for n in idx.条目.values() for a in n.资产展开}
-    未认领资产 = [a for a in idx.资产 if a.startswith("资产/") and a not in 已挂]
+    未认领资产 = [a for a in idx.资产 if a.split("/")[0] in idx.cfg.素材目录 and a not in 已挂]
     # 与项目检查共用 W02 判定，代码目录中的产品文件不能被界面误报为孤儿。
     孤儿工具 = [f.位置 for f in 结果 if f.码 == 'W02']
     产出 = []
@@ -138,6 +139,7 @@ def 打包(根: Path) -> dict:
                 产出.append(str(p.relative_to(根)).replace(os.sep, "/"))
     return {
         "项目": idx.cfg.名称, "主分组": idx.cfg.主分组, "文件候选": 文件候选(idx),
+        "标签": [{"名称": t["名称"], "目录": t["目录"], "规则": t["规则"]} for t in idx.cfg.标签],
         "条目": [n.to_dict() for n in idx.条目.values()] + 资产卡(idx),
         "路线": [{"名称": r.名称, "路径": r.路径, "说明": r.说明, "入口": r.入口,
                  "文件名": r.路径.split("/")[-1],

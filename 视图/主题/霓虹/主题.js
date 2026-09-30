@@ -324,7 +324,7 @@ function 初始视野(){
 
 function 导航内容(视图们){
   return 视图们.map(v =>
-    `<button data-v="${v}"><svg class="导航图标" viewBox="0 0 24 24" aria-hidden="true">${导航图形[v]}</svg><span>${v}</span><span class="导航计数"></span></button>`).join('');
+    `<button data-v="${转义(v)}"><svg class="导航图标" viewBox="0 0 24 24" aria-hidden="true">${导航图形[api.视图原型(v)] || ''}</svg><span>${转义(v)}</span><span class="导航计数"></span></button>`).join('');
 }
 
 function 缩放外观(缩){

@@ -83,6 +83,38 @@ class 发现:
     提示: str = ""
 
 
+规则们 = ("文档", "草稿", "素材")
+默认标签 = [{"名称": "策划", "规则": "文档"}, {"名称": "内容", "规则": "文档"},
+          {"名称": "创意", "规则": "草稿"}, {"名称": "资产", "规则": "素材"}]
+保留目录 = {"路线", "工具", "产出"}
+
+
+def 解析标签(原: Any) -> tuple[list[dict], list[str]]:
+    """项目.yml 的 标签：每个标签是一个顶层目录，套用一种规则。没写就用默认四个。"""
+    if 原 is None:
+        return [dict(t, 目录=t["名称"]) for t in 默认标签], []
+    出, 错, 见 = [], [], set()
+    for i, t in enumerate(原 if isinstance(原, list) else []):
+        if not isinstance(t, dict):
+            错.append(f"标签[{i}] 要写成 {{名称: 内容, 规则: 文档}}")
+            continue
+        名 = str(t.get("名称") or "").strip()
+        目录 = str(t.get("目录") or 名).strip().strip("/")
+        规则 = str(t.get("规则") or "").strip()
+        if not 名 or 规则 not in 规则们:
+            错.append(f"标签[{i}] 缺名称，或规则不是 {'/'.join(规则们)} 之一")
+        elif "/" in 目录 or 目录 in 保留目录 or 名 == "路线":
+            错.append(f"标签「{名}」的目录 `{目录}` 不能用：只能是顶层目录，且不能是 路线/工具/产出")
+        elif 名 in 见 or 目录 in 见:
+            错.append(f"标签「{名}」重名或目录重复")
+        else:
+            见 |= {名, 目录}
+            出.append({"名称": 名, "目录": 目录, "规则": 规则})
+    if not isinstance(原, list):
+        错.append("标签 要写成列表")
+    return 出, 错
+
+
 class 配置:
     def __init__(self, 根: Path):
         self.根 = 根
@@ -95,6 +127,8 @@ class 配置:
         self.忽略 = set(d.get("忽略") or []) | {".git", ".atlas", "node_modules", "__pycache__"}
         self.入口路线 = d.get("入口路线")
         self.代码目录 = [str(x).strip("/") for x in (d.get("代码目录") or [])]
+        self.标签, self.标签错误 = 解析标签(d.get("标签"))
+        self.按目录 = {t["目录"]: t for t in self.标签}
 
         w = y.parse(词表路径.read_text(encoding="utf-8"))
         self.库表 = w.get("库") or {}
@@ -118,6 +152,14 @@ class 配置:
     @property
     def 类型表(self):
         return self.策划类型 | self.通用类型 | self.内容类型
+
+    def 规则(self, 库: str) -> str:
+        """库（标签名）套用的规则；不是标签的库返回空串。"""
+        return next((t["规则"] for t in self.标签 if t["名称"] == 库), "")
+
+    @property
+    def 素材目录(self) -> tuple[str, ...]:
+        return tuple(t["目录"] for t in self.标签 if t["规则"] == "素材")
 
     def 层级序(self, 类型: str):
         for i, 组 in enumerate(self.层级):
