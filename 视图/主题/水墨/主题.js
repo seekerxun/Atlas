@@ -57,6 +57,7 @@ const 图标 = {
   箭头: `<svg viewBox="0 0 24 24" aria-hidden="true" ${线}><path d="M5 12h14M13 6l6 6-6 6"/></svg>`,
   复制: `<svg viewBox="0 0 24 24" aria-hidden="true" ${线}><rect x="8" y="8" width="12" height="12" rx="1.5"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>`,
   原文: `<svg viewBox="0 0 24 24" aria-hidden="true" ${线}><path d="M14 4h6v6M20 4l-8 8"/><path d="M18 14v6H4V6h6"/></svg>`,
+  访达: `<svg viewBox="0 0 24 24" aria-hidden="true" ${线}><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2h8.5A1.5 1.5 0 0 1 21 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/></svg>`,
 };
 
 let 签序 = -1;

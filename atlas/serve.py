@@ -10,6 +10,7 @@
   POST /路线             按固定模板重写一条路线的 yml
   POST /删路线           删掉一条路线的 yml
   POST /还原             把某个文件写回指定内容（撤销/重做就靠它）
+  POST /系统打开         用系统默认应用打开仓库里的文件，或在访达里选中它（不写盘）
   GET  /候选             画布上选文档用的候选列表
   GET  /身份             这个服务管的是哪个项目
   GET  /项目             当前项目、注册表里的项目（含端口和是否在运行）、可用模板
@@ -23,7 +24,7 @@
 写回前一律比对 mtime：对不上说明别人动过，中止，绝不覆盖。
 """
 from __future__ import annotations
-import json, mimetypes, os, re, threading, time, webbrowser
+import json, mimetypes, os, re, subprocess, sys, threading, time, webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote, urlparse
@@ -145,6 +146,21 @@ def 产出池(根: Path) -> list:
         名 = str(b.relative_to(根)).replace(os.sep, "/") + ("/" if b.is_dir() else "")
         出.append({"目录": 名, "件数": len(文件), "天数": 天, "过期": 天 > 产出过期天数})
     return 出
+
+
+def 系统打开(根: Path, rel: str, 显示: bool):
+    """显示=True 在访达（资源管理器）里选中文件，否则用系统默认应用打开。只接受仓库内已存在的路径。"""
+    根 = 根.resolve()
+    p = (根 / rel).resolve()
+    if not p.is_relative_to(根) or not p.exists():
+        raise RuntimeError(f"文件不存在：{rel}")
+    if sys.platform == "darwin":
+        命令 = ["open", "-R", str(p)] if 显示 else ["open", str(p)]
+    elif os.name == "nt":
+        命令 = ["explorer", f"/select,{p}"] if 显示 else ["cmd", "/c", "start", "", str(p)]
+    else:
+        命令 = ["xdg-open", str(p.parent if 显示 else p)]
+    subprocess.Popen(命令, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
 def 打包(根: Path) -> dict:
@@ -330,6 +346,9 @@ class 处理器(BaseHTTPRequestHandler):
                 return
             if 路径 == "/布局":
                 写布局(self.根, 体)
+                self._json({"好": True})
+            elif 路径 == "/系统打开":
+                系统打开(self.根, str(体.get("路径") or ""), bool(体.get("显示")))
                 self._json({"好": True})
             elif 路径 == "/认领":
                 条目 = self.根 / 体["条目"]

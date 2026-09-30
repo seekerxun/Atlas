@@ -253,16 +253,32 @@ function 提示(s){ const t = $('#提示'); t.textContent = s; t.classList.add('
 
 // ---------------------------------------------------------------- 取数
 // 每次取数都是服务端的一次重新扫描，不论从哪个入口触发；扫描期间 #刷 带 data-扫描中，主题据此播放扫描动画。
-async function 取数(){
+async function 取数(自动 = false){
   const 钮 = $('#刷'); 钮.setAttribute('data-扫描中', '');
-  try { await 读数据(); } finally { 钮.removeAttribute('data-扫描中'); }
+  try { await 读数据(自动); } finally { 钮.removeAttribute('data-扫描中'); }
 }
+// 切回前台自动重新扫描一次。正在阅读、输入或开着对话框时不打断，等下次回到前台；数据没变就不重画。
+let 上次数据文本 = null, 上次自动扫描 = 0;
+function 忙着(){
+  return !!(展开卡 || document.querySelector('dialog[open]') || $('#挑')?.classList.contains('开')
+    || /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName || '') || document.activeElement?.isContentEditable);
+}
+function 自动扫描(){
+  if (document.hidden || !数据 || 忙着() || Date.now() - 上次自动扫描 < 2000) return;
+  上次自动扫描 = Date.now();
+  取数(true).catch(() => {});
+}
+addEventListener('focus', 自动扫描);
+document.addEventListener('visibilitychange', 自动扫描);
 // 写请求带上页面所属的项目根；服务管的不是这个项目时会拒收，不会写错地方。
 let 项目根 = null;
 const 项目头 = () => ({'X-Atlas-Root': encodeURIComponent(项目根 || '')});
-async function 读数据(){
-  const r = await fetch('/数据');
-  数据 = await r.json();
+async function 读数据(自动 = false){
+  const 文本 = await (await fetch('/数据')).text();
+  // 自动扫描：结果没变、或者扫描期间用户开始阅读／输入了，就不重画，免得打断
+  if (自动 && (文本 === 上次数据文本 || 忙着())) return;
+  上次数据文本 = 文本;
+  数据 = JSON.parse(文本);
   if (数据.错误) { document.body.innerHTML = '<div class="空">' + 转义(数据.错误) + '</div>'; return; }
   // 同一端口换成了另一个项目的服务（比如在 DevDock 里重启过）：整页重载，撤销栈、布局和选择都属于旧项目。
   if (项目根 && 数据.根 !== 项目根) { location.reload(); return; }
@@ -1123,6 +1139,17 @@ function 去路线(名){
     const e = $('#世界').querySelector(`.步[data-路线="${CSS.escape(名)}"]`);
     if (e) { 缩 = .85; 位 = {x:40 - parseFloat(e.style.left)*缩,y:30 - parseFloat(e.style.top)*缩}; 应用变换(); }
     选步骤(名,r.步骤[0].id);
+  }
+}
+// 用系统默认应用打开，或在访达里选中；失败时退回浏览器新标签页看原文。
+async function 系统打开(路径, 显示 = false){
+  try {
+    const r = await fetch('/系统打开', {method: 'POST', headers: 项目头(), body: JSON.stringify({路径, 显示})});
+    const j = await r.json();
+    if (!j.好) throw new Error(j.错误 || '打开失败');
+    提示(显示 ? '已在访达中显示' : '已用默认应用打开');
+  } catch (e) {
+    if (显示) 提示(e.message || '打开失败'); else window.open('/文件/' + encodeURI(路径), '_blank', 'noopener');
   }
 }
 async function 抄(t){

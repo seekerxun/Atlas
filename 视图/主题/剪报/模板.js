@@ -28,7 +28,7 @@ function 条目详情({n, 按路径, 解析}){
       ${(n.软引用 || []).length ? '<h5>文中引用</h5>' + n.软引用.map(t => { const x = 解析(t); return x ? 跳钮(x.标题 || x.名称, x.路径) : 行(t, ''); }).join('') : ''}
       ${(n.工具 || []).length ? '<h5>工具</h5>' + n.工具.map(t => 行(t, '复制', 转义(`抄(${JSON.stringify(t)})`), null, 图标.工具)).join('') : ''}
       ${(n.路线 || []).length ? '<h5>出现在路线</h5>' + n.路线.map(r => 行(r, '', 转义(`去路线(${JSON.stringify(r)})`), '路线')).join('') : ''}
-      <div class="卡操作"><button class="主钮" onclick="${转义(`抄(${JSON.stringify(n.路径)})`)}">复制路径</button><a href="/文件/${转义(encodeURI(n.路径))}" target="_blank" rel="noopener">打开原文</a></div>
+      <div class="卡操作"><button class="主钮" onclick="${转义(`抄(${JSON.stringify(n.路径)})`)}">复制路径</button><a href="/文件/${转义(encodeURI(n.路径))}" target="_blank" rel="noopener" title="用系统默认应用打开" onclick="${转义(`event.preventDefault();系统打开(${JSON.stringify(n.路径)})`)}">打开原文</a><a href="/文件/${转义(encodeURI(n.路径))}" role="button" title="在访达中选中这个文件" onclick="${转义(`event.preventDefault();系统打开(${JSON.stringify(n.路径)},true)`)}">在访达中显示</a></div>
       </aside></div></div>`;
 }
 
