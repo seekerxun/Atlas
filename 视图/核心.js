@@ -1291,10 +1291,14 @@ function 装路线拖动(){
 // ---------------------------------------------------------------- 未认领抽屉
 function 画未认领(){
   const 组 = [['未认领资产', 数据.未认领资产], ['孤儿工具', 数据.孤儿工具],
-             ['未归类文件', 数据.未归类], ['产出（未挑）', 数据.产出]];
+             ['未归类文件', 数据.未归类]];
   const 总 = 组.reduce((a, [, v]) => a + (v || []).length, 0);
-  $('#未数').textContent = 总 ? `${总} 件` : '空了';
-  $('#未数').dataset.状态 = 总 ? '警告' : '正常';
+  // 产出池是临时存放，不算未认领：按批次列出，过期批次单独成组提醒清理
+  const 批 = 数据.产出批次 || [], 过期 = 批.filter(b => b.过期);
+  const 批名 = b => `${b.目录} · ${b.件数} 件 · ${b.天数} 天`;
+  组.push(['产出池 · 该清了', 过期.map(批名)], ['产出池', 批.filter(b => !b.过期).map(批名)]);
+  $('#未数').textContent = 总 ? `${总} 件` : 批.length ? `产出 ${批.length} 批` : '空了';
+  $('#未数').dataset.状态 = 总 || 过期.length ? '警告' : '正常';
   $('#未体').innerHTML = 主题.模板.未认领列表({组});
   $('#未体').querySelectorAll('.项').forEach(e => {
     e.ondragstart = ev => {
@@ -1311,6 +1315,7 @@ document.addEventListener('drop', async e => {
   const 卡 = e.target.closest('.卡'); if (!卡) return;
   e.preventDefault();
   const 文件 = e.dataTransfer.getData('text/plain'); if (!文件) return;
+  if (文件.startsWith('产出/')) { 提示('产出不能直接认领：值得留的先移到 资产/，再从未认领资产里拖'); return; }
   let 分类 = null;
   if (图后缀.test(文件)) {
     const 答 = await 询问({标题: '挂成哪一类？', 说明: 文件.split('/').pop(), 字段: [{名: '分类', 值: '未分类', 占位: '人设 / 场景 / 图标 …'}], 确定: '认领'});

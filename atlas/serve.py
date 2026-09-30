@@ -23,7 +23,7 @@
 写回前一律比对 mtime：对不上说明别人动过，中止，绝不覆盖。
 """
 from __future__ import annotations
-import json, mimetypes, os, re, threading, webbrowser
+import json, mimetypes, os, re, threading, time, webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote, urlparse
@@ -124,6 +124,29 @@ def 资产卡(idx) -> list:
     return 出
 
 
+产出过期天数 = 14
+
+
+def 产出池(根: Path) -> list:
+    """产出/ 下一个一级目录算一批（散放的文件各算一批）。天数按批内最新文件的修改时间算，
+    超过 产出过期天数 标 过期。产出池是临时存放，不算未认领，也不进 check。"""
+    d = 根 / "产出"
+    if not d.is_dir():
+        return []
+    现在, 出 = time.time(), []
+    for b in sorted(d.iterdir()):
+        if b.name.startswith("."):
+            continue
+        文件 = [f for f in (b.rglob("*") if b.is_dir() else [b])
+                if f.is_file() and not f.name.startswith(".")]
+        if not 文件:
+            continue
+        天 = int((现在 - max(f.stat().st_mtime for f in 文件)) // 86400)
+        名 = str(b.relative_to(根)).replace(os.sep, "/") + ("/" if b.is_dir() else "")
+        出.append({"目录": 名, "件数": len(文件), "天数": 天, "过期": 天 > 产出过期天数})
+    return 出
+
+
 def 打包(根: Path) -> dict:
     idx = 建索引(根)
     结果 = 校验(idx)
@@ -131,12 +154,7 @@ def 打包(根: Path) -> dict:
     未认领资产 = [a for a in idx.资产 if a.split("/")[0] in idx.cfg.素材目录 and a not in 已挂]
     # 与项目检查共用 W02 判定，代码目录中的产品文件不能被界面误报为孤儿。
     孤儿工具 = [f.位置 for f in 结果 if f.码 == 'W02']
-    产出 = []
-    d = 根 / "产出"
-    if d.is_dir():
-        for p in sorted(d.rglob("*")):
-            if p.is_file() and p.name != ".DS_Store":
-                产出.append(str(p.relative_to(根)).replace(os.sep, "/"))
+    产出批次 = 产出池(根)
     return {
         "项目": idx.cfg.名称, "主分组": idx.cfg.主分组, "文件候选": 文件候选(idx),
         "标签": [{"名称": t["名称"], "目录": t["目录"], "规则": t["规则"]} for t in idx.cfg.标签],
@@ -147,7 +165,7 @@ def 打包(根: Path) -> dict:
                  "步骤": [s.__dict__ for s in r.步骤]} for r in idx.路线],
         "工具": idx.工具, "资产": idx.资产, "数据表": idx.数据,
         "未归类": idx.未归类, "未认领资产": 未认领资产, "孤儿工具": 孤儿工具,
-        "产出": 产出, "词表值": {k: sorted(v) for k, v in idx.词表值.items()},
+        "产出批次": 产出批次, "词表值": {k: sorted(v) for k, v in idx.词表值.items()},
         "发现": [f.__dict__ for f in 结果], "体检": 体检数(idx, 结果),
         "统计": idx.统计(), "布局": 读布局(根), "根": str(根),
     }
