@@ -280,9 +280,8 @@ function 卡片过渡(card, 原框){
   片.setAttribute('aria-hidden', 'true'); 片.inert = true;
   api.装饰(片);
   const 框帧 = 框 => ({left:框.left + 'px', top:框.top + 'px', width:框.width + 'px', height:框.height + 'px'});
-  const 起 = 开 ? 原框 : 终框, 止 = 开 ? 终框 : 原框;
   const 动们 = [];
-  const 移 = api.动画(片, [框帧(起), 框帧(止)], {duration:时, easing:开 ? 顺 : 缓});
+  const 移 = api.动画(片, [框帧(原框), 框帧(终框)], {duration:时, easing:开 ? 顺 : 缓});
   动们.push(移, api.动画(片, [{opacity:1}, {opacity:1, offset:.65}, {opacity:0}], {duration:时, fill:'forwards'}));
   动们.push(api.动画(card, [{opacity:0}, {opacity:0, offset:.5}, {opacity:1}], {duration:时, easing:'ease-out'}));
   let 环 = null;
