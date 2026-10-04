@@ -225,7 +225,8 @@ body.远 .盒>.头 span{font-size:clamp(12px,calc(12px / var(--缩,1)),28px)}
 
 /* ———— 展开阅读：详情节点属于原卡片，反向补偿画布缩放 ———— */
 .盒.聚起{z-index:40}
-.卡.展开,.步.展开{z-index:40;width:var(--展开宽)!important;height:auto!important;min-height:0!important;padding:0;overflow:hidden;transform-origin:0 0;background:var(--深);border:1px solid color-mix(in srgb,var(--卡色) 60%,transparent);box-shadow:0 0 44px color-mix(in srgb,var(--卡色) 24%,transparent),0 30px 90px #000a;cursor:default;opacity:1;filter:none;transition:none;translate:0 0}
+/* 展开时用块布局：纵向 flex 且高度自适应的卡片里，详情侧栏的 cqh 会被算成 0。 */
+.卡.展开,.步.展开{z-index:40;display:block;width:var(--展开宽)!important;height:auto!important;min-height:0!important;padding:0;overflow:hidden;transform-origin:0 0;background:var(--深);border:1px solid color-mix(in srgb,var(--卡色) 60%,transparent);box-shadow:0 0 44px color-mix(in srgb,var(--卡色) 24%,transparent),0 30px 90px #000a;cursor:default;opacity:1;filter:none;transition:none;translate:0 0}
 .步.展开{--卡色:var(--主)!important}
 .步.展开:before{content:"";position:absolute;left:-1px;right:-1px;top:-1px;height:2px;background:var(--卡色);box-shadow:0 0 12px var(--卡色);pointer-events:none}
 .展开>:not(#屉){display:none!important}
@@ -252,10 +253,38 @@ body.霓虹阅读 .盒.聚起>.卡:not(.展开),body.霓虹阅读 .盒.聚起>.�
 .收起{flex-shrink:0;display:flex;align-items:center;gap:10px;height:36px;padding:0 12px 0 14px;font-size:13px;color:var(--字);border:1px solid color-mix(in srgb,var(--卡色) 45%,transparent);transition:background-color .18s}
 .收起:hover{background:color-mix(in srgb,var(--卡色) 12%,transparent)}
 .收起 kbd{padding:0 6px;font-size:11px;line-height:19px;color:var(--卡色);border:1px solid color-mix(in srgb,var(--卡色) 45%,transparent)}
-.详情体{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:26px 32px 32px}
+.详情体{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:26px 32px 32px;container-type:size}
 .详情摘要{margin:0 0 22px;padding:14px 18px;font-size:15.5px;line-height:1.7;color:var(--字);background:color-mix(in srgb,var(--卡色) 7%,transparent);border:1px solid color-mix(in srgb,var(--卡色) 22%,transparent)}
-.详情格{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:44px}
+.详情格{display:grid;grid-template-columns:minmax(0,1fr) 256px;gap:32px}
 .详情格>*,.详情侧{min-width:0}
+/* 侧栏钉在阅读区里不随正文滚：高度等于 .详情体 内容高，展开的区在里面自己滚，操作按钮贴底。 */
+.详情侧{position:sticky;top:0;align-self:start;height:100cqh;box-sizing:border-box;display:flex;flex-direction:column;gap:6px;overflow:auto}
+/* 开合高度动画在 主题.js 的 装配详情；过渡中 data-过渡 让区体铺满正在变化的区高。
+   align-content:start 让多出的高度留在底部，不撑高标题行。 */
+.侧区{flex:none;display:grid;grid-template-rows:auto minmax(0,0fr);align-content:start;min-height:36px;overflow:hidden;border-bottom:1px solid var(--边)}
+.侧区:is([data-展开],[data-过渡]){grid-template-rows:auto minmax(0,1fr)}
+/* 收起过程中也要能被压缩；min-height 等于标题栏高，保证标题栏不被压扁。 */
+.侧区:not([data-独立]){flex:0 1 auto}
+.侧区[hidden]{display:none}
+.侧区头{display:flex;align-items:center;gap:8px;width:100%;min-height:36px;box-sizing:border-box;padding:8px 2px;border-radius:0;font:500 10px/1.4 var(--等宽);letter-spacing:.18em;color:var(--副);text-align:left;cursor:pointer}
+.侧区头:hover{color:var(--字)}
+.侧区头:focus-visible{outline-width:2px;outline-offset:-2px}
+.侧区头:after{content:"";margin-left:auto;margin-right:4px;width:7px;height:7px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(-45deg);transition:transform .2s}
+.侧区[data-展开]>.侧区头:after{transform:rotate(45deg) translate(-2px,-2px)}
+.侧区数{padding:0 6px;font:11px/18px var(--等宽);letter-spacing:0;color:var(--字2);background:color-mix(in srgb,var(--字2) 8%,transparent)}
+/* 区体左右留出悬浮效果的位置，横向不滚；展开动画播完才允许纵向滚动，免得中途闪出滚动条。 */
+.侧区体{min-height:0;overflow:hidden;overscroll-behavior:contain;padding:2px 6px 12px 3px;opacity:0;transition:opacity .18s}
+.侧区[data-展开]>.侧区体{overflow:hidden auto;opacity:1;transition:opacity .22s .06s,overflow-y 0s .3s allow-discrete}
+.侧区体 :focus-visible{outline-width:2px;outline-offset:-2px}
+.侧区体 h6{margin:12px 0 8px;font:500 10px/1.4 var(--等宽);letter-spacing:.18em;color:var(--副)}
+.侧区体>h6:first-child{margin-top:4px}
+.大纲{display:flex;flex-direction:column}
+.大纲项{display:block;width:100%;padding:5px 8px 5px calc(8px + (var(--级,1) - 1) * 14px);border-left:2px solid var(--边);font-size:13px;line-height:1.45;color:var(--字2);text-align:left;cursor:pointer;overflow-wrap:anywhere}
+.大纲项[data-级="2"]{--级:2}
+.大纲项[data-级="3"]{--级:3}
+.大纲项[data-级="4"]{--级:4}
+.大纲项:hover{color:var(--字);border-left-color:var(--字3)}
+.大纲项[aria-current]{color:var(--字);font-weight:700;border-left-color:var(--主)}
 #屉 h5{margin:22px 0 10px;font:500 10px var(--等宽);letter-spacing:.18em;color:var(--副)}
 #屉 h5:first-child{margin-top:0}
 .详情体>.路{margin:0 0 14px!important}
@@ -283,8 +312,8 @@ body.霓虹阅读 .盒.聚起>.卡:not(.展开),body.霓虹阅读 .盒.聚起>.�
 .属性表 dt{font:12px var(--等宽);color:var(--字3)}
 .属性表 dd{margin:0;overflow-wrap:anywhere}
 .标签组{display:flex;flex-wrap:wrap;gap:6px}
-.卡操作{display:flex;gap:8px;margin-top:18px}
-.卡操作 a,.卡操作 button{flex:1;display:flex;align-items:center;justify-content:center;height:36px;font-size:13px;color:var(--字);border:1px solid var(--边)}
+.卡操作{flex:none;display:flex;gap:6px;margin-top:auto;padding-top:12px}
+.卡操作 a,.卡操作 button{flex:1 1 auto;display:flex;align-items:center;justify-content:center;height:36px;padding:0 8px;font-size:12.5px;color:var(--字);border:1px solid var(--边);white-space:nowrap}
 .卡操作 button{color:var(--主);border-color:color-mix(in srgb,var(--主) 50%,transparent);background:color-mix(in srgb,var(--主) 12%,transparent)}
 .卡操作 a:hover{text-decoration:none;border-color:var(--主)}
 .资产格{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
@@ -494,6 +523,8 @@ body.霓虹阅读 .盒.聚起>.卡:not(.展开),body.霓虹阅读 .盒.聚起>.�
   .收起 kbd{display:none}
   .详情体{padding:16px}
   .详情格{grid-template-columns:1fr;gap:24px}
+  .详情体{container-type:normal}
+  .详情侧{position:static;height:auto;overflow:visible}
   .空{width:300px;padding:30px}
   #文件预览{width:calc(100vw - 16px)}
   .文件预览头,.检查头,.项目窗头{padding:12px 16px}

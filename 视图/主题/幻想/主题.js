@@ -398,6 +398,29 @@ function 导航内容(视图们){
     `<button data-v="${转义(v)}"><svg class="导航图标" viewBox="0 0 16 16" aria-hidden="true">${导航图形[api.视图原型(v)] || ''}</svg><span>${转义(v)}</span><span class="导航计数"></span></button>`).join('');
 }
 
+// 侧栏分区开合：核心只切 data-展开，这里按切换前后各区的实际高度补间，内容再长速度也均匀。
+// 过渡期间加 data-过渡，让收起中的区体继续占满区高、随区一起被裁掉，而不是瞬间消失。
+function 装配详情(panel){
+  const 侧 = panel.querySelector('.详情侧'); if (!侧) return;
+  const 区们 = () => [...侧.querySelectorAll('.侧区')];
+  let 旧 = null;
+  api.监听(侧, 'click', e => { if (e.target.closest('.侧区头')) 旧 = new Map(区们().map(s => [s, s.offsetHeight])); }, true);
+  api.监听(侧, 'click', e => {
+    if (!旧 || !e.target.closest('.侧区头')) return;
+    const 前 = 旧; 旧 = null;
+    if (!可动()) return;
+    区们().forEach(s => { s._开合?.cancel(); s.removeAttribute('data-过渡'); });
+    区们().forEach(s => {
+      const a = 前.get(s), b = s.offsetHeight;
+      if (a == null || Math.abs(a - b) < 1) return;
+      s.setAttribute('data-过渡', '');
+      // 保留终态到收尾，撤 data-过渡 和撤动画在同一刻，不会闪一帧中间布局。
+      const 动 = s._开合 = api.动画(s, [{height:a + 'px'}, {height:b + 'px'}], {duration:280, easing:顺, fill:'forwards'});
+      动.finished.then(() => { if (s._开合 === 动) { s._开合 = null; s.removeAttribute('data-过渡'); 动.cancel(); } }, () => {});
+    });
+  });
+}
+
 function 缩放外观(缩){
   document.body.classList.toggle('远', 缩 < .55);
   document.body.classList.toggle('中', 缩 >= .55 && 缩 < .8);
@@ -405,7 +428,7 @@ function 缩放外观(缩){
 
 const 模板 = 创建模板(api, {色, 小章, 行, 详情头, 图标, 序色, 状态签});
 return {
-  装配界面, 装配画布, 外观变化, 模板,
+  装配界面, 装配详情, 装配画布, 外观变化, 模板,
   布局: {卡宽, 卡高, 隙, 盒隙, 内左, 内顶, 路线起点:60, 路线间距:110, 路线标题距:100, 路线编辑距:44, 连线出口:步宽},
   镜头时长:480, 镜头缓动:t => 1 - Math.pow(1 - t, 4),
   色, 导航内容, 缩放外观, 初始视野, 定位文件预览, 定位导航, 算库布局, 算路线布局,

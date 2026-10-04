@@ -1137,6 +1137,78 @@ function 装入卡(card){
   卡片过渡(card, 原框);
 }
 
+// 详情侧栏分区：主题在模板里给出 [data-侧区] 区块（.侧区头 按钮 + .侧区体），核心负责折叠和记忆。
+// 带 data-独立 的区自己开合；其余区同一时间只展开一个。折叠状态按项目记在浏览器里。
+// 核心只写 data-展开 和区体的 inert，收起时怎么隐藏、要不要动画由主题 CSS 决定。
+const 侧区键 = () => 'atlas:侧区:' + 项目根;
+function 读侧区(){
+  let s; try { s = JSON.parse(localStorage.getItem(侧区键())); } catch {}
+  return s && typeof s === 'object' ? s : {独立:{}, 展开:'标题'};
+}
+function 排侧区(panel){
+  const 区们 = [...panel.querySelectorAll('[data-侧区]')];
+  if (!区们.length) return;
+  const s = 读侧区(), 组 = 区们.filter(e => !e.hasAttribute('data-独立') && !e.hidden);
+  // 记住的区在这篇里没有时，临时展开第一个可见区，不改记忆；用户全收起时保持全收起。
+  const 展开名 = s.展开 === null ? null : 组.some(e => e.dataset.侧区 === s.展开) ? s.展开 : 组[0]?.dataset.侧区;
+  区们.forEach(e => {
+    const 开 = e.hasAttribute('data-独立') ? s.独立?.[e.dataset.侧区] !== false : e.dataset.侧区 === 展开名;
+    e.toggleAttribute('data-展开', 开);
+    e.querySelector('.侧区头')?.setAttribute('aria-expanded', String(开));
+    // 收起的区体不用 hidden，留给主题做展开收起动画；inert 让它不可聚焦、读屏也跳过。
+    const 体 = e.querySelector('.侧区体'); if (体) 体.inert = !开;
+  });
+}
+function 绑侧区(panel){
+  panel.querySelectorAll('[data-侧区]').forEach(e => {
+    const 头 = e.querySelector('.侧区头'), 体 = e.querySelector('.侧区体');
+    if (!头 || !体) return;
+    体.id = '侧区-' + e.dataset.侧区; 头.setAttribute('aria-controls', 体.id);
+    头.onclick = () => {
+      const s = 读侧区(), 开 = !e.hasAttribute('data-展开');
+      if (e.hasAttribute('data-独立')) s.独立 = {...s.独立, [e.dataset.侧区]: 开};
+      else s.展开 = 开 ? e.dataset.侧区 : null;
+      try { localStorage.setItem(侧区键(), JSON.stringify(s)); } catch {}
+      排侧区(panel);
+    };
+  });
+  排侧区(panel);
+}
+// 正文标题大纲：填进模板的 [data-大纲] 槽；点击在 .详情体 内滚到标题，滚动时标出当前所在标题。
+function 建大纲(panel){
+  const 槽 = panel.querySelector('[data-大纲]'), 正文 = panel.querySelector('#原'), 体 = panel.querySelector('.详情体');
+  if (!槽 || !正文 || !体) return;
+  const 标们 = [...正文.querySelectorAll('h1,h2,h3,h4')];
+  // 正文开头和详情标题同名的大标题不进大纲。
+  if (标们[0]?.textContent.trim() === panel.querySelector('h3')?.textContent.trim()) 标们.shift();
+  const 区 = 槽.closest('[data-侧区]'); if (区) 区.hidden = !标们.length;
+  const 最浅 = Math.min(...标们.map(h => +h.tagName[1]));
+  槽.innerHTML = 标们.map((h, i) => { h.id = '原-标题-' + i;
+    return `<button type="button" class="大纲项" data-级="${+h.tagName[1] - 最浅 + 1}" data-i="${i}">${转义(h.textContent)}</button>`; }).join('');
+  // 展开卡可能带画布缩放，屏幕距离要换回元素自身的 px。
+  const 比 = () => 体.getBoundingClientRect().height / 体.offsetHeight || 1;
+  槽.onclick = ev => {
+    const h = 标们[+ev.target.closest('.大纲项')?.dataset.i]; if (!h) return;
+    体.scrollTo({top: 体.scrollTop + (h.getBoundingClientRect().top - 体.getBoundingClientRect().top) / 比() - 16, behavior: 可动() ? 'smooth' : 'auto'});
+  };
+  let 帧 = 0;
+  const 亮 = () => { 帧 = 0;
+    const 顶 = 体.getBoundingClientRect().top, k = 比();
+    let 当前 = -1;
+    标们.forEach((h, i) => { if ((h.getBoundingClientRect().top - 顶) / k <= 40) 当前 = i; });
+    if (体.scrollTop > 0 && 体.scrollTop + 体.clientHeight >= 体.scrollHeight - 2) 当前 = 标们.length - 1;
+    const 项们 = 槽.querySelectorAll('.大纲项');
+    项们.forEach((b, i) => i === 当前 ? b.setAttribute('aria-current', 'true') : b.removeAttribute('aria-current'));
+    const b = 项们[当前], 滚 = 槽.closest('.侧区体');
+    if (!b || !滚 || 滚.inert) return;
+    const r = b.getBoundingClientRect(), R = 滚.getBoundingClientRect();
+    if (r.top < R.top) 滚.scrollTop -= (R.top - r.top) / k;
+    else if (r.bottom > R.bottom) 滚.scrollTop += (r.bottom - R.bottom) / k;
+  };
+  体.onscroll = () => { 帧 ||= requestAnimationFrame(亮); };
+  排侧区(panel); 亮();
+}
+
 
 
 function 资产预览html(路径){
@@ -1153,11 +1225,11 @@ function 开抽屉(n){
   const card = $('#世界').querySelector(`.卡[data-路径="${CSS.escape(n.路径)}"]`);
   if (!card) return;
   $('#屉').innerHTML = 主题.模板.条目详情({n, 按路径, 解析});
-  装入卡(card);
+  绑侧区($('#屉')); 装入卡(card);
   const 正文 = $('#原');
   if (!正文) { 阅读完成 = Promise.resolve(); 提示('主题条目详情缺少 #原 正文插槽'); return; }
   // 资产卡不是文档：直接内嵌预览，不把图片、视频当文本读
-  if (n.资产文件) { 正文.innerHTML = 资产预览html(n.路径); 阅读完成 = Promise.resolve(); 定位展开(); return; }
+  if (n.资产文件) { 正文.innerHTML = 资产预览html(n.路径); 阅读完成 = Promise.resolve(); 建大纲($('#屉')); 定位展开(); return; }
   正文请求 = new AbortController();
   const controller = 正文请求;
   阅读完成 = fetch('/文件/' + encodeURI(n.路径), {signal: controller.signal}).then(r => {
@@ -1165,7 +1237,7 @@ function 开抽屉(n){
   }).then(t => {
     if (controller.signal.aborted || !正文.isConnected) return;
     正文.innerHTML = 正文html(t.replace(/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/, '')) || '<p class="读取">这篇文档还没有正文。</p>';
-    定位展开();
+    建大纲($('#屉')); 定位展开();
   }).catch(e => { if (e.name !== 'AbortError' && 正文.isConnected) 正文.innerHTML = '<p>正文读取失败，请收起卡片后重新打开，或点击「打开原文」。</p>'; });
 }
 

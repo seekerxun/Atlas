@@ -5,7 +5,7 @@ function 条目详情({n, 按路径, 解析}){
     return 行(文, 尾, 转义(`跳(${JSON.stringify(路径)})`), x?.类型)
       .replace('class="行"', `class="行" data-关联="${转义(路径)}" style="--关联色:${色(x?.类型)}"`); };
   const 关联 = Object.entries(n.关联 || {}).map(([k, v]) =>
-    `<h5>${转义(k)}</h5>` + (Array.isArray(v) ? v : [v]).map(t => {
+    `<h6>${转义(k)}</h6>` + (Array.isArray(v) ? v : [v]).map(t => {
       const x = 解析(t);
       return x ? 跳钮(x.标题 || x.名称, x.路径) : 行(t, '未找到');
     }).join('')).join('');
@@ -16,18 +16,20 @@ function 条目详情({n, 按路径, 解析}){
   const 属性 = [['类型',n.类型],['状态',n.状态],['分组',n.分组],['编号',n.编号],['位阶',n.位阶],['篇幅',n.行数 == null ? '' : n.行数 + ' 行']]
     .filter(([,v]) => v !== null && v !== undefined && v !== '')
     .map(([k,v]) => `<dt>${k}</dt><dd>${k === '状态' ? 状态签(v) : 转义(v)}</dd>`).join('');
+  // 侧栏四个区：属性单独开合；标题、被谁引用、引用同一时间只展开一个（核心负责）。
+  const 区 = (名, 题, 内, 数, 独立) => `<section class="侧区" data-侧区="${名}"${独立 ? ' data-独立' : ''}>
+    <button type="button" class="侧区头"><span>${题}</span>${数 ? `<span class="侧区数">${数}</span>` : ''}</button><div class="侧区体">${内}</div></section>`;
+  const 引用数 = Object.values(n.关联 || {}).reduce((s, v) => s + (Array.isArray(v) ? v.length : 1), 0) + (n.软引用 || []).length + (n.路线 || []).length;
+  const 引用 = `${关联}${(n.软引用 || []).length ? '<h6>文中引用</h6>' + n.软引用.map(t => { const x = 解析(t); return x ? 跳钮(x.标题 || x.名称, x.路径) : 行(t, ''); }).join('') : ''}${(n.路线 || []).length ? '<h6>出现在路线</h6>' + n.路线.map(r => 行(r, '', 转义(`去路线(${JSON.stringify(r)})`), '路线')).join('') : ''}`;
   return 详情头(n.标题 || n.名称, n.类型 || '文档', n.路径, n.类型) + `
     <div class="详情体">
-      ${n.摘要 ? `<p class="详情摘要">${转义(n.摘要)}</p>` : ''}
-      <div class="详情格"><div><article class="正文" id="原"><div class="读取">正在读取正文…</div></article>
+      <div class="详情格"><div>${n.摘要 ? `<p class="详情摘要">${转义(n.摘要)}</p>` : ''}<article class="正文" id="原"><div class="读取">正在读取正文…</div></article>
         ${图.length ? '<h5>资产 (' + 图.length + ')</h5><div class="资产格">' + 图.map(a => `<a href="/文件/${转义(encodeURI(a))}" target="_blank" rel="noopener"><img class="预" loading="lazy" src="/文件/${转义(encodeURI(a))}" alt="${转义(a.split('/').pop())}"></a>`).join('') + '</div>' : ''}
-      </div><aside class="详情侧"><h5>属性</h5><dl class="属性表">${属性}</dl>
-      ${(n.标签 || []).length ? '<h5>标签</h5><div class="标签组">' + n.标签.map(t => `<span class="小签">${转义(t)}</span>`).join('') + '</div>' : ''}
-      ${(n.机制 || []).length ? '<h5>调用机制</h5>' + n.机制.map(m => 行(m, '')).join('') : ''}
-      ${关联}${被引 ? '<h5>被谁引用</h5>' + 被引 : ''}
-      ${(n.软引用 || []).length ? '<h5>文中引用</h5>' + n.软引用.map(t => { const x = 解析(t); return x ? 跳钮(x.标题 || x.名称, x.路径) : 行(t, ''); }).join('') : ''}
-      ${(n.工具 || []).length ? '<h5>工具</h5>' + n.工具.map(t => 行(t, '复制', 转义(`抄(${JSON.stringify(t)})`), null, 图标.工具)).join('') : ''}
-      ${(n.路线 || []).length ? '<h5>出现在路线</h5>' + n.路线.map(r => 行(r, '', 转义(`去路线(${JSON.stringify(r)})`), '路线')).join('') : ''}
+      </div><aside class="详情侧">
+      ${区('属性', '属性', `<dl class="属性表">${属性}</dl>${(n.标签 || []).length ? '<h6>标签</h6><div class="标签组">' + n.标签.map(t => `<span class="小签">${转义(t)}</span>`).join('') + '</div>' : ''}${(n.机制 || []).length ? '<h6>调用机制</h6>' + n.机制.map(m => 行(m, '')).join('') : ''}${(n.工具 || []).length ? '<h6>工具</h6>' + n.工具.map(t => 行(t, '复制', 转义(`抄(${JSON.stringify(t)})`), null, 图标.工具)).join('') : ''}`, 0, true)}
+      ${区('标题', '标题', '<nav class="大纲" data-大纲 aria-label="正文标题"></nav>')}
+      ${被引 ? 区('被引', '被谁引用', 被引, (n.被引用 || []).length) : ''}
+      ${引用 ? 区('引用', '引用', 引用, 引用数) : ''}
       <div class="卡操作"><button class="主钮" onclick="${转义(`抄(${JSON.stringify(n.路径)})`)}">复制路径</button><a href="/文件/${转义(encodeURI(n.路径))}" target="_blank" rel="noopener" title="用系统默认应用打开" draggable="false" onclick="${转义(`event.preventDefault();系统打开(${JSON.stringify(n.路径)})`)}">打开原文</a><a href="/文件/${转义(encodeURI(n.路径))}" role="button" draggable="false" title="在访达中选中这个文件" onclick="${转义(`event.preventDefault();系统打开(${JSON.stringify(n.路径)},true)`)}">在访达中显示</a></div>
       </aside></div></div>`;
 }
