@@ -501,6 +501,17 @@ document.addEventListener('click', e => {
   const b = e.target.closest('[data-预览]');
   if (b) { e.preventDefault(); 预览文档(b.dataset.预览); }
 }, true);
+// 正文双链：指向当前这篇（或只写了 #标题）就在原地滚动，否则跳到那张卡片；带修饰键的点击交给浏览器开新标签。
+// 用捕获阶段：展开卡内的点击会被卡片自己的处理截住，冒泡到不了 document。
+document.addEventListener('click', e => {
+  const a = e.target.closest('a.双链'); if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
+  e.preventDefault();
+  const 路径 = a.dataset.双链, 锚 = a.dataset.锚, 预览 = a.closest('#文件预览');
+  const 原地 = !路径 || (!预览 && a.closest('#屉') && 路径 === 选中);
+  if (原地) { 跳锚(a.closest('.正文'), 预览 ? $('#文件预览正文') : $('#屉 .详情体'), 锚); return; }
+  if (预览?.open) 关弹窗(预览);
+  跳(路径, 锚);
+}, true);
 
 // ---------------------------------------------------------------- 视图切换
 // 导航 = 路线 + 项目 项目.yml 里声明的标签；每个标签套用 文档 / 草稿 / 素材 三种规则之一。
@@ -1038,19 +1049,34 @@ function 更新关联(){
 
 
 
-// 先转义，再渲染常用 Markdown；原始 HTML 只作为文本显示。
+// 正文里的 [[名]]、[[名|显示]]、[[名#标题]]、[[#标题]]：找得到的条目渲染成链接，点击跳到卡片并滚到该标题；
+// 找不到的只留文字，标 .未找到。表格里的 \| 当作显示名分隔。
+function 双链html(内){
+  const [目标, ...显] = 内.replace(/\\\|/g, '|').split('|');
+  const 井 = 目标.indexOf('#');
+  const 名 = (井 < 0 ? 目标 : 目标.slice(0, 井)).trim(), 锚 = 井 < 0 ? '' : 目标.slice(井 + 1).trim();
+  const 文 = 显.join('|').trim() || [名, 锚.split('#').pop()].filter(Boolean).join(' › ');
+  const n = 名 ? 解析(名) : null;
+  if (名 && !n) return `<span class="双链 未找到" title="${转义('未找到：' + 名)}">${转义(文)}</span>`;
+  const 路径 = n?.路径 || '';
+  return `<a class="双链" href="${n ? '/文件/' + 转义(encodeURI(路径)) : '#'}" data-双链="${转义(路径)}" data-锚="${转义(锚)}"`
+    + (n ? ` data-关联="${转义(路径)}" style="--关联色:${转义(色(n.类型))}"` : '') + `>${转义(文)}</a>`;
+}
+// 先转义，再渲染常用 Markdown；原始 HTML 只作为文本显示。行内代码里的内容原样显示。
 function 正文html(文本){
-  const 行内 = t => 转义(t).replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (原, 文, 链) => {
-      if (!/^https?:\/\//i.test(链)) return 文;
-      return `<a href="${链}" target="_blank" rel="noopener noreferrer">${文}</a>`;
-    });
+  const 行内 = t => t.split(/(`[^`]+`|\[\[[^\]\n]+?\]\])/).map((段, i) => {
+    if (i % 2) return 段[0] === '`' ? '<code>' + 转义(段.slice(1, -1)) + '</code>' : 双链html(段.slice(2, -2));
+    return 转义(段).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (原, 文, 链) => {
+        if (!/^https?:\/\//i.test(链)) return 文;
+        return `<a href="${链}" target="_blank" rel="noopener noreferrer">${文}</a>`;
+      });
+  }).join('');
   const ls = 文本.replace(/\r\n/g, '\n').split('\n');
   let out = [], 段 = [], 列 = null;
   const 收段 = () => { if (段.length) out.push('<p>' + 段.map(行内).join('<br>') + '</p>'); 段 = []; };
   const 收列 = () => { if (列) out.push(`</${列}>`); 列 = null; };
-  const 格 = line => line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(x => x.trim());
+  const 格 = line => line.trim().replace(/^\|/, '').replace(/\|$/, '').split(/(?<!\\)\|(?![^\[]*\]\])/).map(x => x.trim());
   for (let i = 0; i < ls.length; i++) {
     const l = ls[i];
     if (/^\s*```/.test(l)) {
@@ -1127,14 +1153,35 @@ function 装入卡(card){
     e.tabIndex = 0; e.setAttribute('role', 'button');
     e.onkeydown = ev => { if (ev.target === e && ['Enter',' '].includes(ev.key)) { ev.preventDefault(); e.click(); } };
   });
-  panel.querySelectorAll('[data-关联]').forEach(e => {
+  绑关联(panel);
+  定位展开(); panel.querySelector('.收起')?.focus({preventScroll:true});
+  卡片过渡(card, 原框);
+}
+
+// 悬停或聚焦关联入口时高亮画布上对应的卡片；正文双链在正文读完后再绑一次。
+function 绑关联(根){
+  根.querySelectorAll('[data-关联]').forEach(e => {
     const 开 = () => { 悬停关联 = e.dataset.关联; 更新关联(); };
     const 关 = () => { 悬停关联 = null; 更新关联(); };
     e.onpointerenter = ev => { if (ev.pointerType !== 'touch') 开(); };
     e.onpointerleave = 关; e.onfocus = 开; e.onblur = 关;
   });
-  定位展开(); panel.querySelector('.收起')?.focus({preventScroll:true});
-  卡片过渡(card, 原框);
+}
+// 在阅读滚动容器里把某个元素滚到顶部附近；展开卡可能带画布缩放，屏幕距离要换回元素自身的 px。
+function 滚到(体, el){
+  const 比 = 体.getBoundingClientRect().height / 体.offsetHeight || 1;
+  体.scrollTo({top: 体.scrollTop + (el.getBoundingClientRect().top - 体.getBoundingClientRect().top) / 比 - 16, behavior: 可动() ? 'smooth' : 'auto'});
+}
+// 双链锚点按标题文字找（忽略空白和大小写），[[名#父#子]] 取最后一段；先精确匹配，再找包含它的标题。
+function 找锚(根, 锚){
+  const 规 = x => x.replace(/\s+/g, '').toLowerCase(), k = 规(锚.split('#').pop());
+  const 标们 = [...根.querySelectorAll('h1,h2,h3,h4')];
+  return k ? 标们.find(h => 规(h.textContent) === k) || 标们.find(h => 规(h.textContent).includes(k)) : null;
+}
+function 跳锚(根, 体, 锚){
+  if (!锚 || !根 || !体) return;
+  const h = 找锚(根, 锚);
+  if (h) 滚到(体, h); else 提示('这篇里没找到标题「' + 锚.split('#').pop() + '」');
 }
 
 // 详情侧栏分区：主题在模板里给出 [data-侧区] 区块（.侧区头 按钮 + .侧区体），核心负责折叠和记忆。
@@ -1185,12 +1232,8 @@ function 建大纲(panel){
   const 最浅 = Math.min(...标们.map(h => +h.tagName[1]));
   槽.innerHTML = 标们.map((h, i) => { h.id = '原-标题-' + i;
     return `<button type="button" class="大纲项" data-级="${+h.tagName[1] - 最浅 + 1}" data-i="${i}">${转义(h.textContent)}</button>`; }).join('');
-  // 展开卡可能带画布缩放，屏幕距离要换回元素自身的 px。
   const 比 = () => 体.getBoundingClientRect().height / 体.offsetHeight || 1;
-  槽.onclick = ev => {
-    const h = 标们[+ev.target.closest('.大纲项')?.dataset.i]; if (!h) return;
-    体.scrollTo({top: 体.scrollTop + (h.getBoundingClientRect().top - 体.getBoundingClientRect().top) / 比() - 16, behavior: 可动() ? 'smooth' : 'auto'});
-  };
+  槽.onclick = ev => { const h = 标们[+ev.target.closest('.大纲项')?.dataset.i]; if (h) 滚到(体, h); };
   let 帧 = 0;
   const 亮 = () => { 帧 = 0;
     const 顶 = 体.getBoundingClientRect().top, k = 比();
@@ -1237,7 +1280,7 @@ function 开抽屉(n){
   }).then(t => {
     if (controller.signal.aborted || !正文.isConnected) return;
     正文.innerHTML = 正文html(t.replace(/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/, '')) || '<p class="读取">这篇文档还没有正文。</p>';
-    建大纲($('#屉')); 定位展开();
+    绑关联(正文); 建大纲($('#屉')); 定位展开();
   }).catch(e => { if (e.name !== 'AbortError' && 正文.isConnected) 正文.innerHTML = '<p>正文读取失败，请收起卡片后重新打开，或点击「打开原文」。</p>'; });
 }
 
@@ -1259,12 +1302,13 @@ function 切视图(v){
   // 导航共享当前缩放与平移；这是画布行为，不随主题改变。
   停镜头(); 收卡(false); 视图 = v; 画签(); 画();
 }
-function 跳(路径){
+function 跳(路径, 锚 = ''){
   const n = 按路径[路径]; if (!n) return;
   收卡(false);
   if (n.库 && n.库 !== 视图 && 视图们.includes(n.库)) { 视图 = n.库; 画签(); 画(); }
   聚焦(路径); 选条目(路径);
-  if (!展开卡) window.open('/文件/' + encodeURI(路径), '_blank', 'noopener');
+  if (!展开卡) { window.open('/文件/' + encodeURI(路径), '_blank', 'noopener'); return; }
+  if (锚) 阅读完成.then(() => { if (选中 === 路径) 跳锚($('#原'), $('#屉 .详情体'), 锚); });
 }
 function 去路线(名){
   切视图('路线');

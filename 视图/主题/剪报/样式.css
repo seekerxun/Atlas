@@ -340,6 +340,10 @@ html[data-外观="深"] .正文 blockquote{background:color-mix(in srgb,var(--�
 .正文 blockquote:not(:has(+blockquote)){margin-bottom:16px;padding-bottom:14px}
 .正文 blockquote:empty{height:8px;padding-top:0;padding-bottom:0}
 .正文 code{padding:1px 5px;background:color-mix(in srgb,var(--字) 9%,transparent);font:13px/1.7 var(--等宽)}
+/* 正文双链：核心生成 a.双链（--关联色 为目标类型色）和找不到目标时的 span.双链.未找到。 */
+.正文 .双链{color:var(--字);font-weight:700;text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--关联色,var(--路线红)) 55%,transparent);text-decoration-thickness:2px;text-underline-offset:3px;transition:color .15s,text-decoration-color .15s,background-color .15s}
+.正文 .双链:hover,.正文 .双链:focus-visible{color:var(--马克上);text-decoration-color:var(--关联色,var(--路线红));background:var(--马克)}
+.正文 .双链.未找到{color:var(--字3);font-weight:inherit;text-decoration:underline dashed;text-decoration-color:var(--字3);text-decoration-thickness:1px;cursor:help}
 .正文 pre{overflow:auto;white-space:pre;padding:16px 20px;background:#1A1A18;color:#EDE6D6;font-size:13px}
 html[data-外观="深"] .正文 pre{background:#0C0B0A}
 .正文 pre code{padding:0;background:none;color:inherit}

@@ -7,7 +7,7 @@ import miniyaml as y
 from model import (Node, 步骤, 路线, 配置, TOOL_EXT, ASSET_EXT, DATA_EXT,
                    SKIP_EXT, SKIP_NAME, 保留目录)
 
-双链 = re.compile(r"\[\[([^\]|#]+)")
+双链 = re.compile(r"\[\[([^\]|#\\]+)")  # 名字止于 | # 或表格里转义的 \|
 资产网页 = {".html", ".htm"}
 
 

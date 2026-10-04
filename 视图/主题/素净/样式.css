@@ -313,6 +313,10 @@ body.素净阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
 .正文 blockquote:not(:has(+blockquote)){margin-bottom:16px;padding-bottom:12px;border-bottom-left-radius:10px;border-bottom-right-radius:10px}
 .正文 blockquote:empty{height:8px;padding-top:0;padding-bottom:0}
 .正文 code{padding:1px 5px;border-radius:4px;background:var(--浅);font:13px/1.7 var(--等宽)}
+/* 正文双链：核心生成 a.双链（--关联色 为目标类型色）和找不到目标时的 span.双链.未找到。 */
+.正文 .双链{color:var(--强调);font-weight:500;text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--关联色,var(--强调)) 55%,transparent);text-decoration-thickness:1px;text-underline-offset:3px;transition:color .15s,text-decoration-color .15s,background-color .15s}
+.正文 .双链:hover,.正文 .双链:focus-visible{color:var(--强调);text-decoration-color:var(--关联色,var(--强调))}
+.正文 .双链.未找到{color:var(--字3);font-weight:inherit;text-decoration:underline dashed;text-decoration-color:var(--字3);text-decoration-thickness:1px;cursor:help}
 .正文 pre{overflow:auto;white-space:pre;padding:14px 16px;border-radius:10px;background:var(--浅);font-size:13px;line-height:1.65}
 .正文 pre code{padding:0;background:none}
 .正文 .表滚{overflow:auto;margin:0 0 16px;border:1px solid var(--边);border-radius:10px}
