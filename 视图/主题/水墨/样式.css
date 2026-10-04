@@ -80,11 +80,14 @@ kbd{font-family:var(--字体)}
 .搜索副文{display:block;margin-top:2px;font-size:12px;color:var(--字3);overflow-wrap:anywhere}
 
 /* 主题选择：基础.css 统一成小图标，这里给一滴墨的图形。 */
-#主题控件{--主题钮:40px;--主题图形:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3c3 4.5 6 7.6 6 11a6 6 0 0 1-12 0c0-3.4 3-6.5 6-11z'/%3E%3Cpath d='M9.5 15a2.6 2.6 0 0 0 2.5 2.5'/%3E%3C/svg%3E");
+#主题控件,#运行控件{--主题钮:40px;--主题图形:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3c3 4.5 6 7.6 6 11a6 6 0 0 1-12 0c0-3.4 3-6.5 6-11z'/%3E%3Cpath d='M9.5 15a2.6 2.6 0 0 0 2.5 2.5'/%3E%3C/svg%3E");
   border-radius:50%;background:var(--面);border:1px solid color-mix(in srgb,var(--字) 16%,transparent);color:var(--字);transition:border-color .2s}
-#主题控件:hover{border-color:var(--字)}
-#主题面板{padding:14px;border:1px solid var(--边);border-radius:4px;background:var(--面);box-shadow:0 30px 60px -28px color-mix(in srgb,var(--影) 55%,transparent)}
-#主题面板:popover-open{animation:水墨晕入 .34s var(--缓)}
+#主题控件:hover,#运行控件:hover{border-color:var(--字)}
+#主题面板,#运行面板{padding:14px;border:1px solid var(--边);border-radius:4px;background:var(--面);box-shadow:0 30px 60px -28px color-mix(in srgb,var(--影) 55%,transparent)}
+#主题面板:popover-open,#运行面板:popover-open{animation:水墨晕入 .34s var(--缓)}
+#运行控件{--运行色:var(--石绿);--运行错色:var(--朱砂)}
+#运行面板 .运行项,#运行面板 .运行钮 button{border-radius:3px}
+
 #主题面板 .主题模式{border-color:var(--边);border-radius:3px}
 #主题面板 .主题组名{font-weight:700;color:var(--字3)}
 #主题面板 .主题项{border-radius:4px}
@@ -472,6 +475,7 @@ body.水墨阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.1}
   #顶{height:auto;padding-top:8px;padding-bottom:6px;display:grid;grid-template-columns:auto minmax(0,1fr) auto auto auto auto auto;grid-template-rows:48px 46px;gap:4px 10px}
   .品牌{grid-row:1;grid-column:1}
   #体检{grid-row:1;grid-column:3;margin:0}
+  #运行控件{grid-row:1;grid-column:2;justify-self:end}
   #新路线{grid-row:1;grid-column:4}
   #搜{grid-row:1;grid-column:5}
   #主题控件{grid-row:1;grid-column:6}
@@ -481,7 +485,8 @@ body.水墨阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.1}
 }
 @media(max-width:700px){
   #顶{height:auto;padding:8px 10px 6px;display:grid;grid-template-columns:minmax(0,1fr) auto auto;grid-template-rows:44px 44px 46px;gap:6px 8px}
-  .品牌{grid-row:1;grid-column:1/3}
+  .品牌{grid-row:1;grid-column:1}
+  #运行控件{grid-row:1;grid-column:2;--主题钮:36px}
   .品牌>span{display:flex}
   #体检{grid-row:1;grid-column:3;margin:0;height:36px}
   #新路线{display:none!important}

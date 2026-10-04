@@ -77,10 +77,14 @@ kbd{font-family:var(--窄)}
 .搜索副文{display:block;margin-top:1px;font:12px var(--等宽);font-weight:400;opacity:.75;overflow-wrap:anywhere}
 
 /* 主题选择：基础.css 统一成小图标，这里只给方钮外观。 */
-#主题控件{--主题钮:38px;border:2px solid var(--字);background:var(--面);color:var(--字)}
-#主题控件:hover{background:var(--马克);color:var(--马克上)}
-#主题面板{border:2px solid var(--字);border-radius:0;background:var(--面) var(--纸纹);box-shadow:5px 6px 0 var(--影)}
-#主题面板:popover-open{animation:剪报贴入 .25s steps(1,end)}
+#主题控件,#运行控件{--主题钮:38px;border:2px solid var(--字);background:var(--面);color:var(--字)}
+#主题控件:hover,#运行控件:hover{background:var(--马克);color:var(--马克上)}
+#主题面板,#运行面板{border:2px solid var(--字);border-radius:0;background:var(--面) var(--纸纹);box-shadow:5px 6px 0 var(--影)}
+#主题面板:popover-open,#运行面板:popover-open{animation:剪报贴入 .25s steps(1,end)}
+#运行控件{--运行色:var(--青绿);--运行错色:var(--路线红)}
+#运行面板 .运行项,#运行面板 .运行钮 button{border-radius:0}
+#运行面板 .运行钮 button{border:2px solid var(--字);font-weight:800}
+#运行面板 .运行钮 button:hover:not(:disabled){background:var(--马克);color:var(--马克上)}
 #主题面板 .主题模式{border:2px solid var(--字);border-radius:0}
 #主题面板 .主题模式 button{border-radius:0;font-weight:800}
 #主题面板 .主题模式 button[aria-pressed="true"]{background:var(--马克);color:var(--马克上)}
@@ -487,6 +491,7 @@ html[data-外观="深"] .正文 pre{background:#0C0B0A}
   #顶{height:auto;display:grid;grid-template-columns:auto minmax(0,1fr) auto auto auto auto auto;grid-template-rows:52px 46px;gap:0 10px;align-items:center}
   .品牌{grid-row:1;grid-column:1}
   #体检{grid-row:1;grid-column:3;margin:0}
+  #运行控件{grid-row:1;grid-column:2;justify-self:end}
   #新路线{grid-row:1;grid-column:4}
   #搜{grid-row:1;grid-column:5;width:180px}
   #主题控件{grid-row:1;grid-column:6}
@@ -495,7 +500,8 @@ html[data-外观="深"] .正文 pre{background:#0C0B0A}
 }
 @media(max-width:700px){
   #顶{height:auto;padding:8px 10px 0;display:grid;grid-template-columns:minmax(0,1fr) auto auto;grid-template-rows:40px 44px 44px;gap:6px 8px;align-items:center}
-  .品牌{grid-row:1;grid-column:1/3}
+  .品牌{grid-row:1;grid-column:1}
+  #运行控件{grid-row:1;grid-column:2;--主题钮:34px}
   .品牌 #名{font-size:22px;line-height:30px}
   #体检{grid-row:1;grid-column:3;margin:0;height:34px}
   #新路线{display:none!important}

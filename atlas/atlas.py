@@ -15,13 +15,14 @@
   atlas 改名 --字段 旧=新                  自定义字段名改名
   atlas 钩子                装 git pre-commit
   atlas serve [--端口 7391] [--不开浏览器]   起本地画布
+  atlas 运行 [目标] [--停止]  列出 .devdock.json 里的运行目标及状态；带目标名就启动（或停止）它
 
 英文别名（与中文等价，可混用）：
   scan 扫描 · check 检查 · route 路线 · find 找 · migrate 迁移 · claim 认领
-  new 新建 · rename 改名 · hook 钩子
+  new 新建 · rename 改名 · hook 钩子 · run 运行
   --errors-only 只看错误 · --list 列表 · --add-field 加字段 · --rename 改名
   --filter 筛选 · --dry-run 演习 · --category 分类 · --name 名称 · --type 类型
-  --entry 条目 · --vocab 词表 · --field 字段 · --port 端口 · --no-browser 不开浏览器
+  --entry 条目 · --vocab 词表 · --field 字段 · --port 端口 · --no-browser 不开浏览器 · --stop 停止
 """
 from __future__ import annotations
 import json, os, shutil, sys
@@ -356,6 +357,26 @@ def 命令_serve(args):
     S.起服务(根目录(), int(args.端口 or 7391), not args.不开浏览器)
 
 
+# ---------------------------------------------------------------- 运行
+def 命令_运行(args):
+    import targets
+    根 = 根目录()
+    try:
+        if args.名字:
+            (targets.停止 if args.停止 else targets.启动)(根, args.名字)
+            print(f"{C['绿']}✓{C['_']} 已{'停止' if args.停止 else '启动'}「{args.名字}」")
+            return
+        列表 = targets.状态(根)
+    except RuntimeError as e:
+        sys.exit(f"{C['红']}✗{C['_']} {e}")
+    if not 列表:
+        print(f"{targets.DevDock} 里没有运行目标。")
+        return
+    for t in 列表:
+        灯 = f"{C['绿']}●{C['_']}" if t["运行中"] else f"{C['淡']}○{C['_']}"
+        print(f"{灯} {垫(t['名称'], 20)}{C['淡']}{t['网址'] or t['端口'] or ''}  {t['说明']}{C['_']}")
+
+
 # ---------------------------------------------------------------- 钩子
 钩子内容 = """#!/bin/sh
 # atlas pre-commit
@@ -388,7 +409,7 @@ def main():
     sub = ap.add_subparsers(dest="命令")
     # 每个命令和选项都有英文别名，方便不切输入法；分派和 args 字段一律用中文名。
     英 = {"扫描": "scan", "检查": "check", "路线": "route", "找": "find", "迁移": "migrate",
-         "认领": "claim", "新建": "new", "改名": "rename", "钩子": "hook"}
+         "认领": "claim", "新建": "new", "改名": "rename", "钩子": "hook", "运行": "run"}
     def 命令(名): return sub.add_parser(名, aliases=[英[名]] if 名 in 英 else [])
     def 选项(q, 名, 英名, **kw): q.add_argument("--" + 名, "--" + 英名, dest=名, **kw)
     命令("扫描")
@@ -407,6 +428,7 @@ def main():
     选项(q, "词表", "vocab"); 选项(q, "字段", "field")
     选项(q, "演习", "dry-run", action="store_true")
     命令("钩子")
+    q = 命令("运行"); q.add_argument("名字", nargs="?"); 选项(q, "停止", "stop", action="store_true")
     q = 命令("serve")
     选项(q, "端口", "port", default=7391); 选项(q, "不开浏览器", "no-browser", action="store_true")
 
@@ -416,12 +438,12 @@ def main():
         return
     args.命令 = {v: k for k, v in 英.items()}.get(args.命令, args.命令)
     for k in ("只看错误", "列表", "演习", "名字", "分类", "筛选", "加字段", "改名",
-              "端口", "不开浏览器", "类型", "条目", "词表"):
+              "端口", "不开浏览器", "类型", "条目", "词表", "停止"):
         if not hasattr(args, k):
             setattr(args, k, None)
     {"扫描": 命令_扫描, "检查": 命令_检查, "路线": 命令_路线, "找": 命令_找,
      "迁移": 命令_迁移, "认领": 命令_认领, "新建": 命令_新建, "钩子": 命令_钩子,
-     "serve": 命令_serve, "改名": 命令_改名}[args.命令](args)
+     "serve": 命令_serve, "改名": 命令_改名, "运行": 命令_运行}[args.命令](args)
 
 
 if __name__ == "__main__":

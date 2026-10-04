@@ -129,15 +129,18 @@ function 画主题选项(){
   $('#主题选择').title = 跟随 ? `界面主题：跟随系统（白天${名(s.浅)}，夜间${名(s.深)}）` : `界面主题：${名(s.手动)}`;
   定位主题面板();
 }
-// 面板贴着按钮下方右对齐，放不下就翻到上方；主题换了按钮位置或窗口变化时重新定位。
-function 定位主题面板(){
-  const 面 = $('#主题面板');
+// 面板贴着按钮下方右对齐，放不下就翻到上方；主题换了按钮位置或窗口变化时重新定位。主题面板和运行面板共用。
+function 定位面板(面, 钮){
   if (!面.matches(':popover-open')) return;
-  const r = $('#主题选择').getBoundingClientRect(), w = 面.offsetWidth, h = 面.offsetHeight;
+  const r = 钮.getBoundingClientRect(), w = 面.offsetWidth, h = 面.offsetHeight;
   let top = r.bottom + 8;
   if (top + h > innerHeight - 8) top = Math.max(8, r.top - h - 8);
   面.style.left = Math.max(8, Math.min(r.right - w, innerWidth - w - 8)) + 'px';
   面.style.top = top + 'px';
+}
+function 定位主题面板(){
+  定位面板($('#主题面板'), $('#主题选择'));
+  定位面板($('#运行面板'), $('#运行选择'));
 }
 async function 应用主题选择(s){
   const 本次 = ++选择序号, 旧 = 主题选择;
@@ -162,6 +165,7 @@ async function 启动界面(){
     }
     await 取数();
     document.body.removeAttribute('data-启动中'); $('#启动状态').hidden = true;
+    查运行();
   } catch (e){
     $('#启动状态').firstChild.textContent = '界面加载失败：' + e.message + ' ';
     $('#重试启动').hidden = false;
@@ -327,6 +331,63 @@ function 打开检查(){
   $('#体检').setAttribute('aria-expanded', 'true');
 }
 $('#体检').onclick = 打开检查;
+
+// ---------------------------------------------------------------- 运行
+// 当前项目 .devdock.json 里的运行目标：看状态、启动、停止、打开。判断和停止规则与 DevDock 相同，由服务端负责；
+// 停止时端口上的进程不在项目目录里就拒绝。当前画布自己那一项不给停。面板由核心生成，外观随主题。
+let 运行目标 = [], 运行错 = '', 运行忙 = new Set(), 上次运行查询 = 0;
+function 画运行(){
+  const 面 = $('#运行面板');
+  const 焦 = 面.contains(document.activeElement) ? document.activeElement.dataset : null;
+  const 项 = (t, i) => {
+    const 忙 = 运行忙.has(t.名称), 副 = [t.端口 ? ':' + t.端口 : '', t.说明].filter(Boolean).join(' · ');
+    const 钮 = t.本页 ? '<span class="运行本页">当前画布</span>'
+      : t.运行中 ? (t.可停止 ? `<button type="button" data-动作="停止" data-i="${i}"${忙 ? ' disabled' : ''}>${忙 ? '停止中…' : '停止'}</button>` : '')
+      : (t.可启动 ? `<button type="button" data-动作="启动" data-i="${i}"${忙 ? ' disabled' : ''}>${忙 ? '启动中…' : '启动'}</button>` : '');
+    const 开 = t.网址 && !t.本页 ? `<button type="button" data-动作="打开" data-i="${i}"${t.运行中 ? '' : ' disabled'}>打开</button>` : '';
+    return `<li class="运行项"${t.运行中 ? ' data-运行中' : ''}${忙 ? ' aria-busy="true"' : ''}><span class="运行灯" aria-hidden="true"></span>`
+      + `<div class="运行名"><b>${转义(t.名称)}</b>${副 ? `<small title="${转义(副)}">${转义(副)}</small>` : ''}</div>`
+      + `<div class="运行钮">${钮}${开}</div></li>`;
+  };
+  面.innerHTML = `<div class="运行头"><b>运行</b><small>.devdock.json</small></div>`
+    + (运行目标.length ? `<ul class="运行列表">${运行目标.map(项).join('')}</ul>` : '<p class="运行空">这个项目的 .devdock.json 里还没有运行目标。</p>')
+    + (运行错 ? `<p class="运行错" role="alert">${转义(运行错)}</p>` : '');
+  if (焦?.动作) 面.querySelector(`[data-动作="${焦.动作}"][data-i="${焦.i}"]`)?.focus({preventScroll: true});
+  const 在跑 = 运行目标.filter(t => t.运行中 && !t.本页);
+  $('#运行控件').toggleAttribute('data-运行中', 在跑.length > 0);
+  $('#运行选择').title = 在跑.length ? `运行中：${在跑.map(t => t.名称).join('、')}` : '运行目标：启动、停止和打开本项目的服务';
+  定位面板(面, $('#运行选择'));
+}
+async function 查运行(){
+  上次运行查询 = Date.now();
+  try {
+    const j = await (await fetch('/运行')).json();
+    if (j.错误) { 运行目标 = []; 运行错 = j.错误; } else { 运行目标 = j.目标; }
+  } catch { 运行错 = '读取运行状态失败，确认 atlas serve 还在运行'; }
+  画运行();
+}
+$('#运行面板').addEventListener('beforetoggle', e => { if (e.newState === 'open') { e.target.setAttribute('data-定位中', ''); 运行错 = ''; } });
+$('#运行面板').addEventListener('toggle', e => {
+  if (e.newState !== 'open') return;
+  画运行(); e.target.removeAttribute('data-定位中');
+  查运行();
+});
+$('#运行面板').onclick = async e => {
+  const 钮 = e.target.closest('button[data-动作]'), t = 钮 && 运行目标[+钮.dataset.i];
+  if (!t || 钮.disabled) return;
+  if (钮.dataset.动作 === '打开') { window.open(t.网址, '_blank'); return; }
+  运行忙.add(t.名称); 运行错 = ''; 画运行();
+  try {
+    const r = await fetch('/运行', {method: 'POST', headers: 项目头(), body: JSON.stringify({名称: t.名称, 动作: 钮.dataset.动作})});
+    const j = await r.json();
+    if (!r.ok || j.错误) 运行错 = j.错误 || '操作失败';
+  } catch { 运行错 = '服务没有响应，确认 atlas serve 还在运行'; }
+  运行忙.delete(t.名称);
+  await 查运行();
+};
+// 运行点要大致准：启动时查一次，回到窗口时再查（DevDock 那边可能起停过），两次之间至少隔 3 秒。
+addEventListener('focus', () => { if (Date.now() - 上次运行查询 > 3000) 查运行(); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden && Date.now() - 上次运行查询 > 3000) 查运行(); });
 
 // ---------------------------------------------------------------- 项目
 // 一个服务只管一个项目。打开或新建别的项目：服务端保证那个项目的画布在它自己的端口（.devdock.json）上运行，

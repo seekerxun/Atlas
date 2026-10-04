@@ -16,6 +16,8 @@
   GET  /项目             当前项目、注册表里的项目（含端口和是否在运行）、可用模板
   POST /打开项目         保证那个项目的画布在它自己的端口上运行，返回网址
   POST /新建项目         从模板新建项目、登记、起它的画布，返回网址
+  GET  /运行             当前项目 .devdock.json 里各运行目标的状态
+  POST /运行             启动或停止当前项目的一个运行目标（只收目标名，命令只从配置里取）
 
 一个服务只管启动时所在的项目。每个项目的端口写在它自己的 .devdock.json（DevDock 同一份配置），
 打开别的项目是在那个端口上另起服务，当前服务不切换。写请求带 X-Atlas-Root，对不上就拒收。
@@ -31,6 +33,7 @@ from urllib.parse import unquote, urlparse
 
 import edit
 import projects
+import targets
 import miniyaml as y
 from lint import 校验, 体检数
 from model import ATLAS
@@ -232,6 +235,7 @@ def 核对(p: Path, 期望):
 
 class 处理器(BaseHTTPRequestHandler):
     根: Path = Path(".")
+    端口: int | None = None
 
     def log_message(self, *a):
         pass
@@ -274,6 +278,12 @@ class 处理器(BaseHTTPRequestHandler):
             return
         if 路径 == "/项目":
             self._json(项目清单(self.根))
+            return
+        if 路径 == "/运行":
+            try:
+                self._json({"目标": targets.状态(self.根, self.端口)})
+            except RuntimeError as e:
+                self._json({"错误": str(e)}, 409)
             return
         if 路径 == "/候选":
             idx = 建索引(self.根)
@@ -347,6 +357,17 @@ class 处理器(BaseHTTPRequestHandler):
             if 路径 == "/布局":
                 写布局(self.根, 体)
                 self._json({"好": True})
+            elif 路径 == "/运行":
+                名, 动作 = str(体.get("名称") or ""), 体.get("动作")
+                if 动作 == "启动":
+                    targets.启动(self.根, 名)
+                elif 动作 == "停止":
+                    if targets.找(self.根, 名).get("port") == self.端口:
+                        raise RuntimeError("这就是当前画布的服务，停了页面就断了。到别处停它。")
+                    targets.停止(self.根, 名)
+                else:
+                    raise RuntimeError("动作只能是 启动 或 停止")
+                self._json({"好": True, "目标": targets.状态(self.根, self.端口)})
             elif 路径 == "/系统打开":
                 系统打开(self.根, str(体.get("路径") or ""), bool(体.get("显示")))
                 self._json({"好": True})
@@ -406,6 +427,7 @@ class 处理器(BaseHTTPRequestHandler):
 
 def 起服务(根: Path, 端口: int = 7391, 打开=True):
     处理器.根 = 根
+    处理器.端口 = 端口
     # 起过画布的项目都进注册表，项目窗里才找得到它。
     projects.登记(根, projects.项目信息(根)["名称"])
     srv = ThreadingHTTPServer(("127.0.0.1", 端口), 处理器)

@@ -77,10 +77,13 @@ html[data-外观="深"] .签块{background:#42413D}
 .搜索副文{display:block;margin-top:1px;font-size:12px;color:var(--字3);overflow-wrap:anywhere}
 
 /* 主题选择：基础.css 统一成小图标，这里只给按钮外观和面板配色。 */
-#主题控件{--主题钮:32px;--主题图标:16px;border:1px solid var(--边);border-radius:8px;background:var(--面);color:var(--字2);transition:border-color .15s}
-#主题控件:hover{border-color:var(--边强);color:var(--字)}
-#主题面板{padding:12px;border:0;border-radius:12px;background:var(--面);box-shadow:var(--窗影)}
-#主题面板:popover-open{animation:素净下拉 .16s var(--缓)}
+#主题控件,#运行控件{--主题钮:32px;--主题图标:16px;border:1px solid var(--边);border-radius:8px;background:var(--面);color:var(--字2);transition:border-color .15s}
+#主题控件:hover,#运行控件:hover{border-color:var(--边强);color:var(--字)}
+#主题面板,#运行面板{padding:12px;border:0;border-radius:12px;background:var(--面);box-shadow:var(--窗影)}
+#主题面板:popover-open,#运行面板:popover-open{animation:素净下拉 .16s var(--缓)}
+#运行控件{--运行色:var(--好色);--运行错色:var(--危)}
+#运行面板 .运行项,#运行面板 .运行钮 button{border-radius:6px}
+
 #主题面板 .主题模式{border-color:var(--边);border-radius:8px;background:var(--控件底)}
 #主题面板 .主题模式 button{border-radius:6px}
 #主题面板 .主题模式 button[aria-pressed="true"]{background:var(--面);color:var(--字);box-shadow:0 1px 2px #0000001A}
@@ -447,6 +450,7 @@ body.素净阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
   #顶{height:auto;padding:8px 14px;display:grid;grid-template-columns:auto minmax(0,1fr) auto auto auto auto auto;grid-template-rows:36px 36px;gap:8px 10px;align-items:center}
   .品牌{grid-row:1;grid-column:1}
   #体检{grid-row:1;grid-column:3;margin:0}
+  #运行控件{grid-row:1;grid-column:2;justify-self:end}
   #新路线{grid-row:1;grid-column:4}
   #搜{grid-row:1;grid-column:5;width:180px}
   #主题控件{grid-row:1;grid-column:6}
@@ -455,7 +459,8 @@ body.素净阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
 }
 @media(max-width:700px){
   #顶{height:auto;padding:8px 10px;display:grid;grid-template-columns:minmax(0,1fr) auto auto;grid-template-rows:36px 40px 38px;gap:8px;align-items:center}
-  .品牌{grid-row:1;grid-column:1/3}
+  .品牌{grid-row:1;grid-column:1}
+  #运行控件{grid-row:1;grid-column:2;--主题钮:36px}
   #体检{grid-row:1;grid-column:3;margin:0}
   #新路线{display:none!important}
   #搜{grid-row:2;grid-column:1;width:100%}
