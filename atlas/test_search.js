@@ -10,7 +10,10 @@ const end = source.indexOf("document.addEventListener('keydown'", start);
 let rendered;
 const more = {};
 const input = {value:''}, output = {style:{}, querySelectorAll:()=>[], querySelector:s=>s === '[data-搜索更多]' && rendered?.更多 ? more : null};
+const storage = new Map();
 const context = vm.createContext({
+  项目根:"/项目甲", 提示:()=>{},
+  localStorage:{getItem:key=>storage.get(key) ?? null, setItem:(key,value)=>storage.set(key,value), removeItem:key=>storage.delete(key)},
   $:s=>s === '#搜 input' ? input : output,
   转义:s=>String(s ?? '').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),
   数据:null, 主题:{模板:{搜索结果:args=>{rendered=args;return '';}}},
@@ -68,3 +71,28 @@ input.value='全文';input.oninput();assert.ok(rendered.提醒.includes('重启'
 context.数据={条目:[],搜索正文:{},搜索遗漏:['失败.md']};
 input.oninput();assert.ok(rendered.提醒.includes('失败.md'));
 console.log('搜索回归通过：全文、多词、排序、路线步骤、去重、规范化、高亮转义、65 项分页及快照更新。');
+
+// 记录只保存完成的查询，刷新后保留，按项目隔离且可持久清除。
+input.value='输入中的半截';input.oninput();assert.equal(context.读搜索记录().length,0);
+input.value='  苹果   香蕉 ';input.onblur();
+assert.equal(context.读搜索记录()[0],'苹果 香蕉');
+input.value='DEMO';input.onblur();input.value='ｄｅｍｏ';input.onblur();
+assert.equal(context.读搜索记录().length,2);
+vm.runInContext('搜索记录缓存.clear()',context);
+assert.equal(context.读搜索记录()[0],'ｄｅｍｏ');
+context.项目根='/项目乙';assert.equal(context.读搜索记录().length,0);
+input.value='乙项目';input.onblur();context.项目根='/项目甲';
+assert.equal(context.读搜索记录().length,2);
+for(let i=0;i<25;i++){input.value=`记录${i}`;input.onblur();}
+assert.equal(context.读搜索记录().length,20);
+assert.equal(context.读搜索记录()[0],'记录24');
+context.存搜索记录([]);vm.runInContext('搜索记录缓存.clear()',context);
+assert.equal(context.读搜索记录().length,0);
+context.项目根='/项目乙';assert.equal(context.读搜索记录()[0],'乙项目');
+input.value='没有结果的搜索';input.oninput();
+input.onkeydown({key:'Enter',isComposing:false,preventDefault:()=>{}});
+assert.equal(context.读搜索记录()[0],'没有结果的搜索');
+input.value='';input.oninput();assert.ok(Array.isArray(rendered.记录));
+context.项目根='/损坏记录';storage.set('atlas:搜索记录:/损坏记录','{bad json');
+assert.equal(context.读搜索记录().length,0);
+console.log('搜索记录回归通过：保存时机、去重、20 条上限、刷新恢复、项目隔离、清空及异常数据。');

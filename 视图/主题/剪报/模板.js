@@ -112,7 +112,11 @@ function 项目列表({列表}){
     <span class="项目签${p.运行中 && !p.当前 ? ' 运行' : ''}">${p.当前 ? '当前' : !p.存在 ? '找不到' : p.运行中 ? '运行中' : 转义(p.类型 || '项目')}</span></button></li>`).join('');
 }
 
-function 搜索结果({前, 总数 = 前.length, 更多 = false, 提醒 = '', 标记 = 转义}){
+function 搜索结果({前, 总数 = 前.length, 更多 = false, 提醒 = '', 标记 = 转义, 记录 = null}){
+  if (记录) return '<p class="搜索记录头"><span>最近搜索</span>'
+    + (记录.length ? '<button type="button" data-清除搜索记录>清除记录</button>' : '') + '</p>'
+    + (记录.length ? 记录.map((q,i) => `<button type="button" class="搜索记录项" data-搜索记录="${i}">${转义(q)}</button>`).join('')
+      : '<p class="搜索计数" role="status">暂无搜索记录</p>');
   return `<p class="搜索计数" role="status">找到 ${总数} 项${更多 ? ` · 已显示 ${前.length} 项` : ''}</p>`
     + (提醒 ? `<p class="搜索提醒" role="status">${转义(提醒)}</p>` : '')
     + 前.map((h, i) => `<div data-i="${i}" tabindex="0" role="button"><b>${标记(h.文)}</b>

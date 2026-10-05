@@ -47,7 +47,7 @@ function 渲染主题包(pack, state, 外观){
   if ($('#检查详情').open) 画检查();
   if ($('#项目窗').open) 画项目();
   const 搜果显示 = 搜果.style.display;
-  if (搜框.value.trim()) 画搜索结果();
+  if (搜框.value.trim()) 画搜索结果(); else 画搜索记录();
   搜果.style.display = 搜果显示;
   重画候选?.();
   state.列表滚动.forEach(([s,top]) => { if ($(s)) $(s).scrollTop = top; });
@@ -1548,6 +1548,50 @@ const 搜框 = $('#搜 input'), 搜果 = $('#搜果');
 const 搜索规范 = s => String(s ?? '').normalize('NFKC').toLowerCase();
 const 搜索词 = q => [...new Set(搜索规范(q).trim().split(/\s+/).filter(Boolean))];
 let 搜索快照 = null, 搜索索引 = [], 搜索命中 = [], 搜索上限 = 30, 搜索当前词 = [];
+const 搜索记录缓存 = new Map();
+const 搜索记录键 = () => 'atlas:搜索记录:' + 项目根;
+function 读搜索记录(){
+  if (!项目根) return [];
+  const key = 搜索记录键();
+  if (!搜索记录缓存.has(key)) {
+    let records;
+    try { records = JSON.parse(localStorage.getItem(key)); } catch {}
+    搜索记录缓存.set(key, Array.isArray(records)
+      ? records.filter(q => typeof q === 'string' && q.trim()).slice(0, 20) : []);
+  }
+  return 搜索记录缓存.get(key);
+}
+function 存搜索记录(records){
+  if (!项目根) return;
+  const key = 搜索记录键();
+  搜索记录缓存.set(key, records);
+  try {
+    if (records.length) localStorage.setItem(key, JSON.stringify(records));
+    else localStorage.removeItem(key);
+  } catch { 提示('浏览器无法保存搜索记录，本次操作仅在当前页面生效'); }
+}
+function 记搜索记录(){
+  const q = 搜框.value.trim().replace(/\s+/g, ' ');
+  if (!q) return;
+  存搜索记录([q, ...读搜索记录().filter(v => 搜索规范(v) !== 搜索规范(q))].slice(0, 20));
+}
+function 画搜索记录(){
+  if (!主题 || !数据) return;
+  const records = 读搜索记录();
+  搜果.innerHTML = 主题.模板.搜索结果({前:[], 记录:records});
+  搜果.style.display = 'block';
+  搜果.querySelectorAll('[data-搜索记录]').forEach(button => {
+    button.onclick = e => {
+      e.stopPropagation();
+      搜框.focus(); 搜框.value = records[+button.dataset.搜索记录];
+      搜框.oninput(); 记搜索记录();
+    };
+  });
+  const clear = 搜果.querySelector('[data-清除搜索记录]');
+  if (clear) clear.onclick = e => {
+    e.stopPropagation(); 存搜索记录([]); 画搜索记录(); 搜框.focus();
+  };
+}
 function 建搜索索引(data){
   const list = [], paths = new Set();
   const add = (item, meta, body = '') => {
@@ -1609,6 +1653,7 @@ function 搜索标记(text){
   return s.split(re).map((part,i) => i % 2 ? `<mark>${转义(part)}</mark>` : 转义(part)).join('');
 }
 function 打开搜索结果(h){
+  记搜索记录();
   搜果.style.display = 'none'; 搜框.value = '';
   if (h.种 === '条目') 跳(h.路径);
   else if (h.种 === '路线') 去路线(h.路线);
@@ -1641,17 +1686,24 @@ function 画搜索结果(){
   };
 }
 搜框.oninput = () => {
-  if (!数据 || !主题 || !搜框.value.trim()) { 搜果.style.display = 'none'; return; }
+  if (!数据 || !主题) { 搜果.style.display = 'none'; return; }
+  if (!搜框.value.trim()) { 画搜索记录(); 搜果.scrollTop = 0; return; }
   if (搜索快照 !== 数据) { 搜索快照 = 数据; 搜索索引 = 建搜索索引(数据); }
   搜索当前词 = 搜索词(搜框.value);
   搜索命中 = 查搜索(搜索索引, 搜框.value); 搜索上限 = 30;
   画搜索结果(); 搜果.scrollTop = 0;
 };
-搜框.onfocus = () => { if (搜框.value.trim()) 搜框.oninput(); };
+搜框.onfocus = () => 搜框.oninput();
+// 提交、打开结果或离开输入框才记一条，避免把每次击键都变成记录。
+搜框.onblur = () => 记搜索记录();
+搜框.onclick = () => { if (搜果.style.display === 'none') 搜框.oninput(); };
 搜框.onkeydown = e => {
   if (e.isComposing || 搜果.style.display === 'none') return;
-  if (e.key === 'Enter' && 搜索命中.length) { e.preventDefault(); 打开搜索结果(搜索命中[0]); }
-  if (e.key === 'ArrowDown') { e.preventDefault(); 搜果.querySelector('[data-i]')?.focus(); }
+  if (e.key === 'Enter' && 搜框.value.trim()) {
+    e.preventDefault(); 记搜索记录();
+    if (搜索命中.length) 打开搜索结果(搜索命中[0]);
+  }
+  if (e.key === 'ArrowDown') { e.preventDefault(); 搜果.querySelector('[data-i], [data-搜索记录]')?.focus(); }
 };
 document.addEventListener('keydown', e => {
   if ($('#检查详情').open || $('#文件预览').open || $('#询问').open) return;
