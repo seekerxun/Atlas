@@ -47,7 +47,8 @@ function 渲染主题包(pack, state, 外观){
   if ($('#检查详情').open) 画检查();
   if ($('#项目窗').open) 画项目();
   const 搜果显示 = 搜果.style.display;
-  搜框.oninput(); 搜果.style.display = 搜果显示;
+  if (搜框.value.trim()) 画搜索结果();
+  搜果.style.display = 搜果显示;
   重画候选?.();
   state.列表滚动.forEach(([s,top]) => { if ($(s)) $(s).scrollTop = top; });
   视图 = state.视图; 缩 = state.缩; 位 = {...state.位};
@@ -313,6 +314,7 @@ async function 读数据(自动 = false){
   签.title = 首条 ? `${首条.位置}：${首条.信息}\n点击查看详情与处理建议` : '项目检查通过，点击查看详情';
   签.dataset.状态 = t.错误 ? '错误' : t.警告 ? '警告' : '正常';
   画签(); 画未认领(); 画(); if (初次) 阅读视野();
+  if (搜框.value.trim()) { const display = 搜果.style.display; 搜框.oninput(); 搜果.style.display = display; }
 }
 
 function 画检查(){
@@ -1311,12 +1313,13 @@ function 跳(路径, 锚 = ''){
   if (锚) 阅读完成.then(() => { if (选中 === 路径) 跳锚($('#原'), $('#屉 .详情体'), 锚); });
 }
 function 去路线(名){
+  收卡(false);
   切视图('路线');
-  const r = 找路线(名); if (r?.步骤.length) {
-    const e = $('#世界').querySelector(`.步[data-路线="${CSS.escape(名)}"]`);
-    if (e) { 缩 = .85; 位 = {x:40 - parseFloat(e.style.left)*缩,y:30 - parseFloat(e.style.top)*缩}; 应用变换(); }
-    选步骤(名,r.步骤[0].id);
-  }
+  const r = 找路线(名); if (!r) return;
+  const selector = `[data-路线="${CSS.escape(名)}"]`;
+  const e = $('#世界').querySelector('.步' + selector) || $('#世界').querySelector('.路线标题' + selector);
+  if (e) { 缩 = .85; 位 = {x:40 - parseFloat(e.style.left)*缩,y:30 - parseFloat(e.style.top)*缩}; 应用变换(); }
+  if (r.步骤.length) 选步骤(名,r.步骤[0].id);
 }
 // 用系统默认应用打开，或在访达里选中；失败时退回浏览器新标签页看原文。
 async function 系统打开(路径, 显示 = false){
@@ -1540,26 +1543,115 @@ document.addEventListener('drop', async e => {
 });
 
 // ---------------------------------------------------------------- 搜索
+// 索引随 /数据 的快照重建；正文仅在服务端扫描时读取，不随每次击键请求。
 const 搜框 = $('#搜 input'), 搜果 = $('#搜果');
-搜框.oninput = () => {
-  const q = 搜框.value.trim().toLowerCase();
-  if (!q) { 搜果.style.display = 'none'; return; }
-  const 命中 = [];
-  数据.条目.forEach(n => {
-    if (`${n.路径} ${n.编号} ${n.名称} ${n.类型} ${n.摘要} ${(n.标签 || []).join(' ')}`
-        .toLowerCase().includes(q))
-      命中.push({文: n.标题 || n.名称, 副: `${n.类型} · ${n.路径}`, 走: () => 跳(n.路径)});
+const 搜索规范 = s => String(s ?? '').normalize('NFKC').toLowerCase();
+const 搜索词 = q => [...new Set(搜索规范(q).trim().split(/\s+/).filter(Boolean))];
+let 搜索快照 = null, 搜索索引 = [], 搜索命中 = [], 搜索上限 = 30, 搜索当前词 = [];
+function 建搜索索引(data){
+  const list = [], paths = new Set();
+  const add = (item, meta, body = '') => {
+    const fields = [item.文, meta, body].map(搜索规范);
+    list.push({...item, 元文: meta, 正文: body, 域: fields, 全文: fields.join('\n')});
+  };
+  (data.条目 || []).forEach(n => {
+    paths.add(n.路径);
+    add({文:n.标题 || n.名称 || n.路径, 副:`${n.类型 || '文档'} · ${n.路径}`, 路径:n.路径, 种:'条目'},
+      [n.标题, n.名称, n.路径, n.编号, n.类型, n.库, n.分组, n.状态, n.摘要, ...(n.标签 || [])].filter(Boolean).join(' · '),
+      data.搜索正文?.[n.路径] || '');
   });
-  数据.资产.forEach(a => { if (a.toLowerCase().includes(q))
-    命中.push({文: a.split('/').pop(), 副: '资产 · ' + a, 走: () => 抄(a)}); });
-  数据.工具.forEach(t => { if (t.toLowerCase().includes(q))
-    命中.push({文: t.split('/').pop(), 副: '工具 · ' + t, 走: () => 抄(t)}); });
-  const 前 = 命中.slice(0, 30);
-  搜果.innerHTML = 主题.模板.搜索结果({前:前.map(({文,副})=>({文,副}))});
+  (data.路线 || []).forEach(r => {
+    paths.add(r.路径);
+    add({文:r.名称, 副:`路线 · ${r.路径}`, 种:'路线', 路线:r.名称}, `${r.路径} · ${r.入口 || ''}`, r.说明 || '');
+    (r.步骤 || []).forEach(s => add(
+      {文:s.title || s.id, 副:`步骤 · ${r.名称} › ${s.id}`, 种:'步骤', 路线:r.名称, 步:s.id},
+      [r.名称, s.id, ...(s.docs || []), ...(s.tools || []), ...(s.outputs || [])].join(' · '), s.note || ''));
+  });
+  const file = (path, kind, title) => {
+    if (!path || paths.has(path)) return;
+    paths.add(path);
+    add({文:title || path.split('/').pop(), 副:`${kind} · ${path}`, 种:'文件', 路径:path}, path);
+  };
+  (data.资产 || []).forEach(p => file(p, '资产'));
+  (data.工具 || []).forEach(p => file(p, '工具'));
+  (data.文件候选 || []).forEach(f => file(f.文件路径, f.类型 || '文件', f.标题));
+  (data.数据表 || []).forEach(p => file(p, '数据表'));
+  return list;
+}
+function 搜索片段(text, words){
+  const s = String(text || '').normalize('NFKC').replace(/\s+/g, ' ').trim(), lower = s.toLowerCase();
+  const positions = words.map(w => lower.indexOf(w)).filter(i => i >= 0).sort((a,b) => a-b);
+  if (!positions.length) return '';
+  const ranges = [];
+  for (const pos of positions){
+    const start = Math.max(0, pos - 28), end = Math.min(s.length, pos + Math.max(72, ...words.map(w => w.length)));
+    const last = ranges[ranges.length - 1];
+    if (last && start <= last[1]) last[1] = Math.max(last[1], end);
+    else if (ranges.length < 3) ranges.push([start, end]);
+  }
+  return ranges.map(([a,b]) => `${a ? '…' : ''}${s.slice(a,b)}${b < s.length ? '…' : ''}`).join(' · ');
+}
+function 查搜索(index, query){
+  const words = 搜索词(query), phrase = 搜索规范(query).trim();
+  if (!words.length) return [];
+  return index.filter(h => words.every(w => h.全文.includes(w))).map(h => {
+    const score = (h.域[0] === phrase ? 100 : h.域[0].includes(phrase) ? 50 : 0)
+      + words.reduce((sum,w) => sum + (h.域[0].includes(w) ? 20 : h.域[1].includes(w) ? 6 : 1), 0);
+    return {...h, 分:score, 片段:搜索片段(h.正文, words) || 搜索片段(h.元文, words)};
+  }).sort((a,b) => b.分 - a.分 || a.文.localeCompare(b.文, 'zh-CN') || a.副.localeCompare(b.副, 'zh-CN'));
+}
+function 搜索标记(text){
+  // 转义先于插入 mark；文件中的 HTML 永远只作为文字显示。
+  const s = String(text || '').normalize('NFKC');
+  if (!搜索当前词.length) return 转义(s);
+  const re = new RegExp('(' + [...搜索当前词].sort((a,b) => b.length-a.length)
+    .map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')', 'giu');
+  return s.split(re).map((part,i) => i % 2 ? `<mark>${转义(part)}</mark>` : 转义(part)).join('');
+}
+function 打开搜索结果(h){
+  搜果.style.display = 'none'; 搜框.value = '';
+  if (h.种 === '条目') 跳(h.路径);
+  else if (h.种 === '路线') 去路线(h.路线);
+  else if (h.种 === '步骤') {
+    切视图('路线');
+    const e = $('#世界').querySelector(`.步[data-路线="${CSS.escape(h.路线)}"][data-步="${CSS.escape(h.步)}"]`);
+    if (e) { 缩 = .85; 位 = {x:40-parseFloat(e.style.left)*缩,y:30-parseFloat(e.style.top)*缩}; 应用变换(); }
+    选步骤(h.路线, h.步);
+  } else if ((数据.文件候选 || []).some(f => f.文件路径 === h.路径)) 预览文档(h.路径);
+  else window.open('/文件/' + h.路径.split('/').map(encodeURIComponent).join('/'), '_blank', 'noopener');
+}
+function 画搜索结果(){
+  const 前 = 搜索命中.slice(0, 搜索上限);
+  const 遗漏 = 数据?.搜索遗漏 || [];
+  const 提醒 = !数据?.搜索正文 ? '文档全文尚未加载，请重启画布服务后刷新。'
+    : 遗漏.length ? `${遗漏.length} 篇文档正文读取失败：${遗漏.join('、')}` : '';
+  搜果.innerHTML = 主题.模板.搜索结果({前, 总数:搜索命中.length, 更多:前.length < 搜索命中.length, 提醒, 标记:搜索标记});
   搜果.style.display = 'block';
-  搜果.querySelectorAll('[data-i]').forEach(d => d.onclick = () => {
-    前[+d.dataset.i].走(); 搜果.style.display = 'none'; 搜框.value = '';
+  搜果.querySelectorAll('[data-i]').forEach(d => {
+    d.onclick = () => 打开搜索结果(前[+d.dataset.i]);
+    d.onkeydown = e => { if (['Enter', ' '].includes(e.key)) { e.preventDefault(); d.click(); } };
   });
+  const more = 搜果.querySelector('[data-搜索更多]');
+  if (more) more.onclick = e => {
+    // 重绘会移除当前按钮，阻止冒泡后被全局点击处理误判为「点在搜索框外」。
+    e.stopPropagation();
+    const top = 搜果.scrollTop, count = 前.length;
+    搜索上限 += 30; 画搜索结果(); 搜果.scrollTop = top;
+    搜果.querySelector(`[data-i="${count}"]`)?.focus({preventScroll:true});
+  };
+}
+搜框.oninput = () => {
+  if (!数据 || !主题 || !搜框.value.trim()) { 搜果.style.display = 'none'; return; }
+  if (搜索快照 !== 数据) { 搜索快照 = 数据; 搜索索引 = 建搜索索引(数据); }
+  搜索当前词 = 搜索词(搜框.value);
+  搜索命中 = 查搜索(搜索索引, 搜框.value); 搜索上限 = 30;
+  画搜索结果(); 搜果.scrollTop = 0;
+};
+搜框.onfocus = () => { if (搜框.value.trim()) 搜框.oninput(); };
+搜框.onkeydown = e => {
+  if (e.isComposing || 搜果.style.display === 'none') return;
+  if (e.key === 'Enter' && 搜索命中.length) { e.preventDefault(); 打开搜索结果(搜索命中[0]); }
+  if (e.key === 'ArrowDown') { e.preventDefault(); 搜果.querySelector('[data-i]')?.focus(); }
 };
 document.addEventListener('keydown', e => {
   if ($('#检查详情').open || $('#文件预览').open || $('#询问').open) return;

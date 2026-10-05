@@ -581,3 +581,13 @@ body.矢量阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
 @media(prefers-reduced-motion:reduce){
   *,*:before,*:after{transition:none!important;animation:none!important}
 }
+
+/* 全文搜索：保留上下文、计数、键盘焦点和继续加载入口。 */
+#搜果 .搜索计数,#搜果 .搜索提醒{margin:6px 12px;font-size:12px;line-height:1.6;color:var(--字3);overflow-wrap:anywhere}
+#搜果 .搜索提醒{color:var(--字)}
+#搜果 [data-i]{overflow-wrap:anywhere}
+#搜果 [data-i]:focus-visible{outline:2px solid var(--字);outline-offset:-2px}
+#搜果 .搜索片段{display:block;margin-top:5px;font-size:12px;line-height:1.65;color:var(--字);white-space:normal}
+#搜果 mark{background:color-mix(in srgb,var(--字) 16%,transparent);color:inherit;border-radius:2px;font-weight:700}
+#搜果 .搜索更多{display:block;width:calc(100% - 24px);margin:8px 12px;padding:9px;border:1px solid var(--边);border-radius:4px;background:var(--面);color:var(--字);font:inherit;cursor:pointer}
+#搜果 .搜索更多:focus-visible{outline:2px solid var(--字);outline-offset:2px}

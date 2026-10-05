@@ -113,10 +113,14 @@ function 项目列表({列表}){
     <span class="项目签${p.运行中 && !p.当前 ? ' 运行' : ''}">${p.当前 ? '当前' : !p.存在 ? '找不到' : p.运行中 ? '运行中' : 转义(p.类型 || '项目')}</span></button></li>`).join('');
 }
 
-function 搜索结果({前}){
-  return 前.map((h, i) => `<div data-i="${i}"><b>${转义(h.文)}</b>
-    <span class="搜索副文">${转义(h.副)}</span></div>`).join('')
-    || '<div class="次文">没找到</div>';
+function 搜索结果({前, 总数 = 前.length, 更多 = false, 提醒 = '', 标记 = 转义}){
+  return `<p class="搜索计数" role="status">找到 ${总数} 项${更多 ? ` · 已显示 ${前.length} 项` : ''}</p>`
+    + (提醒 ? `<p class="搜索提醒" role="status">${转义(提醒)}</p>` : '')
+    + 前.map((h, i) => `<div data-i="${i}" tabindex="0" role="button"><b>${标记(h.文)}</b>
+      <span class="搜索副文">${标记(h.副)}</span>
+      ${h.片段 ? `<span class="搜索片段">${标记(h.片段)}</span>` : ''}</div>`).join('')
+    + (!总数 ? '<p class="搜索计数">没有匹配结果，试试减少关键词或换个词。</p>' : '')
+    + (更多 ? '<button type="button" class="搜索更多" data-搜索更多>再显示 30 项</button>' : '');
 }
 
 // 步骤卡：序号是一个毛笔写的汉字数字。
