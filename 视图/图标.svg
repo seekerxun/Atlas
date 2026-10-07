@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <title>Atlas</title>
+  <rect width="64" height="64" rx="14" fill="#1C1C1A"/>
+  <g transform="translate(14 14)">
+    <path d="M5 26 13 7l8 19M9 18h9M22 10l9 19M23 21h5" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="28" cy="7" r="2" fill="#FFFFFF"/>
+  </g>
+</svg>
