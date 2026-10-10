@@ -40,7 +40,7 @@ from model import ATLAS
 from scan import 建索引, _走
 
 页面 = ATLAS / "视图" / "画布.html"
-文本后缀 = {'.md', '.txt', '.html', '.htm', '.css', '.scss', '.js', '.mjs', '.ts',
+文本后缀 = {'.md', '.txt', '.srt', '.html', '.htm', '.css', '.scss', '.js', '.mjs', '.ts',
           '.tsx', '.jsx', '.vue', '.svelte', '.py', '.sh', '.json', '.yml', '.yaml',
           '.toml', '.xml', '.csv', '.tsv', '.sql'}
 
@@ -98,7 +98,8 @@ def 写布局(根: Path, 数据: dict):
 
 
 资产种类 = [("图片", {".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg", ".psd"}), ("视频", {".mp4", ".mov", ".webm"}),
-          ("音频", {".mp3", ".wav", ".m4a"}), ("网页", {".html", ".htm"})]
+          ("音频", {".mp3", ".wav", ".m4a"}), ("网页", {".html", ".htm"}),
+          ("字幕", {".srt"}), ("文本", {".txt"})]
 
 
 def 资产卡(idx) -> list:
@@ -396,7 +397,7 @@ class 处理器(BaseHTTPRequestHandler):
                         or not 目标.exists()):
                     raise RuntimeError(f"只能认领仓库里已有的文件：{文件}")
                 字段 = 体.get("字段") or ("工具" if Path(文件).suffix.lower() in
-                                        {".py", ".js", ".ts", ".sh", ".html"} else "资产")
+                                        {".py", ".js", ".mjs", ".ts", ".sh", ".html"} else "资产")
                 分类 = 体.get("分类") or (None if 字段 == "工具" else "未分类")
                 旧 = 读文本(条目)
                 r = edit.认领(条目, 字段, 分类, 文件)

@@ -197,7 +197,7 @@ def 建索引(根: Path) -> 索引:
             if err and not _在代码目录(cfg, s):
                 idx.解析错误.append((s, err))
             idx.条目[s] = n
-        elif ext in TOOL_EXT or (顶 == "工具" and ext not in DATA_EXT | SKIP_EXT):
+        elif ext in TOOL_EXT or (顶 == "工具" and ext not in DATA_EXT | SKIP_EXT | ASSET_EXT):
             idx.工具.append(s)
         elif ext in ASSET_EXT:
             idx.资产.append(s)

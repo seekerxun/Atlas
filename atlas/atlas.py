@@ -290,7 +290,7 @@ def 命令_认领(args):
     文件 = args.文件.replace(os.sep, "/")
     if not (根 / 文件).exists():
         sys.exit(f"文件不存在：{文件}")
-    字段 = "工具" if Path(文件).suffix.lower() in {".py", ".js", ".ts", ".sh", ".html"} else "资产"
+    字段 = "工具" if Path(文件).suffix.lower() in {".py", ".js", ".mjs", ".ts", ".sh", ".html"} else "资产"
     分类 = args.分类 or ("" if 字段 == "工具" else "未分类")
     try:
         r = edit.认领(根 / n.路径, 字段, 分类 or None, 文件, args.演习)

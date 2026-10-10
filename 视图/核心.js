@@ -1274,14 +1274,16 @@ function 开抽屉(n){
   const 正文 = $('#原');
   if (!正文) { 阅读完成 = Promise.resolve(); 提示('主题条目详情缺少 #原 正文插槽'); return; }
   // 资产卡不是文档：直接内嵌预览，不把图片、视频当文本读
-  if (n.资产文件) { 正文.innerHTML = 资产预览html(n.路径); 阅读完成 = Promise.resolve(); 建大纲($('#屉')); 定位展开(); return; }
+  const 文本资产 = n.资产文件 && /\.(srt|txt)$/i.test(n.路径);
+  if (n.资产文件 && !文本资产) { 正文.innerHTML = 资产预览html(n.路径); 阅读完成 = Promise.resolve(); 建大纲($('#屉')); 定位展开(); return; }
   正文请求 = new AbortController();
   const controller = 正文请求;
-  阅读完成 = fetch('/文件/' + encodeURI(n.路径), {signal: controller.signal}).then(r => {
-    if (!r.ok) throw new Error('读取失败'); return r.text();
+  阅读完成 = fetch((文本资产 ? '/预览/' : '/文件/') + encodeURIComponent(n.路径), {signal: controller.signal}).then(r => {
+    if (!r.ok) throw new Error('读取失败'); return 文本资产 ? r.json() : r.text();
   }).then(t => {
     if (controller.signal.aborted || !正文.isConnected) return;
-    正文.innerHTML = 正文html(t.replace(/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/, '')) || '<p class="读取">这篇文档还没有正文。</p>';
+    正文.innerHTML = 文本资产 ? `<pre><code>${转义(t.内容 || '文件为空。')}</code></pre>`
+      : 正文html(t.replace(/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/, '')) || '<p class="读取">这篇文档还没有正文。</p>';
     绑关联(正文); 建大纲($('#屉')); 定位展开();
   }).catch(e => { if (e.name !== 'AbortError' && 正文.isConnected) 正文.innerHTML = '<p>正文读取失败，请收起卡片后重新打开，或点击「打开原文」。</p>'; });
 }

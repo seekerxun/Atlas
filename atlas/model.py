@@ -10,8 +10,8 @@ import miniyaml as y
 ATLAS = Path(__file__).resolve().parent.parent
 词表路径 = ATLAS / "规范" / "词表.yml"
 
-TOOL_EXT = {".py", ".js", ".ts", ".css", ".sh", ".ps1", ".cmd", ".bat", ".html", ".ipynb"}
-ASSET_EXT = {".png", ".jpg", ".jpeg", ".webp", ".psd", ".svg", ".gif", ".mp4", ".wav", ".mp3"}
+TOOL_EXT = {".py", ".js", ".mjs", ".ts", ".css", ".sh", ".ps1", ".cmd", ".bat", ".html", ".ipynb"}
+ASSET_EXT = {".png", ".jpg", ".jpeg", ".webp", ".psd", ".svg", ".gif", ".mp4", ".wav", ".mp3", ".srt", ".txt"}
 DATA_EXT = {".csv", ".tsv", ".json", ".xlsx"}
 SKIP_EXT = {".yml", ".yaml", ".lock", ".gitignore", ".gitattributes", ".lfsconfig"}
 SKIP_NAME = {".DS_Store", "package.json", "package-lock.json", "tsconfig.json"}
