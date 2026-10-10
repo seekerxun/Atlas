@@ -51,6 +51,8 @@ def 登记(路径: Path, 备注: str = "") -> bool:
     路径 = 路径.resolve()
     if any(Path(str(x["路径"])).expanduser().resolve() == 路径 for x in 已登记()):
         return False
+    if not 注册表.exists():
+        注册表.write_text("# 本机项目注册表，不进 Git。\n版本: 1\n\n项目:\n", encoding="utf-8")
     with 注册表.open("a", encoding="utf-8") as f:
         f.write(f"\n  - 路径: {路径}\n    备注: {备注 or 路径.name}\n")
     return True

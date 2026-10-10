@@ -4,3 +4,5 @@ node_modules/
 __pycache__/
 *.pyc
 产出/
+# 本机项目路径
+/注册表.yml
