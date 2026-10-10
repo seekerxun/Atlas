@@ -56,6 +56,20 @@ def 登记(路径: Path, 备注: str = "") -> bool:
     return True
 
 
+def _复制模板(源: Path, 目标: Path) -> None:
+    """只继承内容和权限；旧 mtime 在 macOS 上还会把新目录的创建时间拉回过去。"""
+    目标.mkdir(parents=True, exist_ok=True)
+    for p in 源.iterdir():
+        if p.name == ".DS_Store":
+            continue
+        if p.is_dir():
+            _复制模板(p, 目标 / p.name)
+        else:
+            shutil.copy(p, 目标 / p.name)
+    # copytree 即使指定 copy_function=copy，仍会对目录调用 copystat。
+    shutil.copymode(源, 目标)
+
+
 def 新建项目(模板: str, 目标: Path, 名称: str = "") -> Path:
     """从模板复制出一个新项目，替换占位符、补齐标准目录并登记。目标必须不存在或是空目录。"""
     源 = 模板根 / 模板
@@ -65,7 +79,7 @@ def 新建项目(模板: str, 目标: Path, 名称: str = "") -> Path:
     if 目标.exists() and (not 目标.is_dir() or any(目标.iterdir())):
         raise FileExistsError(f"{目标} 已存在且不是空目录，不覆盖。")
     名称 = 名称.strip() or 目标.name
-    shutil.copytree(源, 目标, dirs_exist_ok=True, ignore=shutil.ignore_patterns(".DS_Store"))
+    _复制模板(源, 目标)
     替换 = {"{{名称}}": 名称, "{{atlas}}": str(ATLAS / "atlas" / "atlas.py")}
     for p in 目标.rglob("*"):
         if p.is_file() and p.suffix.lower() in 可替换后缀:
