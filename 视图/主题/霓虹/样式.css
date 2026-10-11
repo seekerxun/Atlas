@@ -75,8 +75,8 @@ kbd{font-family:var(--等宽)}
 .搜索副文{display:block;margin-top:2px;font:11px var(--等宽);color:var(--字3);overflow-wrap:anywhere}
 
 /* 主题选择：基础.css 统一成小图标，这里只给方钮外观。 */
-#主题控件,#运行控件{--主题钮:38px;--主题图标:17px;background:var(--深);color:var(--副);border:1px solid color-mix(in srgb,var(--副) 45%,transparent)}
-#主题控件:hover,#运行控件:hover{border-color:var(--副);box-shadow:0 0 12px color-mix(in srgb,var(--副) 35%,transparent)}
+#主题控件,#运行控件,#产出控件{--主题钮:38px;--主题图标:17px;background:var(--深);color:var(--副);border:1px solid color-mix(in srgb,var(--副) 45%,transparent)}
+#主题控件:hover,#运行控件:hover,#产出控件:hover{border-color:var(--副);box-shadow:0 0 12px color-mix(in srgb,var(--副) 35%,transparent)}
 #主题面板,#运行面板{border:1px solid color-mix(in srgb,var(--主) 55%,transparent);border-radius:0;background:var(--深);box-shadow:0 0 30px color-mix(in srgb,var(--主) 18%,transparent),0 20px 60px #000a}
 #主题面板:popover-open,#运行面板:popover-open{animation:霓虹开屏 .3s cubic-bezier(.2,.8,.2,1)}
 #运行控件{--运行色:var(--好);--运行错色:var(--错)}
@@ -380,16 +380,16 @@ body.霓虹阅读 .盒.聚起>.卡:not(.展开),body.霓虹阅读 .盒.聚起>.�
 .步骤标题编辑 button{padding:5px 10px;font-size:12px;white-space:nowrap;border:1px solid var(--边)}
 .步骤标题编辑 button[type="submit"]{color:var(--主);border-color:color-mix(in srgb,var(--主) 55%,transparent)}
 
-#文件预览,#检查详情,#项目窗{padding:0;color:var(--字);background:var(--深);border:1px solid color-mix(in srgb,var(--主) 55%,transparent);box-shadow:0 0 44px color-mix(in srgb,var(--主) 22%,transparent),0 30px 90px #000a;user-select:text}
+#文件预览,#检查详情,#项目窗,#产出窗{padding:0;color:var(--字);background:var(--深);border:1px solid color-mix(in srgb,var(--主) 55%,transparent);box-shadow:0 0 44px color-mix(in srgb,var(--主) 22%,transparent),0 30px 90px #000a;user-select:text}
 #文件预览{margin:0 auto;top:var(--预览顶,12px);width:min(1320px,90vw);max-width:calc(100vw - 16px);height:var(--预览高,75dvh);max-height:calc(100dvh - 24px)}
-#文件预览[open],#检查详情[open],#项目窗[open]{display:flex;flex-direction:column}
-#文件预览::backdrop,#检查详情::backdrop,#项目窗::backdrop{background:#04030ac7;backdrop-filter:blur(3px)}
-.文件预览头,.检查头,.项目窗头{display:flex;align-items:center;gap:12px;padding:14px 22px;border-bottom:1px solid var(--边)}
+#文件预览[open],#检查详情[open],#项目窗[open],#产出窗[open]{display:flex;flex-direction:column}
+#文件预览::backdrop,#检查详情::backdrop,#项目窗::backdrop,#产出窗::backdrop{background:#04030ac7;backdrop-filter:blur(3px)}
+.文件预览头,.检查头,.项目窗头,.产出窗头{display:flex;align-items:center;gap:12px;padding:14px 22px;border-bottom:1px solid var(--边)}
 .文件预览头>div{flex:1;min-width:0}
-#文件预览标题,#检查标题,#项目窗标题{margin:0;font-size:18px;font-weight:600;overflow-wrap:anywhere}
+#文件预览标题,#检查标题,#项目窗标题,#产出窗标题{margin:0;font-size:18px;font-weight:600;overflow-wrap:anywhere}
 #文件预览路径{font:11px var(--等宽);color:var(--字3);overflow-wrap:anywhere}
-#关闭文件预览,#关闭检查,#关闭项目窗{height:34px;padding:0 14px;white-space:nowrap;color:var(--主);border:1px solid color-mix(in srgb,var(--主) 50%,transparent)}
-#关闭文件预览:hover,#关闭检查:hover,#关闭项目窗:hover{background:color-mix(in srgb,var(--主) 12%,transparent)}
+#关闭文件预览,#关闭检查,#关闭项目窗,#关闭产出窗{height:34px;padding:0 14px;white-space:nowrap;color:var(--主);border:1px solid color-mix(in srgb,var(--主) 50%,transparent)}
+#关闭文件预览:hover,#关闭检查:hover,#关闭项目窗:hover,#关闭产出窗:hover{background:color-mix(in srgb,var(--主) 12%,transparent)}
 #文件预览正文{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:20px 28px}
 #文件预览正文.源码{white-space:pre;font:13px/1.7 var(--等宽);color:var(--正文字)}
 #检查详情{margin:auto;width:min(620px,calc(100vw - 32px));max-height:80dvh}
@@ -481,32 +481,34 @@ body.霓虹阅读 .盒.聚起>.卡:not(.展开),body.霓虹阅读 .盒.聚起>.�
   #顶{gap:10px}
 }
 @media(max-width:1024px) and (min-width:701px){
-  #顶{height:auto;display:grid;grid-template-columns:auto minmax(0,1fr) auto auto minmax(140px,240px) auto auto;grid-template-rows:54px 46px;column-gap:10px;padding:0 16px}
+  #顶{height:auto;display:grid;grid-template-columns:auto minmax(0,1fr) auto auto auto minmax(140px,240px) auto auto;grid-template-rows:54px 46px;column-gap:10px;padding:0 16px}
   .品牌{grid-row:1;grid-column:1}
-  #体检{grid-row:1;grid-column:3;margin:0}
-  #运行控件{grid-row:1;grid-column:2;justify-self:end}
-  #新路线{grid-row:1;grid-column:4}
-  #搜{grid-row:1;grid-column:5;justify-self:end}
-  #主题控件{grid-row:1;grid-column:6}
-  #刷{grid-row:1;grid-column:7}
+  #体检{grid-row:1;grid-column:4;margin:0}
+  #产出控件{grid-row:1;grid-column:2;justify-self:end}
+  #运行控件{grid-row:1;grid-column:3}
+  #新路线{grid-row:1;grid-column:5}
+  #搜{grid-row:1;grid-column:6;justify-self:end}
+  #主题控件{grid-row:1;grid-column:7}
+  #刷{grid-row:1;grid-column:8}
   #签{grid-row:2;grid-column:1/-1;margin:0 -16px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr))}
   #签 button{justify-content:center}
   .导航图标{display:block}
 }
 @media(max-width:700px){
-  #顶{height:auto;display:grid;grid-template-columns:minmax(0,1fr) auto auto;grid-template-rows:40px 44px 46px;gap:8px;padding:8px 12px 0}
+  #顶{height:auto;display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;grid-template-rows:40px 44px 46px;gap:8px;padding:8px 12px 0}
   .品牌{grid-row:1;grid-column:1;gap:10px}
-  #运行控件{grid-row:1;grid-column:2;--主题钮:34px}
+  #产出控件{grid-row:1;grid-column:2;--主题钮:34px}
+  #运行控件{grid-row:1;grid-column:3;--主题钮:34px}
   .品牌 svg{width:24px;height:24px}
   .品牌 #名{font-size:16px}
-  #体检{grid-row:1;grid-column:3;margin:0;height:30px;padding:0 10px}
+  #体检{grid-row:1;grid-column:4;margin:0;height:30px;padding:0 10px}
   #新路线{display:none!important}
-  #搜,#搜:focus-within,#搜:has(input:not(:placeholder-shown)){grid-row:2;grid-column:1;width:100%}
+  #搜,#搜:focus-within,#搜:has(input:not(:placeholder-shown)){grid-row:2;grid-column:1/3;width:100%}
   #搜 input::placeholder{color:var(--字3)!important}
   #搜 input{height:44px;padding-right:12px;font-size:14px}
   #搜 kbd{display:none}
-  #主题控件{grid-row:2;grid-column:2;--主题钮:44px}
-  #刷{grid-row:2;grid-column:3;width:44px;height:44px}
+  #主题控件{grid-row:2;grid-column:3;--主题钮:44px}
+  #刷{grid-row:2;grid-column:4;width:44px;height:44px}
   #签{grid-row:3;grid-column:1/-1;margin:-8px -12px 0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr))}
   #签 button{justify-content:center;gap:5px;padding:0 4px;font-size:13px}
   .导航图标{display:block;width:15px;height:15px}
@@ -531,7 +533,7 @@ body.霓虹阅读 .盒.聚起>.卡:not(.展开),body.霓虹阅读 .盒.聚起>.�
   .详情侧{position:static;height:auto;overflow:visible}
   .空{width:300px;padding:30px}
   #文件预览{width:calc(100vw - 16px)}
-  .文件预览头,.检查头,.项目窗头{padding:12px 16px}
+  .文件预览头,.检查头,.项目窗头,.产出窗头{padding:12px 16px}
   #文件预览正文,.检查正文{padding:16px}
 }
 
@@ -562,10 +564,10 @@ body.霓虹阅读 .盒.聚起>.卡:not(.展开),body.霓虹阅读 .盒.聚起>.�
 @keyframes 霓虹展开{from{clip-path:inset(100% 0 0 0);opacity:.4}70%{opacity:1}}
 @keyframes 霓虹收起{to{clip-path:inset(100% 0 0 0);opacity:0}}
 @keyframes 霓虹下拉{from{clip-path:inset(0 0 100% 0);opacity:.5}}
-:is(#检查详情,#文件预览,#询问,#项目窗)[open]{animation:霓虹开屏 .38s cubic-bezier(.2,.8,.2,1)}
-:is(#检查详情,#文件预览,#询问,#项目窗)[open]::backdrop{animation:霓虹幕入 .25s ease-out}
-:is(#检查详情,#文件预览,#询问,#项目窗)[data-关闭中]{animation:霓虹关屏 .26s ease-in forwards}
-:is(#检查详情,#文件预览,#询问,#项目窗)[data-关闭中]::backdrop{animation:霓虹幕出 .26s ease-in forwards}
+:is(#检查详情,#文件预览,#询问,#项目窗,#产出窗)[open]{animation:霓虹开屏 .38s cubic-bezier(.2,.8,.2,1)}
+:is(#检查详情,#文件预览,#询问,#项目窗,#产出窗)[open]::backdrop{animation:霓虹幕入 .25s ease-out}
+:is(#检查详情,#文件预览,#询问,#项目窗,#产出窗)[data-关闭中]{animation:霓虹关屏 .26s ease-in forwards}
+:is(#检查详情,#文件预览,#询问,#项目窗,#产出窗)[data-关闭中]::backdrop{animation:霓虹幕出 .26s ease-in forwards}
 #检查详情[open] .检查项,#询问[open] :is(.询问项,.询问钮){animation:霓虹闪入 .5s steps(1,end) backwards}
 #检查详情[open] .检查项:nth-child(2),#询问[open] .询问项:nth-child(2){animation-delay:.06s}
 #检查详情[open] .检查项:nth-child(n+3),#询问[open] .询问钮{animation-delay:.12s}

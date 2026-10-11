@@ -114,8 +114,8 @@ kbd{font-family:var(--拉丁)}
 .搜索副文{display:block;margin-top:2px;font-size:11.5px;color:var(--字3);overflow-wrap:anywhere}
 
 /* 主题选择：基础.css 统一成小图标，这里只给方钮外观。 */
-#主题控件,#运行控件{--主题钮:40px;background:var(--面透);border:1px solid var(--金线);color:var(--强);transition:border-color .2s}
-#主题控件:hover,#运行控件:hover{border-color:var(--金)}
+#主题控件,#运行控件,#产出控件{--主题钮:40px;background:var(--面透);border:1px solid var(--金线);color:var(--强);transition:border-color .2s}
+#主题控件:hover,#运行控件:hover,#产出控件:hover{border-color:var(--金)}
 #主题面板,#运行面板{padding:14px;border:1px solid var(--金线);border-radius:0;background:var(--面);box-shadow:0 30px 60px -24px var(--影)}
 #主题面板:popover-open,#运行面板:popover-open{animation:幻想浮现 .3s var(--顺)}
 #运行控件{--运行色:var(--青碧);--运行错色:var(--绯)}
@@ -388,16 +388,16 @@ body.幻想阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
 .步骤标题编辑 button{height:36px;padding:0 14px;border:1px solid var(--金线);font-family:var(--字体);font-size:12px;font-weight:700;white-space:nowrap}
 .步骤标题编辑 button[type="submit"]{background:var(--主钮底);color:var(--主钮字);border-color:transparent}
 
-#文件预览,#检查详情,#项目窗,#询问{padding:0;overflow:hidden;color:var(--字);background:var(--面);border:1px solid var(--金);border-radius:0;
+#文件预览,#检查详情,#项目窗,#询问,#产出窗{padding:0;overflow:hidden;color:var(--字);background:var(--面);border:1px solid var(--金);border-radius:0;
   box-shadow:inset 0 0 0 5px var(--面),inset 0 0 0 6px var(--金淡),0 40px 80px -30px var(--影);user-select:text}
 #文件预览{margin:0 auto;top:var(--预览顶,12px);width:min(1320px,90vw);max-width:calc(100vw - 16px);height:var(--预览高,75dvh);max-height:calc(100dvh - 24px)}
-#文件预览[open],#检查详情[open],#项目窗[open]{display:flex;flex-direction:column}
-:is(#文件预览,#检查详情,#项目窗,#询问)::backdrop{background:var(--幕)}
-.文件预览头,.检查头,.项目窗头{display:flex;align-items:center;gap:12px;padding:16px 22px;border-bottom:1px solid var(--边)}
+#文件预览[open],#检查详情[open],#项目窗[open],#产出窗[open]{display:flex;flex-direction:column}
+:is(#文件预览,#检查详情,#项目窗,#询问,#产出窗)::backdrop{background:var(--幕)}
+.文件预览头,.检查头,.项目窗头,.产出窗头{display:flex;align-items:center;gap:12px;padding:16px 22px;border-bottom:1px solid var(--边)}
 .文件预览头>div{flex:1;min-width:0}
-#文件预览标题,#检查标题,#项目窗标题{margin:0;font:700 19px var(--衬线);overflow-wrap:anywhere}
+#文件预览标题,#检查标题,#项目窗标题,#产出窗标题{margin:0;font:700 19px var(--衬线);overflow-wrap:anywhere}
 #文件预览路径{font-size:12px;color:var(--字4);overflow-wrap:anywhere}
-#关闭文件预览,#关闭检查,#关闭项目窗{height:36px;padding:0 16px;background:var(--主钮底);color:var(--主钮字);font-size:13px;font-weight:700;white-space:nowrap}
+#关闭文件预览,#关闭检查,#关闭项目窗,#关闭产出窗{height:36px;padding:0 16px;background:var(--主钮底);color:var(--主钮字);font-size:13px;font-weight:700;white-space:nowrap}
 #文件预览正文{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:20px 28px 6px;border-bottom:14px solid transparent}
 #文件预览正文.源码{white-space:pre;font:13px/1.7 var(--等宽)}
 #检查详情{margin:auto;width:min(620px,calc(100vw - 32px));max-height:80dvh}
@@ -465,10 +465,10 @@ body.幻想阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
 @keyframes 幻想幕入{from{opacity:0}}
 @keyframes 幻想幕出{to{opacity:0}}
 @keyframes 幻想项入{from{opacity:0;transform:translateY(8px)}}
-:is(#文件预览,#检查详情,#询问,#项目窗)[open]{animation:幻想浮现 .4s var(--顺)}
-:is(#文件预览,#检查详情,#询问,#项目窗)[open]::backdrop{animation:幻想幕入 .25s ease-out}
-:is(#文件预览,#检查详情,#询问,#项目窗)[data-关闭中]{animation:幻想隐去 .2s ease-in forwards}
-:is(#文件预览,#检查详情,#询问,#项目窗)[data-关闭中]::backdrop{animation:幻想幕出 .2s ease-in forwards}
+:is(#文件预览,#检查详情,#询问,#项目窗,#产出窗)[open]{animation:幻想浮现 .4s var(--顺)}
+:is(#文件预览,#检查详情,#询问,#项目窗,#产出窗)[open]::backdrop{animation:幻想幕入 .25s ease-out}
+:is(#文件预览,#检查详情,#询问,#项目窗,#产出窗)[data-关闭中]{animation:幻想隐去 .2s ease-in forwards}
+:is(#文件预览,#检查详情,#询问,#项目窗,#产出窗)[data-关闭中]::backdrop{animation:幻想幕出 .2s ease-in forwards}
 #询问[open] .询问项{animation:幻想项入 .4s var(--顺) backwards}
 #询问[open] .询问项:nth-child(1){animation-delay:.08s}
 #询问[open] .询问项:nth-child(2){animation-delay:.14s}
@@ -536,29 +536,31 @@ body.幻想阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
   #顶{gap:10px}
 }
 @media(max-width:900px) and (min-width:701px){
-  #顶{height:auto;display:grid;grid-template-columns:auto minmax(0,1fr) auto auto auto auto auto;grid-template-rows:44px 48px;gap:8px 10px}
+  #顶{height:auto;display:grid;grid-template-columns:auto minmax(0,1fr) auto auto auto auto auto auto;grid-template-rows:44px 48px;gap:8px 10px}
   .品牌{grid-row:1;grid-column:1}
-  #体检{grid-row:1;grid-column:3;margin:0}
-  #运行控件{grid-row:1;grid-column:2;justify-self:end}
-  #新路线{grid-row:1;grid-column:4}
-  #搜{grid-row:1;grid-column:5}
-  #主题控件{grid-row:1;grid-column:6}
-  #刷{grid-row:1;grid-column:7}
+  #体检{grid-row:1;grid-column:4;margin:0}
+  #产出控件{grid-row:1;grid-column:2;justify-self:end}
+  #运行控件{grid-row:1;grid-column:3}
+  #新路线{grid-row:1;grid-column:5}
+  #搜{grid-row:1;grid-column:6}
+  #主题控件{grid-row:1;grid-column:7}
+  #刷{grid-row:1;grid-column:8}
   #签{grid-row:2;grid-column:1/-1;justify-self:start}
 }
 @media(max-width:700px){
-  #顶{top:10px;left:10px;right:10px;height:auto;display:grid;grid-template-columns:minmax(0,1fr) auto auto;grid-template-rows:44px 44px 46px;gap:8px}
+  #顶{top:10px;left:10px;right:10px;height:auto;display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;grid-template-rows:44px 44px 46px;gap:8px}
   .品牌{grid-row:1;grid-column:1}
-  #运行控件{grid-row:1;grid-column:2;--主题钮:36px}
+  #产出控件{grid-row:1;grid-column:2;--主题钮:36px}
+  #运行控件{grid-row:1;grid-column:3;--主题钮:36px}
   .品牌>span{display:flex}
   .品牌:before{width:38px;height:38px}
-  #体检{grid-row:1;grid-column:3;margin:0;height:36px}
+  #体检{grid-row:1;grid-column:4;margin:0;height:36px}
   #新路线{display:none!important}
-  #搜{grid-row:2;grid-column:1;width:100%}
+  #搜{grid-row:2;grid-column:1/3;width:100%}
   #搜 input{height:44px;font-size:14px}
   #搜 kbd{display:none}
-  #主题控件{grid-row:2;grid-column:2;--主题钮:44px}
-  #刷{grid-row:2;grid-column:3;width:44px;height:44px}
+  #主题控件{grid-row:2;grid-column:3;--主题钮:44px}
+  #刷{grid-row:2;grid-column:4;width:44px;height:44px}
   #签{grid-row:3;grid-column:1/-1;display:grid;grid-template-columns:repeat(5,minmax(0,1fr))}
   #签 button{justify-content:center;gap:5px;padding:0 4px;font-size:13px}
   .导航计数{display:none}
@@ -583,7 +585,7 @@ body.幻想阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
   .详情侧{position:static;height:auto;overflow:visible}
   .空{width:300px;padding:26px}
   #文件预览{width:calc(100vw - 16px)}
-  .文件预览头,.检查头,.项目窗头{padding:12px 16px}
+  .文件预览头,.检查头,.项目窗头,.产出窗头{padding:12px 16px}
   #文件预览正文,.检查正文{padding:16px 16px 2px}
 }
 

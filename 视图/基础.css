@@ -19,29 +19,29 @@ body[data-启动中] > :not(#启动状态){visibility:hidden}
 /* 共享入口顺序：搜索 → 主题 → 重新扫描；主题仍决定控件配色和外观。
    主题选择统一是一枚小图标按钮（所有主题都一样）：透明按钮 #主题选择 铺满，点开核心生成的 #主题面板。
    主题只决定按钮尺寸（--主题钮，默认 40px）、图标尺寸（--主题图标）、底色、边框和图标颜色（currentColor）。 */
-#顶 > #主题控件,#顶 > #运行控件{
+#顶 > #主题控件,#顶 > #运行控件,#顶 > #产出控件{
   position:relative!important;inset:auto!important;transform:none;order:0;
   flex:0 0 auto!important;display:inline-grid!important;place-items:center;
   width:var(--主题钮,40px)!important;height:var(--主题钮,40px)!important;
   min-width:0!important;max-width:none!important;margin:0;padding:0!important;gap:0!important;
 }
-#主题控件::before,#运行控件::before{
+#主题控件::before,#运行控件::before,#产出控件::before{
   content:"";width:var(--主题图标,18px);height:var(--主题图标,18px);background:currentColor;pointer-events:none;
   -webkit-mask:var(--主题图形) center/contain no-repeat;mask:var(--主题图形) center/contain no-repeat;
 }
 #主题控件{--主题图形:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M10 1.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17Zm0 2a6.5 6.5 0 0 1 0 13Z'/%3E%3C/svg%3E")}
-#顶 #主题选择,#顶 #运行选择{
+#顶 #主题选择,#顶 #运行选择,#顶 #产出选择{
   position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
   min-width:0!important;max-width:none!important;margin:0!important;padding:0!important;
   opacity:0!important;cursor:pointer;border:0;background:none;border-radius:inherit;
 }
-#主题控件:has(#主题选择:focus-visible),#运行控件:has(#运行选择:focus-visible){outline:2px solid currentColor;outline-offset:3px}
+#主题控件:has(#主题选择:focus-visible),#运行控件:has(#运行选择:focus-visible),#产出控件:has(#产出选择:focus-visible){outline:2px solid currentColor;outline-offset:3px}
 
 /* 运行入口：当前项目 .devdock.json 里的运行目标，紧挨在检查（#体检）左边，和主题选择同一种小图标按钮。
    主题给它和 #主题控件 一样的底色、边框、圆角；尺寸同样取 --主题钮 / --主题图标，图标是 --运行图形（不随主题的 --主题图形 变）。
    除当前画布外有目标在运行时，核心给它加 data-运行中，右上角亮一个点，颜色取 --运行色。 */
-#顶 > #运行控件{margin-left:auto}
-#顶 > #运行控件 + #体检{margin-left:0}
+#顶 > #运行控件,#顶 > #产出控件{margin-left:auto}
+#顶 > #产出控件 + #运行控件,#顶 > #运行控件 + #体检{margin-left:0}
 #运行控件{--运行色:#2F9E5B;--运行图形:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M6 3.6c0-.8.9-1.3 1.6-.9l9 5.6c.6.4.6 1.3 0 1.7l-9 5.6c-.7.4-1.6-.1-1.6-.9z'/%3E%3C/svg%3E")}
 #运行控件::before{-webkit-mask-image:var(--运行图形);mask-image:var(--运行图形)}
 #运行控件[data-运行中]::after{
@@ -122,3 +122,88 @@ body[data-启动中] > :not(#启动状态){visibility:hidden}
 #顶 > .品牌 > span{min-width:0}
 #顶 .品牌 #名{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #顶 > #搜{min-width:0;flex-shrink:1}
+
+/* 产出入口：顶栏里紧挨在运行入口左边，和主题选择、运行同一种小图标按钮；主题给它和 #主题控件 一样的底色、边框、圆角。
+   有批次在上次打开之后又改动过时，核心给它写 data-新="批数"，右上角显示这个数，颜色取 --产出新色（默认取 --主）。 */
+#产出控件{--产出图形:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M4.6 3h10.8c.7 0 1.3.4 1.6 1l2 5V15c0 1.1-.9 2-2 2H3c-1.1 0-2-.9-2-2V9l2-5c.3-.6.9-1 1.6-1Zm.2 2L3.4 8.5H7c.4 0 .8.3.9.7l.3.9c.1.4.5.7.9.7h1.8c.4 0 .8-.3.9-.7l.3-.9c.1-.4.5-.7.9-.7h3.6L15.2 5Z'/%3E%3C/svg%3E")}
+#产出控件::before{-webkit-mask-image:var(--产出图形);mask-image:var(--产出图形)}
+#产出控件[data-新]::after{
+  content:attr(data-新);position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;padding:0 4px;box-sizing:border-box;
+  border-radius:999px;background:var(--产出新色,var(--主,Highlight));color:var(--面,Canvas);box-shadow:0 0 0 2px var(--面,Canvas);
+  font:700 10px/17px var(--字体,sans-serif);text-align:center;pointer-events:none;
+}
+
+/* 产出窗：核心生成，左边批次、右边这一批的说明和文件墙。外框、头部（.产出窗头、#产出窗标题、#关闭产出窗）、
+   背景幕和开合动画由主题像 #项目窗 一样设；内部结构在这里，配色取 --底 --面 --字 --字2 --字3 --边 --主 --好 --错。 */
+#产出窗{margin:auto;padding:0;width:min(1320px,calc(100vw - 32px));height:calc(100dvh - 48px);max-width:none;max-height:none;overflow:hidden;
+  color:var(--字,CanvasText);background:var(--面,Canvas);user-select:text}
+#产出窗[open]{display:flex;flex-direction:column}
+#产出窗 .产出窗头{flex:none;display:flex;align-items:center;gap:12px}
+#产出窗标题{margin:0}
+#产出窗计数{font-size:13px;color:var(--字3,GrayText)}
+#关闭产出窗{margin-left:auto}
+#产出窗 .产出窗正文{flex:1;min-height:0;display:grid;grid-template-columns:minmax(200px,264px) minmax(0,1fr)}
+:where(#产出窗) button{font:inherit;color:inherit;cursor:pointer}
+#产出批次{display:flex;flex-direction:column;gap:2px;min-height:0;overflow:auto;overscroll-behavior:contain;padding:10px;border-right:1px solid var(--边,#8886)}
+.产出批次项{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;column-gap:8px;align-items:center;
+  width:100%;padding:9px 10px;border:0;border-radius:8px;background:none;text-align:left}
+.产出批次项 b{grid-column:1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.产出批次项 small{grid-column:1;font-size:11px;color:var(--字3,GrayText);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.产出批次项 .产出新{grid-column:2;grid-row:1/3}
+.产出批次项:hover{background:color-mix(in srgb,var(--字,CanvasText) 6%,transparent)}
+.产出批次项[aria-current="true"]{background:color-mix(in srgb,var(--主,Highlight) 16%,transparent)}
+.产出批次项[data-过期] b{color:var(--字2,inherit)}
+.产出新{display:inline-block;padding:1px 7px;border-radius:999px;background:var(--产出新色,var(--主,Highlight));color:var(--面,Canvas);font-size:11px;font-weight:700;white-space:nowrap}
+#产出批{min-height:0;overflow:auto;overscroll-behavior:contain;padding:18px 22px 28px}
+.产出批头{display:flex;align-items:flex-start;gap:12px;margin-bottom:14px}
+.产出批头>div:first-child{flex:1;min-width:0}
+.产出批头 h3{margin:0;font-size:17px;overflow-wrap:anywhere}
+.产出批头 small{font-size:12px;color:var(--字3,GrayText)}
+.产出批钮{display:flex;flex-wrap:wrap;gap:6px}
+.产出批钮 button,.产出筛 button,.产出件钮 button{height:28px;padding:0 10px;border:1px solid var(--边,#8886);border-radius:6px;background:none;font-size:12px;white-space:nowrap}
+.产出批钮 button:hover,.产出筛 button:hover,.产出件钮 button:hover{border-color:var(--字,CanvasText)}
+.产出说明们{display:grid;gap:8px;margin-bottom:16px}
+.产出说明{border:1px solid var(--边,#8886);border-radius:10px;background:var(--底,Canvas)}
+.产出说明>summary{display:flex;align-items:baseline;gap:10px;padding:10px 14px;cursor:pointer}
+.产出说明>summary small{font-size:11px;color:var(--字3,GrayText)}
+.产出说明>.正文{max-height:46vh;overflow:auto;padding:0 18px 12px;border-top:1px solid var(--边,#8886)}
+.产出说明 pre{white-space:pre-wrap;overflow-wrap:anywhere}
+.产出链{display:inline;padding:0 3px;border:0;border-radius:4px;background:color-mix(in srgb,var(--主,Highlight) 14%,transparent);color:inherit;font:inherit;text-decoration:underline dotted}
+.产出链:hover{background:color-mix(in srgb,var(--主,Highlight) 28%,transparent)}
+.产出筛{position:sticky;top:-18px;z-index:1;display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 -22px 12px;padding:10px 22px;background:var(--面,Canvas);border-bottom:1px solid var(--边,#8886)}
+.产出筛 button[aria-pressed="true"]{background:var(--字,CanvasText);color:var(--面,Canvas);border-color:transparent}
+.产出筛 small{opacity:.7}
+.产出筛 label{display:inline-flex;align-items:center;gap:5px;margin-left:8px;font-size:12px;color:var(--字2,inherit);cursor:pointer}
+.产出筛 label:has(input:disabled){opacity:.5;cursor:default}
+.产出提醒,.产出空{font-size:13px;color:var(--字3,GrayText)}
+.产出组{margin-bottom:14px}
+.产出组>summary{display:flex;align-items:baseline;gap:10px;padding:6px 0;cursor:pointer}
+.产出组>summary b{font-size:13px;overflow-wrap:anywhere}
+.产出组>summary small{font-size:11px;color:var(--字3,GrayText);white-space:nowrap}
+.产出墙{display:grid;grid-template-columns:repeat(auto-fill,minmax(176px,1fr));gap:12px;padding-top:6px}
+.产出件{position:relative;display:flex;flex-direction:column;min-width:0;border:1px solid var(--边,#8886);border-radius:10px;background:var(--底,Canvas);overflow:hidden}
+.产出件[data-新]::before{content:"新";position:absolute;top:6px;left:6px;z-index:1;padding:1px 6px;border-radius:999px;background:var(--产出新色,var(--主,Highlight));color:var(--面,Canvas);font-size:11px;font-weight:700;pointer-events:none}
+.产出件[data-标记="通过"]{border-color:var(--好,#2F9E5B);box-shadow:inset 0 0 0 1px var(--好,#2F9E5B)}
+.产出件[data-标记="打回"]{border-color:var(--错,#C0392B)}
+.产出件[data-标记="打回"] .产出缩略{opacity:.45}
+.产出件[data-当前]{outline:2px solid var(--主,Highlight);outline-offset:2px}
+.产出缩略{position:relative;display:grid;place-items:center;width:100%;aspect-ratio:4/3;padding:0;border:0;
+  background:color-mix(in srgb,var(--字,CanvasText) 5%,transparent);overflow:hidden}
+.产出缩略 img,.产出缩略 video{width:100%;height:100%;object-fit:contain;pointer-events:none}
+.产出缩略 video+.产出符{position:absolute;right:6px;bottom:6px;padding:1px 6px;border-radius:4px;background:#000a;color:#fff;font-size:10px}
+.产出符{font:700 13px/1 var(--等宽,monospace);letter-spacing:.04em;color:var(--字3,GrayText)}
+.产出件 audio{width:100%;height:32px}
+.产出件名{padding:6px 8px 0;font-size:12px;line-height:1.35;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.产出件钮{display:flex;flex-wrap:wrap;gap:4px;padding:6px 8px 8px;margin-top:auto}
+.产出件钮 button{height:24px;padding:0 7px;font-size:11px}
+.产出件钮 button[data-产出标="通过"][aria-pressed="true"]{background:var(--好,#2F9E5B);border-color:transparent;color:var(--面,Canvas)}
+.产出件钮 button[data-产出标="打回"][aria-pressed="true"]{background:var(--错,#C0392B);border-color:transparent;color:var(--面,Canvas)}
+@media(max-width:700px){
+  #产出窗{width:calc(100vw - 16px);height:calc(100dvh - 16px)}
+  #产出窗 .产出窗正文{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}
+  #产出批次{flex-direction:row;overflow-x:auto;overflow-y:hidden;border-right:0;border-bottom:1px solid var(--边,#8886)}
+  .产出批次项{flex:0 0 auto;width:auto;max-width:220px}
+  #产出批{padding:14px 12px 24px}
+  .产出筛{margin:0 -12px 12px;padding:8px 12px;top:-14px}
+  .产出墙{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+}

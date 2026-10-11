@@ -11,6 +11,9 @@
   POST /删路线           删掉一条路线的 yml
   POST /还原             把某个文件写回指定内容（撤销/重做就靠它）
   POST /系统打开         用系统默认应用打开仓库里的文件，或在访达里选中它（不写盘）
+  GET  /产出             产出批次：件数、天数、上次看过之后的新文件数
+  GET  /产出批/<目录>     一批产出的文件清单与批次根目录下的说明
+  POST /审阅             记一批看过的时间，或给产出文件标 通过／打回（写 .atlas/审阅.json）
   GET  /候选             画布上选文档用的候选列表
   GET  /身份             这个服务管的是哪个项目
   GET  /项目             当前项目、注册表里的项目（含端口和是否在运行）、可用模板
@@ -130,26 +133,127 @@ def 资产卡(idx) -> list:
 
 
 产出过期天数 = 14
+产出单批上限 = 3000
+产出跳过目录 = {"node_modules", "__pycache__"}
+产出种类 = [("图片", {".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg", ".avif", ".bmp"}),
+          ("视频", {".mp4", ".mov", ".webm", ".m4v"}), ("音频", {".mp3", ".wav", ".m4a", ".aac", ".ogg", ".flac"}),
+          ("网页", {".html", ".htm"}), ("文档", {".md", ".txt", ".srt", ".pdf", ".csv", ".docx", ".xlsx", ".pptx"})]
+# 过程文件：生成脚本、配置、缓存、字体之类，审阅时默认收起
+产出过程后缀 = {".json", ".py", ".js", ".mjs", ".cjs", ".ts", ".sh", ".log", ".yml", ".yaml", ".css", ".map",
+             ".lock", ".toml", ".xml", ".tmp", ".pid", ".pyc", ".woff", ".woff2", ".ttf", ".otf"}
+产出过程文件 = {"claude.md", "agents.md"}
+# 批次根目录下的 md/txt 当作 AI 写的说明置顶；这些是框架自带或制作用的文件，不算说明
+产出非说明 = 产出过程文件 | {"brief.md", "storyboard.md", "script.md", "frame.md", "design.md"}
+
+
+def _产出文件(b: Path):
+    """一批里的文件：跳过点开头的文件和目录、node_modules 之类的依赖目录。"""
+    if b.is_file():
+        yield b
+        return
+    for dp, dns, fns in os.walk(b):
+        dns[:] = [d for d in dns if not d.startswith(".") and d not in 产出跳过目录]
+        for f in fns:
+            if not f.startswith("."):
+                yield Path(dp) / f
+
+
+def 读审阅(根: Path) -> dict:
+    """产出的审阅状态：每批上次看过的时间、每个文件的 通过／打回。存在 .atlas/审阅.json，只由画布写。
+    第一次用时记下基准时间，之前就有的产出都算看过，免得老批次全部亮成新的。"""
+    p = 根 / ".atlas" / "审阅.json"
+    try:
+        d = json.loads(p.read_text(encoding="utf-8"))
+        if isinstance(d, dict) and isinstance(d.get("基准"), (int, float)):
+            d.setdefault("看过", {}); d.setdefault("标记", {})
+            return d
+    except (OSError, ValueError):
+        pass
+    d = {"基准": time.time(), "看过": {}, "标记": {}}
+    写审阅(根, d)
+    return d
+
+
+def 写审阅(根: Path, d: dict):
+    p = 根 / ".atlas" / "审阅.json"
+    p.parent.mkdir(exist_ok=True)
+    p.write_text(json.dumps(d, ensure_ascii=False, indent=1), encoding="utf-8")
 
 
 def 产出池(根: Path) -> list:
     """产出/ 下一个一级目录算一批（散放的文件各算一批）。天数按批内最新文件的修改时间算，
-    超过 产出过期天数 标 过期。产出池是临时存放，不算未认领，也不进 check。"""
+    超过 产出过期天数 标 过期；新数 是上次看过这批之后改动过的文件数。
+    产出池是临时存放，不算未认领，也不进 check。"""
     d = 根 / "产出"
     if not d.is_dir():
         return []
+    审 = 读审阅(根)
     现在, 出 = time.time(), []
     for b in sorted(d.iterdir()):
-        if b.name.startswith("."):
+        if b.name.startswith(".") or b.name in 产出跳过目录:
             continue
-        文件 = [f for f in (b.rglob("*") if b.is_dir() else [b])
-                if f.is_file() and not f.name.startswith(".")]
-        if not 文件:
+        时间 = [f.stat().st_mtime for f in _产出文件(b)]
+        if not 时间:
             continue
-        天 = int((现在 - max(f.stat().st_mtime for f in 文件)) // 86400)
         名 = str(b.relative_to(根)).replace(os.sep, "/") + ("/" if b.is_dir() else "")
-        出.append({"目录": 名, "件数": len(文件), "天数": 天, "过期": 天 > 产出过期天数})
+        看过 = 审["看过"].get(名, 审["基准"])
+        最新 = max(时间)
+        天 = int((现在 - 最新) // 86400)
+        出.append({"目录": 名, "件数": len(时间), "天数": 天, "过期": 天 > 产出过期天数,
+                   "最新": 最新, "新数": sum(t > 看过 for t in 时间)})
     return 出
+
+
+def 产出批详情(根: Path, 目录: str) -> dict:
+    """一批产出的文件清单（新的在前）和批次根目录下的说明。看过时间由画布另行写回。"""
+    产出根 = (根 / "产出").resolve()
+    b = (根 / 目录).resolve()
+    if not b.is_relative_to(产出根) or b == 产出根 or not b.exists():
+        raise FileNotFoundError("没有这一批产出")
+    名 = str(b.relative_to(根.resolve())).replace(os.sep, "/") + ("/" if b.is_dir() else "")
+    审 = 读审阅(根)
+    全 = sorted(((f, f.stat()) for f in _产出文件(b)), key=lambda x: -x[1].st_mtime)
+    文件 = []
+    for f, st in 全[:产出单批上限]:
+        rel = f.relative_to(根.resolve()).as_posix()
+        后 = f.suffix.lower()
+        文件.append({"路径": rel, "种类": next((k for k, v in 产出种类 if 后 in v), "其他"),
+                   "大小": st.st_size, "时间": st.st_mtime, "文本": 后 in 文本后缀,
+                   "过程": 后 in 产出过程后缀 or f.name.lower() in 产出过程文件,
+                   "标记": 审["标记"].get(rel)})
+    说明 = []
+    if b.is_dir():
+        for f in b.iterdir():
+            if (f.is_file() and f.suffix.lower() in {".md", ".txt"} and not f.name.startswith(".")
+                    and f.name.lower() not in 产出非说明 and f.stat().st_size <= 200 * 1024):
+                try:
+                    说明.append({"路径": f.relative_to(根.resolve()).as_posix(), "时间": f.stat().st_mtime,
+                               "格式": "markdown" if f.suffix.lower() == ".md" else "text",
+                               "内容": f.read_text(encoding="utf-8")})
+                except (OSError, UnicodeError):
+                    pass
+        说明.sort(key=lambda x: (x["格式"] != "markdown", -x["时间"]))  # md 说明优先，同类新的在前
+    return {"目录": 名, "看过": 审["看过"].get(名, 审["基准"]), "总数": len(全), "文件": 文件, "说明": 说明}
+
+
+def 记审阅(根: Path, 体: dict):
+    审 = 读审阅(根)
+    if 体.get("看过"):
+        名 = str(体["看过"])
+        if not 名.startswith("产出/"):
+            raise RuntimeError("只记录 产出/ 下的批次")
+        审["看过"][名] = time.time()
+    for rel, 状态 in (体.get("标记") or {}).items():
+        rel = str(rel)
+        if not rel.startswith("产出/") or ".." in rel.split("/"):
+            raise RuntimeError("只标记 产出/ 下的文件")
+        if 状态 in ("通过", "打回"):
+            审["标记"][rel] = 状态
+        elif 状态 is None:
+            审["标记"].pop(rel, None)
+        else:
+            raise RuntimeError("标记只能是 通过、打回 或清除")
+    写审阅(根, 审)
 
 
 def 系统打开(根: Path, rel: str, 显示: bool):
@@ -258,6 +362,13 @@ class 处理器(BaseHTTPRequestHandler):
     def log_message(self, *a):
         pass
 
+    def handle(self):
+        # 浏览器中途取消（视频缩略滚出视野、切换批次）会断开连接，不算错误
+        try:
+            super().handle()
+        except (BrokenPipeError, ConnectionResetError):
+            pass
+
     def _发(self, 码, 体: bytes, 类型="application/json; charset=utf-8"):
         self.send_response(码)
         self.send_header("Content-Type", 类型)
@@ -303,6 +414,15 @@ class 处理器(BaseHTTPRequestHandler):
             except RuntimeError as e:
                 self._json({"错误": str(e)}, 409)
             return
+        if 路径 == "/产出":
+            self._json(产出池(self.根))
+            return
+        if 路径.startswith("/产出批/"):
+            try:
+                self._json(产出批详情(self.根, 路径[len("/产出批/"):]))
+            except FileNotFoundError as e:
+                self._json({"错误": str(e)}, 404)
+            return
         if 路径 == "/候选":
             idx = 建索引(self.根)
             self._json(文件候选(idx))
@@ -328,7 +448,9 @@ class 处理器(BaseHTTPRequestHandler):
             if 范围:
                 大小 = p.stat().st_size
                 起 = int(范围.group(1)) if 范围.group(1) else max(0, 大小 - int(范围.group(2) or 0))
-                止 = min(int(范围.group(2)), 大小 - 1) if 范围.group(1) and 范围.group(2) else 大小 - 1
+                # 没写结束位置（bytes=N-）时每次最多给 4 MB：产出墙一次挂几十个视频缩略，不能把整片都读进内存
+                止 = min(int(范围.group(2)), 大小 - 1) if 范围.group(1) and 范围.group(2) else (
+                    min(大小 - 1, 起 + 4 * 1024 * 1024 - 1) if 范围.group(1) else 大小 - 1)
                 with open(p, "rb") as f:
                     f.seek(起); 体 = f.read(止 - 起 + 1)
                 self.send_response(206)
@@ -388,6 +510,9 @@ class 处理器(BaseHTTPRequestHandler):
                 self._json({"好": True, "目标": targets.状态(self.根, self.端口)})
             elif 路径 == "/系统打开":
                 系统打开(self.根, str(体.get("路径") or ""), bool(体.get("显示")))
+                self._json({"好": True})
+            elif 路径 == "/审阅":
+                记审阅(self.根, 体)
                 self._json({"好": True})
             elif 路径 == "/认领":
                 条目 = self.根 / 体["条目"]

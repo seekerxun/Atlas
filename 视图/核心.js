@@ -222,7 +222,7 @@ function 关弹窗(el, 关 = () => el.close()){
   Promise.race([Promise.all(动.map(a => a.finished.catch(() => {}))), new Promise(r => setTimeout(r, 600))]).then(完);
 }
 function 取消关闭(el){ el._关令 = null; el.removeAttribute('data-关闭中'); }
-['#检查详情', '#文件预览', '#询问', '#项目窗'].forEach(s => $(s).addEventListener('cancel', e => {
+['#检查详情', '#文件预览', '#询问', '#项目窗', '#产出窗'].forEach(s => $(s).addEventListener('cancel', e => {
   e.preventDefault(); if (s === '#询问') 询问中?.(null); else 关弹窗($(s));
 }));
 
@@ -313,7 +313,7 @@ async function 读数据(自动 = false){
   const 首条 = (数据.发现 || [])[0];
   签.title = 首条 ? `${首条.位置}：${首条.信息}\n点击查看详情与处理建议` : '项目检查通过，点击查看详情';
   签.dataset.状态 = t.错误 ? '错误' : t.警告 ? '警告' : '正常';
-  画签(); 画未认领(); 画(); if (初次) 阅读视野();
+  画签(); 画未认领(); 画产出入口(); 画(); if (初次) 阅读视野();
   if (搜框.value.trim()) { const display = 搜果.style.display; 搜框.oninput(); 搜果.style.display = display; }
 }
 
@@ -475,7 +475,7 @@ function 路线文件(引用){
 }
 let 预览请求 = null;
 
-async function 预览文档(路径){
+async function 预览文档(路径, 副 = ''){
   预览请求?.abort();
   const controller = 预览请求 = new AbortController(), dialog = $('#文件预览'), body = $('#文件预览正文');
   定位文件预览();
@@ -489,7 +489,7 @@ async function 预览文档(路径){
     if (!r.ok) throw new Error(file.错误 || '读取失败');
     if (controller.signal.aborted) return;
     $('#文件预览标题').textContent = file.路径.split('/').pop();
-    $('#文件预览路径').textContent = file.路径 + (file.格式 === 'code' ? ' · 源码预览' : '');
+    $('#文件预览路径').textContent = file.路径 + (file.格式 === 'code' ? ' · 源码预览' : '') + 副;
     if (file.格式 === 'markdown') {
       body.innerHTML = 正文html(file.内容.replace(/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/, '')) || '<p>这篇文档还没有正文。</p>';
     } else { body.className = '源码'; body.textContent = file.内容 || '文件为空。'; }
@@ -498,7 +498,7 @@ async function 预览文档(路径){
   }
 }
 $('#关闭文件预览').onclick = () => 关弹窗($('#文件预览'));
-$('#文件预览').addEventListener('close', () => { 预览请求?.abort(); 预览请求 = null; });
+$('#文件预览').addEventListener('close', () => { 预览请求?.abort(); 预览请求 = null; 产出预览位 = null; });
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-预览]');
   if (b) { e.preventDefault(); 预览文档(b.dataset.预览); }
@@ -512,6 +512,7 @@ document.addEventListener('click', e => {
   const 原地 = !路径 || (!预览 && a.closest('#屉') && 路径 === 选中);
   if (原地) { 跳锚(a.closest('.正文'), 预览 ? $('#文件预览正文') : $('#屉 .详情体'), 锚); return; }
   if (预览?.open) 关弹窗(预览);
+  if (a.closest('#产出窗')) 关弹窗($('#产出窗'));
   跳(路径, 锚);
 }, true);
 
@@ -1259,10 +1260,11 @@ function 建大纲(panel){
 function 资产预览html(路径){
   const 址 = '/文件/' + encodeURI(路径), 后 = (路径.split('.').pop() || '').toLowerCase();
   if (图后缀.test(路径)) return `<p><img class="资产预览" src="${转义(址)}" alt="${转义(路径.split('/').pop())}" style="max-width:100%;height:auto"></p>`;
-  if (['mp4', 'webm', 'mov'].includes(后)) return `<p><video class="资产预览" src="${转义(址)}" controls preload="metadata" style="width:100%;max-height:70vh"></video></p>`;
-  if (['mp3', 'wav', 'm4a'].includes(后)) return `<p><audio class="资产预览" src="${转义(址)}" controls style="width:100%"></audio></p>`;
+  if (['mp4', 'webm', 'mov', 'm4v'].includes(后)) return `<p><video class="资产预览" src="${转义(址)}" controls preload="metadata" style="width:100%;max-height:70vh"></video></p>`;
+  if (['mp3', 'wav', 'm4a', 'aac', 'ogg', 'flac'].includes(后)) return `<p><audio class="资产预览" src="${转义(址)}" controls style="width:100%"></audio></p>`;
   if (['html', 'htm'].includes(后)) return `<p><a href="${转义(址)}" target="_blank" rel="noopener">在新标签页打开这个网页 ↗</a></p>` +
     `<iframe class="资产预览" src="${转义(址)}" title="${转义(路径)}" style="width:100%;aspect-ratio:16/9;border:0"></iframe>`;
+  if (后 === 'pdf') return `<iframe class="资产预览" src="${转义(址)}" title="${转义(路径)}" style="width:100%;height:70vh;border:0"></iframe>`;
   return `<p class="读取">这个文件不能在这里预览，<a href="${转义(址)}" target="_blank" rel="noopener">在新标签页打开 ↗</a>。</p>`;
 }
 
@@ -1497,17 +1499,233 @@ function 装路线拖动(){
   }));
 }
 
+// ---------------------------------------------------------------- 产出
+// 产出/ 是 AI 的倾倒区，大部分要人看过确认。产出窗按批次看：说明置顶、文件预览墙、新文件标记、通过／打回。
+// 「新」= 上次打开这一批之后改动过的文件，AI 不用做任何标记；审阅状态由服务端存在 .atlas/审阅.json。
+// 面板由核心生成，结构和默认配色在 基础.css，主题只给外框、头部和入口按钮的外观。
+let 产出批 = null, 产出选中 = null, 产出基线 = 0, 产出请求 = null, 产出预览位 = null, 产出序列 = [];
+let 产出筛 = {种类: '全部', 只新: false, 过程: false};
+const 产出开合 = new Map(), 产出种类 = ['图片', '视频', '音频', '网页', '文档', '其他'];
+const 产出名 = 目录 => 目录.replace(/^产出\//, '').replace(/\/$/, '');
+// 文件在批内所在的子目录；散放在 产出/ 下的单个文件算批次根目录
+const 产出子目录 = f => 产出批.目录.endsWith('/') ? f.路径.slice(产出批.目录.length).split('/').slice(0, -1).join('/') : '';
+const 产出新数 = () => (数据?.产出批次 || []).filter(b => b.新数 > 0);
+function 多久前(秒){
+  const d = Date.now() / 1000 - 秒;
+  return d < 60 ? '刚刚' : d < 3600 ? `${Math.floor(d / 60)} 分钟前` : d < 86400 ? `${Math.floor(d / 3600)} 小时前` : `${Math.floor(d / 86400)} 天前`;
+}
+function 画产出入口(){
+  const 待 = 产出新数(), c = $('#产出控件'), 钮 = $('#产出选择');
+  if (待.length) c.dataset.新 = 待.length; else delete c.dataset.新;
+  钮.title = 待.length ? `产出：${待.length} 批有新东西待看` : '产出：查看 AI 的中间产出';
+  钮.setAttribute('aria-label', 待.length ? `产出，${待.length} 批有新东西` : '产出');
+  if ($('#产出窗').open) 画产出批次();
+}
+function 画产出批次(){
+  const 批 = [...(数据?.产出批次 || [])].sort((a, b) => b.最新 - a.最新), 待 = 产出新数().length;
+  $('#产出窗计数').textContent = 批.length ? `${批.length} 批` + (待 ? ` · ${待} 批有新的` : '') : '';
+  $('#产出批次').innerHTML = 批.length ? 批.map(b => `<button type="button" class="产出批次项" data-批="${转义(b.目录)}"`
+      + `${b.目录 === 产出选中 ? ' aria-current="true"' : ''}${b.过期 ? ' data-过期' : ''}>`
+      + `<b>${转义(产出名(b.目录))}</b><small>${b.件数} 件 · ${多久前(b.最新)}${b.过期 ? ' · 该清了' : ''}</small>`
+      + (b.新数 ? `<span class="产出新">${b.新数} 新</span>` : '') + '</button>').join('')
+    : '<p class="产出空">产出/ 里还没有东西。AI 不知道放哪的文件都会落在这里。</p>';
+}
+async function 打开产出窗(){
+  const d = $('#产出窗'); 取消关闭(d);
+  if (!d.open) d.showModal();
+  $('#产出选择').setAttribute('aria-expanded', 'true');
+  await 刷新产出批次();
+  const 批 = [...(数据?.产出批次 || [])].sort((a, b) => b.最新 - a.最新);
+  const 目标 = 批.find(b => b.目录 === 产出选中) || 批.find(b => b.新数) || 批[0];
+  if (目标) 选产出批(目标.目录); else { 产出选中 = null; 产出批 = null; $('#产出批').innerHTML = ''; }
+}
+async function 刷新产出批次(){
+  try { const 列 = await (await fetch('/产出')).json(); if (数据 && Array.isArray(列)) 数据.产出批次 = 列; } catch {}
+  画产出入口(); 画产出批次();
+}
+// 打开一批：记下它上次看过的时间做基线（本次一直按它标新），再告诉服务端这批看过了。
+async function 选产出批(目录, 保留 = false){
+  const 换批 = 目录 !== 产出选中;
+  产出选中 = 目录; 画产出批次();
+  产出请求?.abort(); const c = 产出请求 = new AbortController();
+  const 区 = $('#产出批'), 滚 = 保留 ? 区.scrollTop : 0;
+  if (!保留) 区.innerHTML = '<p class="读取">正在读取…</p>';
+  try {
+    const r = await fetch('/产出批/' + encodeURIComponent(目录), {signal: c.signal}), j = await r.json();
+    if (!r.ok) throw new Error(j.错误 || '读取失败');
+    if (换批 || !保留) { 产出基线 = j.看过; if (换批) 产出筛 = {种类: '全部', 只新: false, 过程: false}; }
+    产出批 = j; 画产出批(); 区.scrollTop = 滚;
+    const b = (数据?.产出批次 || []).find(x => x.目录 === 目录);
+    if (b?.新数) { b.新数 = 0; 画产出入口(); }
+    fetch('/审阅', {method: 'POST', headers: 项目头(), body: JSON.stringify({看过: 目录})}).catch(() => {});
+  } catch (e) { if (e.name !== 'AbortError') 区.innerHTML = `<p class="读取">读取失败：${转义(e.message)}</p>`; }
+}
+const 产出新 = f => f.时间 > 产出基线;
+function 产出可见(){
+  const 筛 = 产出筛;
+  return (产出批?.文件 || []).filter(f => (筛.过程 || !f.过程) && (!筛.只新 || 产出新(f)) && (筛.种类 === '全部' || f.种类 === 筛.种类));
+}
+function 产出件html(f){
+  const 址 = '/文件/' + encodeURI(f.路径), 名 = f.路径.split('/').pop(), 后 = (名.includes('.') ? 名.split('.').pop() : '').toUpperCase();
+  const 图 = f.种类 === '图片' ? `<img src="${转义(址)}" alt="" loading="lazy" draggable="false">`
+    : f.种类 === '视频' ? `<video data-src="${转义(址)}#t=0.1" muted playsinline preload="none"></video><span class="产出符">▶ ${转义(后)}</span>`
+    : `<span class="产出符">${转义(后 || '文件')}</span>`;
+  const 标钮 = (状态, 字) => `<button type="button" data-产出标="${状态}" aria-pressed="${f.标记 === 状态}" title="${状态}">${字}</button>`;
+  return `<div class="产出件" data-路径="${转义(f.路径)}" data-种类="${f.种类}"${f.标记 ? ` data-标记="${f.标记}"` : ''}${产出新(f) ? ' data-新' : ''}>`
+    + `<button type="button" class="产出缩略" data-产出看="${转义(f.路径)}" title="预览 ${转义(名)}">${图}</button>`
+    + (f.种类 === '音频' ? `<audio src="${转义(址)}" controls preload="none"></audio>` : '')
+    + `<div class="产出件名" title="${转义(f.路径)}">${转义(名)}</div>`
+    + `<div class="产出件钮">${标钮('通过', '✓ 通过')}${标钮('打回', '✕ 打回')}`
+    + `<button type="button" data-产出动作="打开" data-路径="${转义(f.路径)}" title="用默认应用打开">打开</button>`
+    + `<button type="button" data-产出动作="访达" data-路径="${转义(f.路径)}" title="在访达中显示">访达</button></div></div>`;
+}
+function 画产出批(){
+  const j = 产出批, 区 = $('#产出批'); if (!j) return;
+  const 不含过程 = j.文件.filter(f => 产出筛.过程 || !f.过程);
+  const 数 = k => 不含过程.filter(f => (!产出筛.只新 || 产出新(f)) && (k === '全部' || f.种类 === k)).length;
+  const 新数 = j.文件.filter(f => (产出筛.过程 || !f.过程) && 产出新(f)).length, 过程数 = j.文件.filter(f => f.过程).length;
+  const 可见 = 产出可见();
+  // 按所在子目录分组；目录按其中最新的文件排，批次根目录永远在最前
+  const 组 = new Map();
+  for (const f of 可见) { const 目 = 产出子目录(f); if (!组.has(目)) 组.set(目, []); 组.get(目).push(f); }
+  const 组们 = [...组].sort(([a], [b]) => (a === '' ? -1 : b === '' ? 1 : 0));
+  产出序列 = 组们.flatMap(([, fs]) => fs);  // 翻看顺序和墙上一致
+  // 默认：总数不多就全开，多了只开前三个不太大的组；用户亲手开合过的组按他的来
+  const 手 = 产出开合.get(j.目录) || new Map(); 产出开合.set(j.目录, 手);
+  const 开 = new Set(组们.filter(([目, fs], i) => 手.has(目) ? 手.get(目) : 可见.length <= 200 || (i < 3 && fs.length <= 120)).map(([目]) => 目));
+  const 说明 = j.说明.map((n, i) => `<details class="产出说明"${i ? '' : ' open'}><summary><b>${转义(n.路径.split('/').pop())}</b><small>${多久前(n.时间)}</small></summary>`
+    + `<div class="正文">${n.格式 === 'markdown' ? 正文html(n.内容.replace(/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/, '')) : `<pre>${转义(n.内容)}</pre>`}</div></details>`).join('');
+  const 片 = k => `<button type="button" data-产出种="${k}" aria-pressed="${产出筛.种类 === k}">${k} <small>${数(k)}</small></button>`;
+  区.innerHTML = `<div class="产出批头"><div><h3>${转义(产出名(j.目录))}</h3><small>${j.总数} 件 · 最近改动 ${多久前(j.文件[0]?.时间 || 0)}</small></div>`
+    + `<div class="产出批钮"><button type="button" data-产出动作="访达" data-路径="${转义(j.目录)}">在访达中显示</button>`
+    + `<button type="button" data-产出动作="复制" data-路径="${转义(j.目录)}">复制路径</button></div></div>`
+    + (说明 ? `<div class="产出说明们">${说明}</div>` : '')
+    + `<div class="产出筛" role="toolbar" aria-label="筛选">${['全部', ...产出种类].filter(k => k === '全部' || 数(k)).map(片).join('')}`
+    + `<label><input type="checkbox" data-产出筛="只新"${产出筛.只新 ? ' checked' : ''}${新数 ? '' : ' disabled'}> 只看新的 <small>${新数}</small></label>`
+    + (过程数 ? `<label><input type="checkbox" data-产出筛="过程"${产出筛.过程 ? ' checked' : ''}> 显示过程文件 <small>${过程数}</small></label>` : '') + '</div>'
+    + (j.总数 > j.文件.length ? `<p class="产出提醒">这一批有 ${j.总数} 件，这里只列出最近改动的 ${j.文件.length} 件，其余请在访达里看。</p>` : '')
+    + (可见.length ? 组们.map(([目, fs]) => `<details class="产出组" data-组="${转义(目)}"${开.has(目) ? ' open' : ''}>`
+        + `<summary><b>${转义(目 || '批次根目录')}</b><small>${fs.length} 件${fs.some(产出新) ? ` · ${fs.filter(产出新).length} 新` : ''}</small></summary>`
+        + `<div class="产出墙">${开.has(目) ? fs.map(产出件html).join('') : ''}</div></details>`).join('')
+      : `<p class="产出空">${j.文件.length ? '没有符合筛选的文件。' : '这一批是空的。'}</p>`);
+  链接产出说明(区.querySelector('.产出说明们'));
+  看视频缩略(区);
+}
+// 说明里提到的文件名（`封面-v2.png`、assets/images/x.png 之类）变成按钮，点了直接预览那个文件。
+function 链接产出说明(根){
+  if (!根 || !产出批) return;
+  const 根前 = 产出批.目录.endsWith('/') ? 产出批.目录 : '', 表 = new Map(), 重名 = new Set();
+  for (const f of 产出批.文件) {
+    表.set(f.路径, f.路径); if (根前) 表.set(f.路径.slice(根前.length), f.路径);
+    const 名 = f.路径.split('/').pop();
+    if (表.has(名) && 表.get(名) !== f.路径) 重名.add(名); else 表.set(名, f.路径);
+  }
+  重名.forEach(名 => 表.delete(名));
+  const 词 = /[^\s`'"“”‘’()（）<>\[\]【】,，;；:：、。|*]+\.[A-Za-z0-9]{1,6}/g;
+  const 走 = document.createTreeWalker(根, NodeFilter.SHOW_TEXT, {acceptNode: t => t.parentElement.closest('a,button,summary') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT});
+  const 节点们 = []; while (走.nextNode()) 节点们.push(走.currentNode);
+  for (const t of 节点们) {
+    const 文 = t.nodeValue; let 末 = 0, 有 = false; const 片 = document.createDocumentFragment();
+    for (const m of 文.matchAll(词)) {
+      const 键 = m[0].replace(/^\.?\//, ''), 路径 = 表.get(键) || 表.get(键.replace(/^产出\//, ''));
+      if (!路径) continue;
+      有 = true; 片.append(文.slice(末, m.index));
+      const b = document.createElement('button'); b.type = 'button'; b.className = '产出链'; b.dataset.产出看 = 路径; b.textContent = m[0]; b.title = '预览 ' + 路径;
+      片.append(b); 末 = m.index + m[0].length;
+    }
+    if (有) { 片.append(文.slice(末)); t.replaceWith(片); }
+  }
+}
+// 视频缩略按需加载：滚到眼前才给 src，一批几十个视频不会一次全拉。
+let 视频观察 = null;
+function 看视频缩略(根){
+  视频观察 ??= new IntersectionObserver(es => es.forEach(e => {
+    if (!e.isIntersecting) return; const v = e.target; v.preload = 'metadata'; v.src = v.dataset.src; v.removeAttribute('data-src'); v.load(); 视频观察.unobserve(v);
+  }), {root: $('#产出批'), rootMargin: '200px'});
+  根.querySelectorAll('video[data-src]').forEach(v => 视频观察.observe(v));
+}
+// 预览一件产出。从墙上点开的可以用 ← → 翻当前筛选下的上一件、下一件。
+async function 预览产出(路径){
+  let i = 产出序列.findIndex(f => f.路径 === 路径);
+  if (i < 0) { const f = 产出批?.文件.find(f => f.路径 === 路径); if (!f) return; 产出序列 = [f]; i = 0; }
+  const f = 产出序列[i], 副 = 产出序列.length > 1 ? ` · ${i + 1} / ${产出序列.length}（← → 翻看）` : '';
+  document.querySelectorAll('#产出批 .产出件[data-当前]').forEach(e => e.removeAttribute('data-当前'));
+  const 件 = $('#产出批').querySelector(`.产出件[data-路径="${CSS.escape(f.路径)}"]`);
+  件?.setAttribute('data-当前', ''); 件?.scrollIntoView({block: 'nearest'});
+  if (f.文本) await 预览文档(f.路径, 副);
+  else {
+    预览请求?.abort(); 预览请求 = null;
+    const dialog = $('#文件预览'), body = $('#文件预览正文');
+    定位文件预览();
+    $('#文件预览标题').textContent = f.路径.split('/').pop();
+    $('#文件预览路径').textContent = f.路径 + 副;
+    body.className = '正文'; body.innerHTML = 资产预览html(f.路径); body.scrollTop = 0;
+    取消关闭(dialog); if (!dialog.open) dialog.showModal();
+  }
+  产出预览位 = i;
+}
+$('#文件预览').addEventListener('keydown', e => {
+  if (产出预览位 === null || !['ArrowLeft', 'ArrowRight'].includes(e.key) || e.target.closest?.('input,textarea,audio,video')) return;
+  const i = 产出预览位 + (e.key === 'ArrowRight' ? 1 : -1);
+  if (i < 0 || i >= 产出序列.length) return;
+  e.preventDefault(); 预览产出(产出序列[i].路径);
+});
+async function 标产出(路径, 状态){
+  const f = 产出批?.文件.find(x => x.路径 === 路径); if (!f) return;
+  const 新 = f.标记 === 状态 ? null : 状态, 旧 = f.标记;
+  f.标记 = 新; 重画产出件(f);
+  try {
+    const r = await fetch('/审阅', {method: 'POST', headers: 项目头(), body: JSON.stringify({标记: {[路径]: 新}})});
+    const j = await r.json(); if (!j.好) throw new Error(j.错误 || '保存失败');
+  } catch (e) { f.标记 = 旧; 重画产出件(f); 提示('标记没存上：' + e.message); }
+}
+function 重画产出件(f){
+  const 旧 = $('#产出批').querySelector(`.产出件[data-路径="${CSS.escape(f.路径)}"]`); if (!旧) return;
+  const 当前 = 旧.hasAttribute('data-当前');
+  旧.outerHTML = 产出件html(f);
+  const 新 = $('#产出批').querySelector(`.产出件[data-路径="${CSS.escape(f.路径)}"]`);
+  if (当前) 新.setAttribute('data-当前', '');
+  看视频缩略(新);
+}
+$('#产出选择').onclick = 打开产出窗;
+$('#关闭产出窗').onclick = () => 关弹窗($('#产出窗'));
+$('#产出窗').addEventListener('close', () => { 产出请求?.abort(); $('#产出选择').setAttribute('aria-expanded', 'false'); });
+$('#产出批次').onclick = e => { const b = e.target.closest('[data-批]'); if (b) 选产出批(b.dataset.批); };
+$('#产出批').addEventListener('click', e => {
+  const 看 = e.target.closest('[data-产出看]'); if (看) { 预览产出(看.dataset.产出看); return; }
+  const 标 = e.target.closest('[data-产出标]'); if (标) { 标产出(标.closest('.产出件').dataset.路径, 标.dataset.产出标); return; }
+  const 动 = e.target.closest('[data-产出动作]');
+  if (动) { const 路径 = 动.dataset.路径.replace(/\/$/, ''); 动.dataset.产出动作 === '复制' ? 抄(路径) : 系统打开(路径, 动.dataset.产出动作 === '访达'); return; }
+  const 种 = e.target.closest('[data-产出种]'); if (种) { 产出筛.种类 = 种.dataset.产出种; 画产出批(); }
+});
+$('#产出批').addEventListener('change', e => { const k = e.target.dataset?.产出筛; if (k) { 产出筛[k] = e.target.checked; 画产出批(); } });
+// 子目录分组展开时才画里面的文件。用户亲手开合的组按批记住，切走再回来、换筛选都不变。
+$('#产出批').addEventListener('click', e => {
+  const 头 = e.target.closest('.产出组>summary'); if (!头 || !产出批) return;
+  const 组 = 头.parentElement; 产出开合.get(产出批.目录)?.set(组.dataset.组, !组.open);
+});
+$('#产出批').addEventListener('toggle', e => {
+  const 组 = e.target; if (!组.classList?.contains('产出组') || !组.open || !产出批) return;
+  const 墙 = 组.querySelector('.产出墙'), 目 = 组.dataset.组;
+  if (!墙.childElementCount) { 墙.innerHTML = 产出序列.filter(f => 产出子目录(f) === 目).map(产出件html).join(''); 看视频缩略(墙); }
+}, true);
+// 产出窗开着时回到窗口：AI 可能刚写完一批，刷新批次列表；正在看的这批有新文件就原地重读（滚动位置、基线不变）。
+addEventListener('focus', async () => {
+  if (!$('#产出窗').open || $('#文件预览').open) return;
+  const 旧 = (数据?.产出批次 || []).find(b => b.目录 === 产出选中)?.最新;
+  await 刷新产出批次();
+  const 新 = (数据?.产出批次 || []).find(b => b.目录 === 产出选中)?.最新;
+  if (产出选中 && 新 !== 旧) 选产出批(产出选中, true);
+});
+
 // ---------------------------------------------------------------- 未认领抽屉
 function 画未认领(){
   const 组 = [['未认领资产', 数据.未认领资产], ['孤儿工具', 数据.孤儿工具],
              ['未归类文件', 数据.未归类]];
+  // 产出池不在这里：它有自己的产出窗（顶栏的产出入口）
   const 总 = 组.reduce((a, [, v]) => a + (v || []).length, 0);
-  // 产出池是临时存放，不算未认领：按批次列出，过期批次单独成组提醒清理
-  const 批 = 数据.产出批次 || [], 过期 = 批.filter(b => b.过期);
-  const 批名 = b => `${b.目录} · ${b.件数} 件 · ${b.天数} 天`;
-  组.push(['产出池 · 该清了', 过期.map(批名)], ['产出池', 批.filter(b => !b.过期).map(批名)]);
-  $('#未数').textContent = 总 ? `${总} 件` : 批.length ? `产出 ${批.length} 批` : '空了';
-  $('#未数').dataset.状态 = 总 || 过期.length ? '警告' : '正常';
+  $('#未数').textContent = 总 ? `${总} 件` : '空了';
+  $('#未数').dataset.状态 = 总 ? '警告' : '正常';
   $('#未体').innerHTML = 主题.模板.未认领列表({组});
   $('#未体').querySelectorAll('.项').forEach(e => {
     e.ondragstart = ev => {
@@ -1708,7 +1926,7 @@ function 画搜索结果(){
   if (e.key === 'ArrowDown') { e.preventDefault(); 搜果.querySelector('[data-i], [data-搜索记录]')?.focus(); }
 };
 document.addEventListener('keydown', e => {
-  if ($('#检查详情').open || $('#文件预览').open || $('#询问').open) return;
+  if ($('#检查详情').open || $('#文件预览').open || $('#询问').open || $('#产出窗').open) return;
   const 在输入 = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName || '')
                 || document.activeElement?.isContentEditable;
   if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z' && !在输入){

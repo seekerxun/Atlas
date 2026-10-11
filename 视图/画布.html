@@ -12,6 +12,7 @@
 <div id="顶">
   <button type="button" class="品牌" id="项目" aria-haspopup="dialog" aria-controls="项目窗" title="打开或新建项目"><svg viewBox="0 0 36 36" fill="none" aria-hidden="true"><path d="M5 26 13 7l8 19M9 18h9M22 10l9 19M23 21h5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="28" cy="7" r="2" fill="currentColor"/></svg><span><small>Atlas · 项目图谱</small><span id="名">Atlas</span></span></button>
   <div id="签"></div>
+  <div id="产出控件"><button type="button" id="产出选择" aria-haspopup="dialog" aria-controls="产出窗" aria-label="产出"></button></div>
   <div id="运行控件"><button type="button" id="运行选择" popovertarget="运行面板" aria-haspopup="dialog" aria-controls="运行面板" aria-label="运行目标"></button>
     <div id="运行面板" popover role="dialog" aria-label="运行目标"></div></div>
   <button type="button" class="丸" id="体检" aria-haspopup="dialog" aria-controls="检查详情" aria-expanded="false"></button>
@@ -50,6 +51,10 @@
   <div class="项目窗头"><h2 id="项目窗标题">项目</h2><button type="button" id="关闭项目窗" autofocus>关闭</button></div>
   <div class="项目窗正文"><ul id="项目列表"></ul>
     <div class="项目窗钮"><button type="button" id="新建项目">＋ 新建项目</button><button type="button" id="打开路径">打开其他文件夹…</button></div></div>
+</dialog>
+<dialog id="产出窗" aria-labelledby="产出窗标题">
+  <div class="产出窗头"><h2 id="产出窗标题">产出</h2><span id="产出窗计数"></span><button type="button" id="关闭产出窗">关闭</button></div>
+  <div class="产出窗正文"><nav id="产出批次" aria-label="产出批次"></nav><section id="产出批" aria-live="polite"></section></div>
 </dialog>
 <dialog id="检查详情" aria-labelledby="检查标题" aria-describedby="检查说明">
   <div class="检查头"><h2 id="检查标题">项目检查</h2><span id="检查计数"></span><button id="关闭检查" type="button" autofocus>关闭</button></div>
