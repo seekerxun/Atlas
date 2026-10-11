@@ -36,15 +36,17 @@ def 找(根: Path, 名: str) -> dict:
 
 
 def _展开(值, 根: Path) -> str:
+    if '{uid}' in str(值) and not hasattr(os, 'getuid'):
+        raise RuntimeError('当前平台没有 Unix uid，请修改此运行目标中的 {uid} 占位符。')
     return (str(值).replace("{projectDirectory}", str(根)).replace("{home}", str(Path.home()))
-            .replace("{uid}", str(os.getuid())))
+            .replace("{uid}", str(os.getuid()) if hasattr(os, 'getuid') else ""))
 
 
 def _准备(命令: dict, 根: Path):
     """返回 (argv, 工作目录, 环境)。工作目录相对项目目录，空就是项目目录。"""
     argv = [_展开(命令.get("executable") or "", 根)] + [_展开(a, 根) for a in 命令.get("arguments") or []]
     目录 = _展开(命令.get("workingDirectory") or "", 根)
-    目录 = Path(目录) if 目录.startswith("/") else 根 / 目录
+    目录 = Path(目录) if Path(目录).is_absolute() else 根 / 目录
     环境 = {**os.environ, **{k: _展开(v, 根) for k, v in (命令.get("environment") or {}).items()}}
     return argv, 目录, 环境
 
@@ -60,6 +62,8 @@ def _跑完(命令: dict, 根: Path, 超时=30) -> tuple[int, str]:
 
 
 def _lsof(*参数) -> tuple[int, str]:
+    if not Path('/usr/sbin/lsof').is_file():
+        raise RuntimeError('此运行目标需要 lsof 检查进程归属；当前平台尚未适配，请在外部工具中管理该服务。')
     # 不设 UTF-8 时 lsof 会把中文路径转义掉，工作目录就对不上了。
     r = subprocess.run(["/usr/sbin/lsof", *参数], stdin=subprocess.DEVNULL, capture_output=True,
                        env={**os.environ, "LC_ALL": "en_US.UTF-8"})

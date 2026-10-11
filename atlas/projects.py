@@ -3,7 +3,7 @@
 注册表只存路径，项目身份（名称、类型）一律读各项目自己的 项目.yml。
 """
 from __future__ import annotations
-import json, shutil, socket, subprocess, sys, time
+import json, os, shutil, socket, subprocess, sys, time
 import urllib.request
 from pathlib import Path
 
@@ -11,7 +11,15 @@ import miniyaml as y
 from model import ATLAS
 
 模板根 = ATLAS / "模板"
-注册表 = ATLAS / "注册表.yml"
+注册表 = Path(os.environ.get("ATLAS_STATE_DIR", str(ATLAS))) / "注册表.yml"
+# 桌面宿主管理多个项目服务的生命周期；普通 CLI 仍启动独立进程。
+画布启动器 = None
+
+
+def CLI命令() -> list[str]:
+    if getattr(sys, 'frozen', False):
+        return [sys.executable, "--cli"]
+    return [_python(), str(ATLAS / "atlas" / "atlas.py")]
 # 模板里可以写的占位符；新建时按项目替换。
 可替换后缀 = {".md", ".yml", ".yaml", ".txt"}
 # git 不收空目录，模板里缺的标准目录在新建时补上。
@@ -52,6 +60,7 @@ def 登记(路径: Path, 备注: str = "") -> bool:
     if any(Path(str(x["路径"])).expanduser().resolve() == 路径 for x in 已登记()):
         return False
     if not 注册表.exists():
+        注册表.parent.mkdir(parents=True, exist_ok=True)
         注册表.write_text("# 本机项目注册表，不进 Git。\n版本: 1\n\n项目:\n", encoding="utf-8")
     with 注册表.open("a", encoding="utf-8") as f:
         f.write(f"\n  - 路径: {路径}\n    备注: {备注 or 路径.name}\n")
@@ -89,6 +98,8 @@ def 新建项目(模板: str, 目标: Path, 名称: str = "") -> Path:
             新 = s
             for k, v in 替换.items():
                 新 = 新.replace(k, v)
+            if getattr(sys, 'frozen', False):
+                新 = 新.replace('python3 ' + 替换['{{atlas}}'], '"' + sys.executable + '" --cli')
             if 新 != s:
                 p.write_text(新, encoding="utf-8")
     for d in 标准目录:
@@ -108,7 +119,7 @@ DevDock = ".devdock.json"
 def _atlas目标(配置: dict):
     for t in 配置.get("targets") or []:
         参数 = [str(x) for x in ((t.get("startCommand") or {}).get("arguments") or [])]
-        if "serve" in 参数 and any(a.endswith("atlas.py") for a in 参数) and t.get("port"):
+        if "serve" in 参数 and ("--cli" in 参数 or any(a.endswith("atlas.py") for a in 参数)) and t.get("port"):
             return t
     return None
 
@@ -134,7 +145,9 @@ def 端口在用(端口: int) -> bool:
 
 def _已占端口() -> set[int]:
     """LifeSpace 下各项目 .devdock.json 里写死的端口，加上注册表里项目的，都不能再分配。"""
-    目录们 = {p for p in ATLAS.parent.iterdir() if p.is_dir()} | {Path(str(x["路径"])).expanduser() for x in 已登记()}
+    目录们 = {Path(str(x["路径"])).expanduser() for x in 已登记()}
+    if not getattr(sys, 'frozen', False):
+        目录们 |= {p for p in ATLAS.parent.iterdir() if p.is_dir()}
     端口们 = set()
     for d in 目录们:
         for t in _读配置(d).get("targets") or []:
@@ -169,8 +182,8 @@ def 确保画布端口(路径: Path, 名称: str = "") -> int:
     配置.setdefault("targets", []).append({
         "name": "Atlas 画布", "detail": "本地画布，只绑 127.0.0.1", "kind": "webPreview",
         "port": 端口, "url": f"http://127.0.0.1:{端口}",
-        "startCommand": {"executable": _python(),
-                         "arguments": [str(ATLAS / "atlas" / "atlas.py"), "serve", "--端口", str(端口), "--不开浏览器"],
+        "startCommand": {"executable": CLI命令()[0],
+                         "arguments": CLI命令()[1:] + ["serve", "--端口", str(端口), "--不开浏览器"],
                          "workingDirectory": "."},
     })
     (路径 / DevDock).write_text(json.dumps(配置, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -189,6 +202,8 @@ def 端口上的项目(端口: int) -> str | None:
 def 启动画布(路径: Path, 名称: str = "") -> str:
     """保证这个项目的画布在它自己的端口上运行，返回网址。和 DevDock 用同一条命令、同一个工作目录。"""
     路径 = 路径.resolve()
+    if 画布启动器 is not None:
+        return 画布启动器(路径, 名称)
     端口 = 确保画布端口(路径, 名称)
     网址 = f"http://127.0.0.1:{端口}/"
     if 端口在用(端口):
@@ -200,7 +215,7 @@ def 启动画布(路径: Path, 名称: str = "") -> str:
     日志 = 路径 / ".atlas" / "serve.log"
     日志.parent.mkdir(exist_ok=True)
     with 日志.open("ab") as f:
-        subprocess.Popen([_python(), str(ATLAS / "atlas" / "atlas.py"), "serve", "--端口", str(端口), "--不开浏览器"],
+        subprocess.Popen(CLI命令() + ["serve", "--端口", str(端口), "--不开浏览器"],
                          cwd=路径, stdin=subprocess.DEVNULL, stdout=f, stderr=f, start_new_session=True)
     for _ in range(40):
         time.sleep(0.2)

@@ -578,14 +578,20 @@ class 处理器(BaseHTTPRequestHandler):
             self._json({"错误": str(e)}, 409)
 
 
+def 创建服务(根: Path, 端口: int = 7391, 处理器类=处理器):
+    # 每个服务独立的处理器，避免桌面多项目共用类属性而串根目录。
+    根 = 根.resolve()
+    handler = type('项目处理器', (处理器类,), {'根': 根, '空间': 空间缓存(根)})
+    srv = ThreadingHTTPServer(("127.0.0.1", 端口), handler)
+    handler.端口 = srv.server_port
+    return srv
+
+
 def 起服务(根: Path, 端口: int = 7391, 打开=True):
-    处理器.根 = 根
-    处理器.端口 = 端口
-    处理器.空间 = 空间缓存(根)
     # 起过画布的项目都进注册表，项目窗里才找得到它。
     projects.登记(根, projects.项目信息(根)["名称"])
-    srv = ThreadingHTTPServer(("127.0.0.1", 端口), 处理器)
-    地址 = f"http://127.0.0.1:{端口}/"
+    srv = 创建服务(根, 端口)
+    地址 = f"http://127.0.0.1:{srv.server_port}/"
     print(f"画布开在 {地址}（只绑本机，Ctrl+C 停）")
     if 打开:
         threading.Timer(0.6, lambda: webbrowser.open(地址)).start()
@@ -593,4 +599,5 @@ def 起服务(根: Path, 端口: int = 7391, 打开=True):
         srv.serve_forever()
     except KeyboardInterrupt:
         print("\n停了。")
-        srv.shutdown()
+    finally:
+        srv.server_close()

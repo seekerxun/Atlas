@@ -1,13 +1,13 @@
 """配置与数据模型。"""
 from __future__ import annotations
-import re
+import re, sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 import miniyaml as y
 
-ATLAS = Path(__file__).resolve().parent.parent
+ATLAS = Path(sys._MEIPASS) if getattr(sys, 'frozen', False) else Path(__file__).resolve().parent.parent
 词表路径 = ATLAS / "规范" / "词表.yml"
 
 TOOL_EXT = {".py", ".js", ".mjs", ".ts", ".css", ".sh", ".ps1", ".cmd", ".bat", ".html", ".ipynb"}
