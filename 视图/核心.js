@@ -76,6 +76,7 @@ async function 切换方案(方案){
     const 旧外观 = 当前外观;
     if (旧外观 !== 方案.外观) {
       当前外观 = 方案.外观; document.documentElement.dataset.外观 = 方案.外观;
+      刷新分组折叠();
       try { 主题.外观变化?.(方案.外观, 旧外观); } catch (e) { console.error('主题外观切换失败', e); }
     }
     $('#主题选择').removeAttribute('aria-busy');
@@ -639,6 +640,48 @@ function 画(){
 
 
 
+// 开合是本机的阅读状态，不写布局；没有接入折叠的主题仍显示完整分组。
+const 分组折叠缓存 = new Map();
+function 折叠分组们(){
+  const key = 'atlas:分组折叠:' + 项目根;
+  if (!分组折叠缓存.has(key)) {
+    let ids; try { ids = JSON.parse(localStorage.getItem(key)); } catch {}
+    分组折叠缓存.set(key, new Set(Array.isArray(ids) ? ids.filter(id => typeof id === 'string') : []));
+  }
+  return 分组折叠缓存.get(key);
+}
+function 刷新分组折叠(){
+  const 高 = 主题?.分组折叠高?.(当前外观);
+  const 支持 = Number.isFinite(高) && 高 > 0;
+  $('#世界').querySelectorAll('.盒').forEach(box => {
+    const 钮 = box.querySelector('[data-分组开合]');
+    if (!钮) return;
+    const 折叠 = 支持 && 折叠分组们().has(box.dataset.id) && !box.contains(展开卡);
+    钮.hidden = !支持;
+    box.toggleAttribute('data-折叠', 折叠);
+    box.style.height = (折叠 ? 高 : box._分组展开高) + 'px';
+    box.querySelectorAll(':scope>.卡,:scope>.类标').forEach(el => {
+      el.inert = 折叠; el.hidden = 折叠;
+      // 主题常为卡片写 display:flex，行内隐藏保证不被这些规则覆盖。
+      if (折叠) el.style.display = 'none'; else el.style.removeProperty('display');
+    });
+    钮.setAttribute('aria-expanded', String(!折叠));
+    钮.title = (折叠 ? '展开' : '折叠') + '分组';
+    钮.setAttribute('aria-label', 钮.title + ' ' + box._分组名);
+  });
+}
+function 设置分组折叠(box, 折叠){
+  if (!box) return;
+  const ids = 折叠分组们();
+  if (折叠) ids.add(box.dataset.id); else ids.delete(box.dataset.id);
+  try { localStorage.setItem('atlas:分组折叠:' + 项目根, JSON.stringify([...ids])); } catch {}
+  清除卡片悬停(); 刷新分组折叠();
+}
+function 展开条目分组(card){
+  const box = card?.closest('.盒[data-折叠]');
+  if (box) 设置分组折叠(box, false);
+}
+
 function 画库(){
   const w = $('#世界'), 盒们 = 算库布局();
   if (!盒们.length) {
@@ -653,9 +696,17 @@ function 画库(){
            style="--卡色:${色(c.节.类型)};left:${c.x + 主题.布局.内左}px;top:${c.y + 主题.布局.内顶}px;width:${卡宽}px;height:${c.h}px">
            ${卡html(c.节)}</div>`).join('');
     w.insertAdjacentHTML('beforeend',
-      `<div class="盒" data-id="${b.id}" style="left:${b.x}px;top:${b.y}px;width:${b.w}px;height:${b.h}px">
+      `<div class="盒" data-id="${转义(b.id)}" style="left:${b.x}px;top:${b.y}px;width:${b.w}px;height:${b.h}px">
         ${主题.模板.分组头({b})}${内}</div>`);
+    const box = w.lastElementChild, 钮 = box.querySelector('[data-分组开合]');
+    box._分组展开高 = b.h; box._分组名 = b.名;
+    if (钮) 钮.onclick = ev => {
+      ev.stopPropagation();
+      if (展开卡 || 钮.hidden) return;
+      设置分组折叠(box, !box.hasAttribute('data-折叠'));
+    };
   });
+  刷新分组折叠();
   w.querySelectorAll('.卡').forEach(e => {
     e.tabIndex = 0; e.setAttribute('role', 'button'); e.setAttribute('aria-expanded', 'false');
     e.setAttribute('aria-label', '展开 ' + (按路径[e.dataset.路径].标题 || 按路径[e.dataset.路径].名称));
@@ -1181,6 +1232,7 @@ function 收卡(恢复焦点 = true){
 
 function 装入卡(card){
   if (!card) return;
+  展开条目分组(card);
   const 原框 = card._过渡壳?.getBoundingClientRect() || card.getBoundingClientRect();
   停卡片动效(card); card._入场动画?.cancel();
   停镜头();
@@ -1387,6 +1439,7 @@ async function 抄(t){
 }
 function 聚焦(路径){
   const e = $('#世界').querySelector(`.卡[data-路径="${CSS.escape(路径)}"]`); if (!e) return;
+  展开条目分组(e);
   const 盒 = e.closest('.盒');
   const x = parseFloat(盒.style.left) + e.offsetLeft, y = parseFloat(盒.style.top) + e.offsetTop;
   缩 = Math.max(缩, 0.85);

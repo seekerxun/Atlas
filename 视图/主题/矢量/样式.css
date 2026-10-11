@@ -122,7 +122,14 @@ kbd{font-family:var(--数字)}
 #线{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
 
 .盒{position:absolute;border-radius:32px;background:color-mix(in srgb,var(--底),var(--组色,var(--靛蓝)) var(--组浓))}
-.盒>.头{position:absolute;top:18px;left:20px;max-width:calc(100% - 40px);box-sizing:border-box;display:inline-flex;align-items:center;gap:.625em;height:2.25em;padding:0 .375em 0 1em;border-radius:999px;background:var(--组色,var(--靛蓝));color:var(--组上,#fff);font-size:16px;font-weight:700}
+.盒>.头{position:absolute;top:18px;left:20px;max-width:calc(100% - 40px);box-sizing:border-box;display:inline-flex;align-items:center;gap:12px;font-size:16px;font-weight:700}
+.分组签{min-width:0;display:flex;align-items:center;gap:.625em;height:2.25em;padding:0 .375em 0 1em;border-radius:999px;background:var(--组色,var(--靛蓝));color:var(--组上,#fff)}
+.分组开合{flex-shrink:0;display:grid;place-items:center;width:36px;height:36px;padding:8px;border-radius:50%;color:var(--字);background:color-mix(in srgb,var(--面) 65%,transparent);transition:background-color .18s,scale .18s}
+.分组开合[hidden]{display:none}
+.分组开合:hover{background:var(--面)}
+.分组开合:active{scale:.92}
+.分组开合 svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;transform:rotate(-90deg);transition:transform .22s var(--顺)}
+.分组开合[aria-expanded="false"] svg{transform:none}
 .盒>.头 b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .盒>.头 span{flex-shrink:0;min-width:1.625em;height:1.625em;padding:0 .4em;box-sizing:border-box;border-radius:999px;background:var(--组上,#fff);color:var(--组色,var(--靛蓝));display:inline-flex;align-items:center;justify-content:center;font:700 .8125em var(--数字)}
 .盒>.类标{position:absolute;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--字2);white-space:nowrap}

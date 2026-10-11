@@ -109,6 +109,7 @@ window.Atlas主题加载器 = (() => {
       for (const key of ['路线标题','路线工具','条目详情','步骤详情','检查列表','候选列表','未认领列表','搜索结果','步骤卡','分组头','项目列表'])
         if (typeof theme?.模板?.[key] !== 'function') throw new Error('主题缺少区域模板：' + key);
       for (const key of 必需) if (typeof theme?.[key] !== 'function') throw new Error('主题缺少接口：' + key);
+      if (theme.分组折叠高 != null && typeof theme.分组折叠高 !== 'function') throw new Error('主题接口不正确：分组折叠高');
       for (const key of ['卡宽','卡高','隙','盒隙','内左','内顶','路线起点','路线间距','路线标题距','路线编辑距','连线出口'])
         if (!Number.isFinite(theme.布局?.[key]) || theme.布局[key] < 0) throw new Error('主题布局参数不正确：' + key);
       if (!theme.布局.卡宽 || !theme.布局.卡高 || !(theme.镜头时长 > 0)) throw new Error('主题尺寸或动画时长不正确');
