@@ -25,7 +25,8 @@ body[data-启动中] > :not(#启动状态){visibility:hidden}
 #项目位置{display:grid;place-items:center;flex-shrink:0;width:24px;height:24px;padding:0;border:0;border-radius:5px;background:none;color:var(--字3);cursor:pointer}
 #项目位置:hover{color:var(--字);background:color-mix(in srgb,var(--字) 8%,transparent)}
 #项目位置 svg{display:block;width:16px;height:16px;padding:0;border:0;border-radius:0;background:none;color:inherit}
-#项目:focus-visible,#项目位置:focus-visible{outline:2px solid currentColor;outline-offset:3px}
+.品牌:has(#项目:focus-visible),#项目位置:focus-visible{outline:2px solid currentColor;outline-offset:3px}
+#项目:focus-visible{outline:none}
 
 /* 共享入口顺序：搜索 → 主题 → 重新扫描；主题仍决定控件配色和外观。
    主题选择统一是一枚小图标按钮（所有主题都一样）：透明按钮 #主题选择 铺满，点开核心生成的 #主题面板。

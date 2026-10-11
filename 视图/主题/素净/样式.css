@@ -38,7 +38,7 @@ kbd{font-family:var(--字体)}
 /* ———— 顶栏：通栏、半透明、底边一道细线 ———— */
 #顶{position:fixed;top:0;left:0;right:0;height:56px;box-sizing:border-box;padding:0 20px;display:flex;align-items:center;gap:20px;z-index:30;
   background:color-mix(in srgb,var(--面) 86%,transparent);-webkit-backdrop-filter:saturate(1.4) blur(12px);backdrop-filter:saturate(1.4) blur(12px);border-bottom:1px solid var(--边)}
-.品牌{display:flex;align-items:center;gap:10px;min-width:0;padding:4px 10px 4px 4px;border-radius:8px;cursor:pointer;transition:background-color .15s}
+.品牌{background:var(--面);box-shadow:0 0 0 1px var(--边);display:flex;align-items:center;gap:10px;min-width:0;padding:4px 10px 4px 4px;border-radius:8px;cursor:pointer;transition:background-color .15s}
 .品牌:hover{background:var(--浅)}
 .品牌 svg{flex-shrink:0;width:28px;height:28px;box-sizing:border-box;padding:6px;border-radius:7px;background:var(--字);color:var(--面)}
 .品牌>span{display:flex;align-items:baseline;gap:8px;min-width:0}

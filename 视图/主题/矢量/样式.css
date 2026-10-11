@@ -41,13 +41,13 @@ kbd{font-family:var(--数字)}
 /* ———— 顶栏：浮在画布上的几枚胶囊 ———— */
 #顶{position:fixed;top:18px;left:24px;right:24px;height:52px;display:flex;align-items:center;gap:16px;z-index:30;pointer-events:none}
 #顶>*{pointer-events:auto}
-.品牌{display:flex;align-items:center;gap:12px;min-width:0}
+.品牌{background:var(--面);box-shadow:0 0 0 1px var(--边);display:flex;align-items:center;gap:12px;min-width:0}
 .品牌 svg{flex-shrink:0;width:44px;height:44px;box-sizing:border-box;padding:11px;border-radius:50%;background:var(--字);color:var(--底)}
 .品牌>span{display:flex;flex-direction:column;line-height:1.15;min-width:0}
 .品牌 small{order:2;font:500 11px var(--数字);letter-spacing:.06em;color:var(--字3)}
 .品牌 #名{font-size:17px;font-weight:700}
 .品牌{padding:0 14px 0 0;border-radius:999px;cursor:pointer;transition:background-color .2s}
-.品牌:hover{background:color-mix(in srgb,var(--字) 6%,transparent)}
+.品牌:hover{background:color-mix(in srgb,var(--字) 6%,var(--面))}
 
 #签{position:relative;isolation:isolate;display:flex;gap:2px;padding:4px;border-radius:999px;background:var(--面);border:1px solid var(--边)}
 .签块{position:absolute;top:4px;bottom:4px;left:4px;right:auto;border-radius:999px;background:var(--陶土);z-index:-1}

@@ -75,7 +75,7 @@ kbd{font-family:var(--拉丁)}
 /* ———— 顶栏 ———— */
 #顶{position:fixed;top:18px;left:24px;right:24px;height:52px;display:flex;align-items:center;gap:14px;z-index:30;pointer-events:none}
 #顶>*{pointer-events:auto}
-.品牌{display:flex;align-items:center;gap:12px;min-width:0;padding:0 12px 0 0;cursor:pointer}
+.品牌{background:var(--面);box-shadow:0 0 0 1px var(--边);display:flex;align-items:center;gap:12px;min-width:0;padding:0 12px 0 0;cursor:pointer}
 .品牌 svg{display:none}
 .品牌:before{content:"";flex-shrink:0;width:44px;height:44px;background:var(--徽) center/contain no-repeat;transition:rotate .6s var(--顺)}
 .品牌:hover:before{rotate:90deg}

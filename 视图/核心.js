@@ -475,6 +475,10 @@ async function 反复询问(参数, 提交){
   }
 }
 $('#项目').onclick = 打开项目窗;
+// 整块品牌的悬停范围也是点击范围；两个原生按钮仍独立处理键盘和点击。
+$('.品牌').onclick = e => {
+  if (!e.target.closest('button')) $('#项目').click();
+};
 $('#关闭项目窗').onclick = () => 关弹窗($('#项目窗'));
 $('#项目窗').addEventListener('close', () => $('#项目').setAttribute('aria-expanded', 'false'));
 $('#项目列表').onclick = e => {
