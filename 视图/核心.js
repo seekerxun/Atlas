@@ -167,6 +167,7 @@ async function 启动界面(){
     await 取数();
     document.body.removeAttribute('data-启动中'); $('#启动状态').hidden = true;
     查运行();
+    查空间('更新');
   } catch (e){
     $('#启动状态').firstChild.textContent = '界面加载失败：' + e.message + ' ';
     $('#重试启动').hidden = false;
@@ -278,6 +279,46 @@ document.addEventListener('visibilitychange', 自动扫描);
 // 写请求带上页面所属的项目根；服务管的不是这个项目时会拒收，不会写错地方。
 let 项目根 = null;
 const 项目头 = () => ({'X-Atlas-Root': encodeURIComponent(项目根 || '')});
+
+// 空间统计独立于 /数据：启动读缓存，前台每五分钟检查一次；焦点切换不触发。
+let 空间请求序号 = 0, 空间计时 = null, 空间进行中 = false;
+function 空间短名(字节){
+  const 单位 = ['M', 'G', 'T'];
+  let 数 = 字节 / 1024 ** 2, i = 0;
+  while (Math.round(数) >= 1024 && i < 单位.length - 1) { 数 /= 1024; i++; }
+  return `${字节 > 0 ? Math.max(1, Math.round(数)) : 0}${单位[i]}`;
+}
+async function 查空间(模式 = '缓存', 序号 = ++空间请求序号){
+  clearTimeout(空间计时);
+  if (!项目根) return;
+  空间进行中 = true;
+  const el = $('#项目空间');
+  try {
+    const r = await fetch(模式 === '更新' ? '/空间?更新=1' : '/空间',
+      模式 === '强制' ? {method:'POST', headers:项目头()} : undefined);
+    if (!r.ok) throw new Error(r.status === 404 ? '请重启画布服务以启用磁盘占用统计' : '暂时无法读取磁盘占用');
+    const j = await r.json();
+    if (序号 !== 空间请求序号) return;
+    if (j.根 !== 项目根) { location.reload(); return; }
+    el.textContent = j.字节 == null ? (j.扫描中 ? '…' : '—') : 空间短名(j.字节);
+    el.toggleAttribute('data-扫描中', j.扫描中);
+    const 说明 = '实际磁盘占用（M/G/T，按 1024 进位）';
+    el.title = [说明, j.时间 ? `统计于 ${new Date(j.时间 * 1000).toLocaleTimeString()}` : '',
+      j.扫描中 ? '正在后台更新' : '', j.错误 || ''].filter(Boolean).join('\n');
+    el.setAttribute('aria-label', `${说明}：${el.textContent}`);
+    if (j.扫描中) 空间计时 = setTimeout(() => 查空间('缓存', 序号), 1000);
+    else 空间进行中 = false;
+  } catch (e) {
+    if (序号 !== 空间请求序号) return;
+    空间进行中 = false;
+    el.removeAttribute('data-扫描中');
+    if (el.textContent === '…') el.textContent = '—';
+    el.title = e.message;
+  }
+}
+setInterval(() => { if (!document.hidden && !空间进行中) 查空间('更新'); }, 300000);
+$('#项目位置').onclick = () => 系统打开('.', true);
+
 async function 读数据(自动 = false){
   const 文本 = await (await fetch('/数据')).text();
   // 自动扫描：结果没变、或者扫描期间用户开始阅读／输入了，就不重画，免得打断
@@ -1943,7 +1984,10 @@ document.addEventListener('keydown', e => {
 });
 document.addEventListener('click', e => { if (!$('#搜').contains(e.target)) 搜果.style.display = 'none'; });
 
-$('#刷').onclick = () => 取数().then(() => 提示('已重新扫描'));
+$('#刷').onclick = () => {
+  查空间('强制');
+  取数().then(() => 提示('已重新扫描，磁盘占用在后台更新')).catch(() => 提示('重新扫描失败'));
+};
 $('#新路线').onclick = 新建路线;
 $('#撤销').onclick = 撤销;
 $('#重做').onclick = 重做;

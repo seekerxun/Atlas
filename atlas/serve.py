@@ -4,6 +4,8 @@
   GET  /                 画布页面
   GET  /界面/<路径>       Atlas 自身的界面资源，与当前被管理项目分开
   GET  /数据             扫描结果 + 校验结果 + 布局（每次请求重扫，规模小不值得缓存）
+  GET  /空间             仅读缓存；?更新=1 允许后台刷新过期统计
+  POST /空间             强制后台刷新磁盘占用（复用进行中的统计）
   GET  /文件/<路径>       读一个仓库里的文件（缩略图、原文预览）
   POST /布局             存卡片位置
   POST /认领             把资产或工具挂到某个条目的 frontmatter 上
@@ -32,11 +34,12 @@ from __future__ import annotations
 import json, mimetypes, os, re, subprocess, sys, threading, time, webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import unquote, urlparse
+from urllib.parse import unquote, urlparse, parse_qs
 
 import edit
 import projects
 import targets
+from disk_usage import 空间缓存
 import miniyaml as y
 from lint import 校验, 体检数
 from model import ATLAS
@@ -358,6 +361,7 @@ def 核对(p: Path, 期望):
 class 处理器(BaseHTTPRequestHandler):
     根: Path = Path(".")
     端口: int | None = None
+    空间: 空间缓存
 
     def log_message(self, *a):
         pass
@@ -401,6 +405,10 @@ class 处理器(BaseHTTPRequestHandler):
                 self._json(打包(self.根))
             except Exception as e:
                 self._json({"错误": f"{type(e).__name__}: {e}"}, 500)
+            return
+        if 路径 == "/空间":
+            更新 = parse_qs(urlparse(self.path).query).get('更新') == ['1']
+            self._json(self.空间.状态(更新=更新))
             return
         if 路径 == "/身份":
             self._json({"根": str(self.根)})
@@ -494,7 +502,9 @@ class 处理器(BaseHTTPRequestHandler):
             if unquote(self.headers.get("X-Atlas-Root") or "") != str(self.根):
                 self._json({"错误": "这个页面和服务管的不是同一个项目，刷新后再操作。"}, 409)
                 return
-            if 路径 == "/布局":
+            if 路径 == "/空间":
+                self._json(self.空间.状态(强制=True))
+            elif 路径 == "/布局":
                 写布局(self.根, 体)
                 self._json({"好": True})
             elif 路径 == "/运行":
@@ -571,6 +581,7 @@ class 处理器(BaseHTTPRequestHandler):
 def 起服务(根: Path, 端口: int = 7391, 打开=True):
     处理器.根 = 根
     处理器.端口 = 端口
+    处理器.空间 = 空间缓存(根)
     # 起过画布的项目都进注册表，项目窗里才找得到它。
     projects.登记(根, projects.项目信息(根)["名称"])
     srv = ThreadingHTTPServer(("127.0.0.1", 端口), 处理器)

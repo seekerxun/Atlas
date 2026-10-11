@@ -16,6 +16,17 @@ body[data-启动中] > :not(#启动状态){visibility:hidden}
 #启动状态{position:fixed;top:24px;left:24px;font:14px sans-serif}
 #启动状态[hidden]{display:none}
 
+/* 项目名、磁盘占用、访达入口共用一行，沿用主题文字与配色。 */
+#项目名称行{display:flex;align-items:center;gap:7px;min-width:0;order:1}
+#项目{display:flex;min-width:0;padding:0;border:0;background:none;color:inherit;text-align:left;font:inherit;cursor:pointer}
+#名{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#项目空间{flex-shrink:0;font:500 11px/1.2 ui-monospace,monospace;font-variant-numeric:tabular-nums;color:var(--字3);white-space:nowrap}
+#项目空间[data-扫描中]{opacity:.55}
+#项目位置{display:grid;place-items:center;flex-shrink:0;width:24px;height:24px;padding:0;border:0;border-radius:5px;background:none;color:var(--字3);cursor:pointer}
+#项目位置:hover{color:var(--字);background:color-mix(in srgb,var(--字) 8%,transparent)}
+#项目位置 svg{display:block;width:16px;height:16px;padding:0;border:0;border-radius:0;background:none;color:inherit}
+#项目:focus-visible,#项目位置:focus-visible{outline:2px solid currentColor;outline-offset:3px}
+
 /* 共享入口顺序：搜索 → 主题 → 重新扫描；主题仍决定控件配色和外观。
    主题选择统一是一枚小图标按钮（所有主题都一样）：透明按钮 #主题选择 铺满，点开核心生成的 #主题面板。
    主题只决定按钮尺寸（--主题钮，默认 40px）、图标尺寸（--主题图标）、底色、边框和图标颜色（currentColor）。 */
