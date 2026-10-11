@@ -629,6 +629,7 @@ function 画(){
   $('#线').innerHTML = '';
   if (视图 === '路线') 画路线(); else 画库();
   主题.装配画布?.();
+  恢复卡片前置();
   应用变换();
   $('#视图名').textContent = 视图;
   const 数 = 视图 === '路线' ? (数据.路线 || []).length : 数据.条目.filter(n => n.库 === 视图).length;
@@ -639,6 +640,28 @@ function 画(){
 }
 
 
+
+// 最后操作的卡片置顶；组内卡片连同分组一起提起，不改坐标和 DOM 顺序。
+// 按导航保留到本页关闭，重绘和主题切换后恢复，不写布局文件。
+const 卡片前置状态 = new Map();
+function 恢复卡片前置(){
+  const w = $('#世界'), state = 卡片前置状态.get(视图);
+  w.querySelectorAll('[data-前置]').forEach(el => el.removeAttribute('data-前置'));
+  if (!state) return;
+  const top = [...w.querySelectorAll(':scope>.盒,:scope>.步')].find(el => el.dataset.id === state.顶层);
+  if (!top) return;
+  top.setAttribute('data-前置', '');
+  if (state.条目) [...top.querySelectorAll(':scope>.卡')].find(el => el.dataset.路径 === state.条目)?.setAttribute('data-前置', '');
+}
+function 前置卡片(target){
+  const card = target.closest('.卡,.步,.盒');
+  if (!card || !$('#世界').contains(card)) return;
+  const top = card.closest('.盒') || card, old = 卡片前置状态.get(视图);
+  const 条目 = card.matches('.卡') ? card.dataset.路径 : old?.顶层 === top.dataset.id ? old.条目 : null;
+  if (old?.顶层 === top.dataset.id && old.条目 === 条目) return;
+  卡片前置状态.set(视图, {顶层:top.dataset.id, 条目});
+  恢复卡片前置();
+}
 
 // 开合是本机的阅读状态，不写布局；没有接入折叠的主题仍显示完整分组。
 const 分组折叠缓存 = new Map();
@@ -1232,6 +1255,7 @@ function 收卡(恢复焦点 = true){
 
 function 装入卡(card){
   if (!card) return;
+  前置卡片(card);
   展开条目分组(card);
   const 原框 = card._过渡壳?.getBoundingClientRect() || card.getBoundingClientRect();
   停卡片动效(card); card._入场动画?.cancel();
@@ -1490,6 +1514,10 @@ function 应用变换(){
 }
 const 台 = $('#台');
 台.addEventListener('pointerdown', () => 清除卡片悬停(), true);
+// 捕获阶段先置顶，拖动处理随后才取得指针；按钮和键盘操作也走同一规则。
+台.addEventListener('pointerdown', e => { if (e.button === 0 && !展开卡) 前置卡片(e.target); }, true);
+台.addEventListener('click', e => { if (!展开卡) 前置卡片(e.target); }, true);
+台.addEventListener('focusin', e => { if (!展开卡) 前置卡片(e.target); });
 台.addEventListener('wheel', e => {
   if (e.target.closest('#屉')) return;
   e.preventDefault(); if (展开卡) return;

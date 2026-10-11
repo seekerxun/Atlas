@@ -6,6 +6,11 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden}
 #世界 .路线标题{cursor:grab;touch-action:none}
 #屉{user-select:text;-webkit-user-select:text}
 
+/* 普通卡片的前后关系属于交互：分组建立独立层，组内卡不能越过别的分组。
+   前置层低于阅读幕（35）与展开阅读（40），阅读时仍由主题接管其外观。 */
+#世界>.盒:not(.聚起){z-index:0}
+#世界 :is(.盒,.卡,.步)[data-前置]:not(.聚起):not(.展开){z-index:30}
+
 /* 卡片展开阅读：画布整体盖到固定界面（顶栏、未认领、角落控件，主题须让它们低于 60）之上；
    世界里除展开卡外都不接收鼠标，点在别处都落到 #台 上由核心收卡，拖动和滚轮缩放也停用。 */
 body[data-阅读中] #台{z-index:60!important}
