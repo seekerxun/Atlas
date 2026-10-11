@@ -1,6 +1,6 @@
 """校验：宁可误报，不可漏报。"""
 from __future__ import annotations
-import fnmatch, os
+import fnmatch, os, subprocess
 from pathlib import Path
 
 from model import 发现, TOOL_EXT, ASSET_EXT
@@ -26,10 +26,31 @@ def _存在(根: Path, rel: str) -> bool:
     return False
 
 
-def 校验(idx: 索引) -> list[发现]:
+def _被忽略(根: Path, rel: str) -> bool:
+    """这个路径是否被 git 忽略（本来就不进库）。不在 git 仓库或没装 git 时一律当作没被忽略。"""
+    rel = rel.strip()
+    if not rel:
+        return False
+    try:
+        r = subprocess.run(["git", "-C", str(根), "check-ignore", "-q", "--", rel],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10)
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return r.returncode == 0
+
+
+def 校验(idx: 索引, 严格: bool = False) -> list[发现]:
+    """严格=True 时，被 git 忽略、本机又不存在的文件也按 E06 报错（在应当有全部文件的机器上用）。"""
     cfg, 根 = idx.cfg, idx.根
     出: list[发现] = []
     加 = 出.append
+
+    def 缺文件(位置: str, 种类: str, p: str):
+        if not 严格 and _被忽略(根, p):
+            加(发现("警告", "W14", 位置, f"{种类}本机缺失（被 git 忽略，不进库）: {p}",
+                    "换到有这个文件的机器上跑 atlas check --严格 确认它没丢"))
+        else:
+            加(发现("错误", "E06", 位置, f"{种类}不存在: {p}"))
 
     for err in cfg.标签错误:
         加(发现("错误", "E09", "项目.yml", err, "标签写法见 规范/目录规范.md《标签》"))
@@ -94,16 +115,16 @@ def 校验(idx: 索引) -> list[发现]:
                 continue
             for p in 路径们:
                 if not _存在(根, str(p)):
-                    加(发现("错误", "E06", s, f"资产不存在: {p}"))
+                    缺文件(s, "资产", str(p))
                 else:
                     被挂资产.add(str(p))
         for t in n.工具:
             if not _存在(根, t):
-                加(发现("错误", "E06", s, f"工具不存在: {t}"))
+                缺文件(s, "工具", t)
             被声明工具.setdefault(t, set()).add(n.分组 or "?")
         for d in n.数据:
             if not _存在(根, d):
-                加(发现("错误", "E06", s, f"数据表不存在: {d}"))
+                缺文件(s, "数据表", d)
 
         规则 = cfg.规则(n.库)
         # 草稿是零门槛区：不要求摘要，门槛一高就没人往里丢东西了
@@ -146,7 +167,7 @@ def 校验(idx: 索引) -> list[发现]:
                         f"docs → `{d}` 不存在", "路线里写的是文件路径，不带 .md"))
             for t in st.tools:
                 if not _存在(根, t):
-                    加(发现("错误", "E06", f"{r.路径}#{st.id}", f"工具不存在: {t}"))
+                    缺文件(f"{r.路径}#{st.id}", "工具", t)
                 else:
                     被声明工具.setdefault(t, set()).add(f"路线:{r.名称}")
             for nx in st.next:

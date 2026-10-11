@@ -2,7 +2,7 @@
 """atlas —— 项目知识导航。零依赖。
 
   atlas 扫描                写出 .atlas/索引.json
-  atlas 检查 [--只看错误]    体检，有错误退出码 1
+  atlas 检查 [--只看错误] [--严格]  体检，有错误退出码 1；--严格 把被 git 忽略的缺失文件也算错误
   atlas 路线 [名字] [--列表] 输出这条路线的文件清单（给 AI 用）
   atlas 找 <关键词>          搜条目 / 工具 / 资产
   atlas 迁移 --加字段 k=v [--筛选 类型=NPC] [--演习]
@@ -20,7 +20,7 @@
 英文别名（与中文等价，可混用）：
   scan 扫描 · check 检查 · route 路线 · find 找 · migrate 迁移 · claim 认领
   new 新建 · rename 改名 · hook 钩子 · run 运行
-  --errors-only 只看错误 · --list 列表 · --add-field 加字段 · --rename 改名
+  --errors-only 只看错误 · --strict 严格 · --list 列表 · --add-field 加字段 · --rename 改名
   --filter 筛选 · --dry-run 演习 · --category 分类 · --name 名称 · --type 类型
   --entry 条目 · --vocab 词表 · --field 字段 · --port 端口 · --no-browser 不开浏览器 · --stop 停止
 """
@@ -86,7 +86,7 @@ def 命令_扫描(args):
 def 命令_检查(args):
     根 = 根目录()
     idx = 建索引(根)
-    结果 = 校验(idx)
+    结果 = 校验(idx, 严格=bool(args.严格))
     if args.只看错误:
         结果 = [f for f in 结果 if f.级别 == "错误"]
     当前 = None
@@ -414,6 +414,7 @@ def main():
     def 选项(q, 名, 英名, **kw): q.add_argument("--" + 名, "--" + 英名, dest=名, **kw)
     命令("扫描")
     q = 命令("检查"); 选项(q, "只看错误", "errors-only", action="store_true")
+    选项(q, "严格", "strict", action="store_true")
     q = 命令("路线"); q.add_argument("名字", nargs="?"); 选项(q, "列表", "list", action="store_true")
     q = 命令("找"); q.add_argument("关键词")
     q = 命令("迁移")
@@ -437,7 +438,7 @@ def main():
         ap.print_help()
         return
     args.命令 = {v: k for k, v in 英.items()}.get(args.命令, args.命令)
-    for k in ("只看错误", "列表", "演习", "名字", "分类", "筛选", "加字段", "改名",
+    for k in ("只看错误", "严格", "列表", "演习", "名字", "分类", "筛选", "加字段", "改名",
               "端口", "不开浏览器", "类型", "条目", "词表", "停止"):
         if not hasattr(args, k):
             setattr(args, k, None)
