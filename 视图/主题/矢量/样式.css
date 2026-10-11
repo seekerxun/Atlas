@@ -510,6 +510,7 @@ body.矢量阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
 #角 .分隔{width:1px;height:22px;margin:0 4px;background:var(--边)}
 #角 #回{margin-left:4px;padding:0 16px;background:var(--字);color:var(--底);font-size:13px;font-weight:700}
 #角 #回:hover{background:var(--字)}
+#角 #自动排列{padding:0 12px;font-size:13px;font-weight:700;background:var(--底)}
 
 #提示{position:fixed;left:50%;bottom:88px;z-index:99;transform:translateX(-50%);translate:0 8px;padding:10px 20px;border-radius:999px;background:var(--字);color:var(--底);font-size:13px;font-weight:600;opacity:0;transition:opacity .2s,translate .35s var(--弹);pointer-events:none}
 #提示.开{opacity:1;translate:0 0}

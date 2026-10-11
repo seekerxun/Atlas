@@ -1,4 +1,5 @@
 import 创建模板 from './模板.js';
+import {自动分组布局, 恢复组内布局} from './排列.js';
 /* 矢量主题：大地色块、简洁几何形、弹性形状动画，深浅两用。
    视觉在 样式.css（按 html[data-外观] 切配色），本文件负责布局、模板与动效。 */
 export default function 创建主题(api){
@@ -173,6 +174,13 @@ function 算库布局(){
   const 窄 = $('#台').clientWidth < 700;
   const 限宽 = 窄 ? 400 : 2400;
   Object.keys(盒).sort((a, b) => 盒[b].length - 盒[a].length).forEach(名 => {
+    const id = `盒:${视图}:${名}`, 存 = 布局[id];
+    const 已排 = 恢复组内布局(盒[名], 存?.排列, {卡宽, 卡高, 隙, 内左, 内顶, 图后缀});
+    if (已排) {
+      结果.push({id, 名, 数:盒[名].length, x, y, ...已排, 存});
+      x += 已排.w + 盒隙; 行高 = Math.max(行高, 已排.h);
+      return;
+    }
     const ns = 盒[名].slice().sort((a, b) =>
       (a.类型 + a.标题).localeCompare(b.类型 + b.标题, 'zh'));
     const 类组 = {}; ns.forEach(n => (类组[n.类型 || '?'] ??= []).push(n));
@@ -191,7 +199,6 @@ function 算库布局(){
     });
     const w = 列 * (卡宽 + 隙) - 隙 + 内左 * 2, h = 内y + 内顶 + 6;
     if (x + w > 限宽 && x > 40) { x = 40; y += 行高 + 盒隙; 行高 = 0; }
-    const id = `盒:${视图}:${名}`;
     结果.push({id, 名, 数: ns.length, x, y, w, h, 卡们, 存: 布局[id]});
     x += w + 盒隙; 行高 = Math.max(行高, h);
   });
@@ -208,6 +215,22 @@ function 算库布局(){
   });
   结果.forEach(b => delete b.存);
   return 结果;
+}
+
+function 算自动布局({折叠们}){
+  const {视图, 外观} = api.读取状态();
+  const 台宽 = $('#台').clientWidth, 可用高 = 阅读区域().高;
+  const 宽们 = 台宽 < 700 ? [848] : [2000, 2400, 2800, 3200];
+  let 最好 = [], 最小 = Infinity;
+  for (const 宽 of 宽们) {
+    const 组们 = 自动分组布局(分组数据(), 视图, 宽, {卡宽, 卡高, 隙, 盒隙, 内左, 内顶, 图后缀}, 折叠们, 外观 === '浅' ? 84 : 0);
+    if (!组们.length) return [];
+    const 总宽 = Math.max(...组们.map(b => b.x+b.w))-40, 总高 = Math.max(...组们.map(b => b.y+b.h))-40;
+    // 选全局取景时字能显示得最大的形状；不依赖当前缩放，重复点击不会漂移。
+    const 分 = Math.max(总宽 / Math.max(1, 台宽-64), 总高 / Math.max(1, 可用高-32));
+    if (分 < 最小) { 最小 = 分; 最好 = 组们; }
+  }
+  return 最好;
 }
 
 function 算路线布局(r, 基y){
@@ -454,6 +477,7 @@ function 缩放外观(缩){
 const 模板 = 创建模板(api, {色, 上, 形, 小形, 行, 详情头, 图标, 序色});
 return {
   装配界面, 装配画布, 装配详情, 外观变化, 模板,
+  算自动布局,
   分组折叠高: 外观 => 外观 === '浅' ? 84 : 0,
   布局: {卡宽, 卡高, 隙, 盒隙, 内左, 内顶, 路线起点:60, 路线间距:110, 路线标题距:100, 路线编辑距:44, 连线出口:步宽},
   镜头时长:460, 镜头缓动:t => 1-Math.pow(1-t,4),

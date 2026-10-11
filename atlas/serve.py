@@ -289,6 +289,16 @@ def 文档搜索正文(idx):
     return 正文, 遗漏
 
 
+def 文件修改时间(根: Path, rel: str):
+    """仅报告项目内文件的真实时间，消失／不可访问时留空，不伪造最新时间。"""
+    try:
+        根 = 根.resolve()
+        p = (根 / rel).resolve()
+        return p.stat().st_mtime if p.is_relative_to(根) and p.is_file() else None
+    except (OSError, ValueError, RuntimeError):
+        return None
+
+
 def 打包(根: Path) -> dict:
     idx = 建索引(根)
     结果 = 校验(idx)
@@ -298,10 +308,13 @@ def 打包(根: Path) -> dict:
     孤儿工具 = [f.位置 for f in 结果 if f.码 == 'W02']
     产出批次 = 产出池(根)
     搜索正文, 搜索遗漏 = 文档搜索正文(idx)
+    条目 = [n.to_dict() for n in idx.条目.values()] + 资产卡(idx)
+    for n in 条目:
+        n["修改时间"] = 文件修改时间(根, n["路径"])
     return {
         "项目": idx.cfg.名称, "主分组": idx.cfg.主分组, "文件候选": 文件候选(idx),
         "标签": [{"名称": t["名称"], "目录": t["目录"], "规则": t["规则"]} for t in idx.cfg.标签],
-        "条目": [n.to_dict() for n in idx.条目.values()] + 资产卡(idx),
+        "条目": 条目,
         "搜索正文": 搜索正文, "搜索遗漏": 搜索遗漏,
         "路线": [{"名称": r.名称, "路径": r.路径, "说明": r.说明, "入口": r.入口,
                  "文件名": r.路径.split("/")[-1],

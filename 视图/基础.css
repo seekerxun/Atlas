@@ -5,6 +5,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden}
 #世界{position:absolute;transform-origin:0 0}
 #世界 .路线标题{cursor:grab;touch-action:none}
 #屉{user-select:text;-webkit-user-select:text}
+#角 #自动排列[hidden]{display:none}
 
 /* 普通卡片的前后关系属于交互：分组建立独立层，组内卡不能越过别的分组。
    前置层低于阅读幕（35）与展开阅读（40），阅读时仍由主题接管其外观。 */

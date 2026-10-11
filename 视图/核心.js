@@ -3,6 +3,7 @@ const $ = s => document.querySelector(s);
 const 转义 = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const 图后缀 = /\.(png|jpg|jpeg|webp|gif|svg)$/i;
 let 数据 = null, 视图 = '内容', 选中 = null, 布局 = {}, 选中步 = null;
+let 布局变更序号 = 0;
 let 缩 = 0.85, 位 = {x: 30, y: 24};
 let 展开卡 = null, 正文请求 = null, 首次 = true, 上次绘制视图 = null;
 let 悬停条目 = null, 悬停关联 = null;
@@ -321,7 +322,10 @@ setInterval(() => { if (!document.hidden && !空间进行中) 查空间('更新'
 $('#项目位置').onclick = () => 系统打开('.', false);
 
 async function 读数据(自动 = false){
+  const 原布局序号 = 布局变更序号;
   const 文本 = await (await fetch('/数据')).text();
+  // 写布局期间的扫描可能读到旧快照；不要让它覆盖刚排列或撤销的结果。
+  if (布局操作中 || 存计时 || 布局待写 || 原布局序号 !== 布局变更序号) return;
   // 自动扫描：结果没变、或者扫描期间用户开始阅读／输入了，就不重画，免得打断
   if (自动 && (文本 === 上次数据文本 || 忙着())) return;
   上次数据文本 = 文本;
@@ -634,6 +638,7 @@ function 画(){
   $('#视图名').textContent = 视图;
   const 数 = 视图 === '路线' ? (数据.路线 || []).length : 数据.条目.filter(n => n.库 === 视图).length;
   $('#视图数').textContent = `${数} ${视图 === '路线' ? '条路线' : '个条目'}`;
+  刷新排列按钮();
   if (原选 && w.querySelector(`.卡[data-路径="${CSS.escape(原选)}"]`)) 选条目(原选);
   else if (原步 && 视图 === '路线') 选步骤(原步.路线, 原步.步);
   if (切换了) { const 本次视图 = 视图, 本次主题 = 主题; requestAnimationFrame(() => { if (视图 === 本次视图 && 主题 === 本次主题) 画布入场(); }); }
@@ -820,6 +825,7 @@ function 画边(r, 位置){
 // 每一笔记的是「文件改之前的全文」和「改之后的全文」。撤销就是把前者写回去，
 // 重做就是再写后者。路线、认领、迁移全走这一套，不用给每种操作写逆操作。
 const 撤销栈 = [], 重做栈 = [], 栈上限 = 60;
+let 布局操作中 = false;
 
 function 记一笔(说明, 快照){
   if (!快照) return;
@@ -838,18 +844,22 @@ function 记布局(说明, 旧, 新){
 
 function 刷新撤销按钮(){
   const a = $('#撤销'), b = $('#重做');
-  a.disabled = !撤销栈.length; b.disabled = !重做栈.length;
+  a.disabled = 布局操作中 || !撤销栈.length; b.disabled = 布局操作中 || !重做栈.length;
   a.title = 撤销栈.length ? `撤销「${撤销栈.at(-1).说明}」 ⌘Z` : '没什么可撤销的';
   b.title = 重做栈.length ? `重做「${重做栈.at(-1).说明}」 ⇧⌘Z` : '没什么可重做的';
 }
 
 async function 走一步(笔, 目标内容, 动词){
   if (笔.类型 === '布局'){
-    布局 = JSON.parse(JSON.stringify(目标内容 || {}));
-    await fetch('/布局', {method: 'POST', headers: 项目头(), body: JSON.stringify(布局)});
-    提示(`已${动词}：${笔.说明}`);
-    画();
-    return true;
+    布局操作中 = true; 刷新撤销按钮(); 刷新排列按钮();
+    clearTimeout(存计时); 存计时 = null;
+    try {
+      const 目标 = JSON.parse(JSON.stringify(目标内容 || {}));
+      await 写布局快照(目标);
+      布局 = 目标; 画(); 提示(`已${动词}：${笔.说明}`);
+      return true;
+    } catch (e) { 提示(`${动词}失败：${e.message}`); return false; }
+    finally { 布局操作中 = false; 刷新撤销按钮(); 刷新排列按钮(); }
   }
   const res = await fetch('/还原', {method: 'POST', headers: 项目头(), body: JSON.stringify(
     {路径: 笔.路径, 内容: 目标内容, 期望mtime: 笔.mtime})});
@@ -862,6 +872,7 @@ async function 走一步(笔, 目标内容, 动词){
 }
 
 async function 撤销(){
+  if (布局操作中) return;
   const 笔 = 撤销栈.at(-1); if (!笔) return;
   if (await 走一步(笔, 笔.旧内容, '撤销')){
     撤销栈.pop(); 重做栈.push(笔); 刷新撤销按钮();
@@ -869,6 +880,7 @@ async function 撤销(){
 }
 
 async function 重做(){
+  if (布局操作中) return;
   const 笔 = 重做栈.at(-1); if (!笔) return;
   if (await 走一步(笔, 笔.新内容, '重做')){
     重做栈.pop(); 撤销栈.push(笔); 刷新撤销按钮();
@@ -1553,16 +1565,67 @@ window.addEventListener('resize', () => { if (!主题) return; 停镜头(); docu
 $('#屉').addEventListener('click', e => e.stopPropagation());
 $('#屉').addEventListener('pointerdown', e => e.stopPropagation());
 
+// ---------------------------------------------------------------- 自动排列与布局保存
+function 刷新排列按钮(){
+  const 钮 = $('#自动排列');
+  钮.hidden = 视图 === '路线' || typeof 主题?.算自动布局 !== 'function';
+  const ns = (数据?.条目 || []).filter(n => n.库 === 视图);
+  const 有时间 = ns.every(n => Object.hasOwn(n, '修改时间'));
+  钮.disabled = 布局操作中 || !ns.length || !有时间;
+  钮.textContent = 布局操作中 ? '排列中…' : '排列';
+  钮.setAttribute('aria-label', '自动排列当前画布');
+  钮.title = !有时间 ? '请重启画布服务以读取修改时间' : '按目录／系列分组，修改时间新到旧，紧凑排列；可撤销';
+}
+async function 自动排列(){
+  if (布局操作中 || $('#自动排列').disabled || $('#自动排列').hidden) return;
+  收卡(false);
+  const 原视图 = 视图, 旧 = JSON.parse(JSON.stringify(布局)), 新 = JSON.parse(JSON.stringify(布局));
+  try {
+    const 盒们 = 主题.算自动布局({折叠们:new Set(折叠分组们())});
+    if (!盒们.length) return;
+    for (const b of 盒们) {
+      if (![b.x,b.y,b.w,b.h].every(Number.isFinite) || b.w <= 0 || b.h <= 0) throw new Error('排列尺寸无效');
+      新[b.id] = {...新[b.id], x:b.x, y:b.y, 排列:b.排列};
+    }
+    if (JSON.stringify(旧) === JSON.stringify(新)) { 提示('已经排好了'); return; }
+    布局操作中 = true; 刷新排列按钮(); 刷新撤销按钮();
+    const 有待存 = !!存计时;
+    clearTimeout(存计时); 存计时 = null;
+    if (有待存) await 写布局快照(旧);
+    await 写布局快照(新);
+    布局 = 新;
+    记布局(`自动排列「${原视图}」`, 旧, 新);
+    画();
+    if (视图 === 原视图) 回全局();
+    提示(`已按修改时间排列「${原视图}」，可撤销`);
+  } catch (e) { 提示('排列失败：' + e.message); }
+  finally { 布局操作中 = false; 刷新排列按钮(); 刷新撤销按钮(); }
+}
+$('#自动排列').onclick = 自动排列;
+
+// 串行写入，避免拖动的延迟保存晚于排列／撤销到达，覆盖新结果。
+let 布局写入 = Promise.resolve(), 布局待写 = 0;
+function 写布局快照(值){
+  const 内容 = JSON.stringify(值);
+  布局变更序号++; 布局待写++;
+  布局写入 = 布局写入.catch(() => {}).then(async () => {
+    const res = await fetch('/布局', {method:'POST', headers:项目头(), body:内容});
+    const j = await res.json();
+    if (!res.ok || !j.好) throw new Error(j.错误 || '布局保存失败');
+  }).finally(() => { 布局待写--; });
+  return 布局写入;
+}
+
 // ---------------------------------------------------------------- 拖动卡片存布局
 let 存计时 = null;
 function 存布局(){
   clearTimeout(存计时);
-  存计时 = setTimeout(() => fetch('/布局', {method: 'POST', headers: 项目头(), body: JSON.stringify(布局)}), 400);
+  存计时 = setTimeout(() => { 存计时 = null; 写布局快照(布局).catch(e => 提示(e.message)); }, 400);
 }
 function 装拖动(选择器, 属性){
   $('#世界').querySelectorAll(选择器).forEach(e => {
     e.addEventListener('pointerdown', ev => {
-      if (ev.button !== 0 || ev.target.closest('#屉,.柄,button,input,a') || e.classList.contains('展开')) return;
+      if (布局操作中 || ev.button !== 0 || ev.target.closest('#屉,.柄,button,input,a') || e.classList.contains('展开')) return;
       if (ev.target.closest('.卡') && 选择器 === '.盒') return;
       ev.stopPropagation(); 停镜头(); e._入场动画?.cancel(); 停卡片动效(e);
       const id = e.getAttribute(属性);
@@ -1582,7 +1645,7 @@ function 装拖动(选择器, 属性){
         if (e._拖过) {
           // 步骤存的是路线平移前的位置，主题按它排布，核心再整体平移。
           const 移 = 选择器 === '.步' && 布局[路线键(e.dataset.路线)] || {x: 0, y: 0};
-          布局[id] = {x: parseFloat(e.style.left) - 移.x, y: parseFloat(e.style.top) - 移.y};
+          布局[id] = {...布局[id], x: parseFloat(e.style.left) - 移.x, y: parseFloat(e.style.top) - 移.y};
           记布局('挪了 ' + id.split(':').pop(), 布局快照,
                 JSON.parse(JSON.stringify(布局)));
           存布局();
@@ -1598,7 +1661,7 @@ function 装拖动(选择器, 属性){
 const 路线键 = 名 => '路线:' + 名;
 function 装路线拖动(){
   $('#世界').querySelectorAll('.路线标题').forEach(t => t.addEventListener('pointerdown', ev => {
-    if (ev.button !== 0 || ev.target.closest('button,input,a,[contenteditable]')) return;
+    if (布局操作中 || ev.button !== 0 || ev.target.closest('button,input,a,[contenteditable]')) return;
     ev.stopPropagation(); ev.preventDefault(); 停镜头();
     const 名 = t.dataset.路线, 键 = 路线键(名);
     const 同路 = [...$('#世界').querySelectorAll('.路线标题,.编辑条,.步')].filter(e => e.dataset.路线 === 名)
