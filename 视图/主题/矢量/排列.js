@@ -62,6 +62,90 @@ export function 矩形填空(分组, 宽, 隙){
   });
 }
 
+// 系列按目录结构／编号前缀识别，不把 E01、E02 等同系列分组与模板穿插。
+// 至少两个分组匹配才形成区域；原始分组、标题和布局键都不改变。
+function 系列键(名){
+  const 段 = 名.split(/\s*\/\s*/), 末 = 段.pop(), 上级 = 段.join('/');
+  const 编号 = 末.match(/^([\p{L}]+)\d+(?=$|[-_\s])/u);
+  if (编号) return `编号:${上级}:${编号[1].toLocaleUpperCase()}`;
+  return 上级 ? `目录:${上级}` : null;
+}
+
+// 保持时间顺序，按整行换行；均衡余量，避免七张卡排成 3+3+1。
+function 对齐分行(组们, 宽, 隙){
+  const n = 组们.length, 代价 = Array(n+1).fill(Infinity), 断点 = [];
+  代价[n] = 0;
+  for (let i = n-1; i >= 0; i--) {
+    let 行宽 = 0;
+    for (let j = i; j < n; j++) {
+      行宽 += 组们[j].w + (j > i ? 隙 : 0);
+      if (行宽 > 宽) break;
+      const 分 = 1 + ((宽-行宽)/宽)**2 + 代价[j+1];
+      if (分 <= 代价[i] + 1e-9) { 代价[i] = 分; 断点[i] = j+1; }
+    }
+  }
+  const 子组 = []; let y = 0, w = 0, 行数 = 0;
+  for (let i = 0; i < n;) {
+    const end = 断点[i]; let x = 0, 行高 = 0;
+    for (let j = i; j < end; j++) {
+      子组.push({...组们[j], x, y});
+      x += 组们[j].w + 隙; 行高 = Math.max(行高, 组们[j].h);
+    }
+    w = Math.max(w, x-隙); y += 行高+隙; 行数++; i = end;
+  }
+  return {w, h:y-隙, 子组, 行数};
+}
+
+function 系列区域(组们, 宽, 隙){
+  const 最窄 = Math.max(...组们.map(b => b.w)), 总宽 = 组们.reduce((s,b) => s+b.w+隙, -隙);
+  宽 = Math.max(宽, 最窄);
+  if (组们.length <= 3 && 总宽 <= 宽) return 对齐分行(组们, 总宽, 隙);
+  // 候选来自真实卡宽，避免使用与卡宽不吻合的任意行宽。
+  const 宽们 = new Set([最窄, 宽]);
+  for (let i = 0; i < 组们.length; i++) {
+    let w = 0;
+    for (let j = i; j < Math.min(i+6, 组们.length); j++) {
+      w += 组们[j].w + (j > i ? 隙 : 0);
+      if (w > 宽) break;
+      if (w >= 最窄) 宽们.add(w);
+    }
+  }
+  let 最好, 最小 = Infinity;
+  for (const w of 宽们) {
+    const 区 = 对齐分行(组们, w, 隙);
+    const 分 = Math.abs(Math.log(区.w/区.h/1.4)) + Math.max(0, 区.行数-3)*.12;
+    if (分 < 最小) { 最好 = 区; 最小 = 分; }
+  }
+  return 最好;
+}
+
+export function 按系列填空(组们, 宽, 隙){
+  const 系列 = new Map();
+  for (const b of 组们) {
+    const key = 系列键(b.名);
+    if (key) { if (!系列.has(key)) 系列.set(key, []); 系列.get(key).push(b); }
+  }
+  const 已归 = new Set(), 区们 = [];
+  for (const [key, 同类] of 系列) {
+    if (同类.length < 2) continue;
+    同类.forEach(b => 已归.add(b.id));
+    区们.push({id:key, ...系列区域(同类, 宽, 隙)});
+  }
+  // 系列完整占一块区域，其余小分组填在区域外，不钻进系列的行尾空位。
+  const 待排 = [...区们, ...组们.filter(b => !已归.has(b.id))];
+  const 已排 = 矩形填空(待排, 宽, 隙);
+  const 行线 = [...new Set(已排.flatMap(b => (b.子组 || []).map(c => b.y+c.y)))].sort((a,b) => a-b);
+  // 侧边小组离系列行线很近时顺势对齐，避免模板矮一点就让下排参差。
+  已排.filter(b => !b.子组).sort((a,b) => b.y-a.y).forEach(b => {
+    const y = 行线.find(y => y >= b.y && y-b.y <= 隙*1.5);
+    if (y == null || y === b.y) return;
+    const 候选 = {...b, y, w:b.w+隙, h:b.h+隙};
+    if (已排.every(o => o === b || !相交(候选, {...o, w:o.w+隙, h:o.h+隙}))) b.y = y;
+  });
+  return 已排.flatMap(b => b.子组
+    ? b.子组.map(c => ({...c, x:c.x+b.x, y:c.y+b.y})) : [b]);
+}
+
 export function 自动分组布局(分组, 视图, 宽, 尺寸, 折叠们 = new Set(), 折叠高 = 0){
   const 组们 = Object.entries(分组).filter(([, ns]) => ns.length).map(([名, ns]) => {
     const 有序 = ns.slice().sort(按修改排序), 列 = 选列(有序, 宽, 尺寸), id = `盒:${视图}:${名}`;
@@ -69,5 +153,5 @@ export function 自动分组布局(分组, 视图, 宽, 尺寸, 折叠们 = new 
     return {id, 名, 数:ns.length, ...b, h:折叠高 > 0 && 折叠们.has(id) ? 折叠高 : b.h,
       修改时间:Math.max(...ns.map(时间)), 排列:{版本:1, 列, 顺序:有序.map(n => n.路径)}};
   }).sort((a, b) => b.修改时间-a.修改时间 || 自然序.compare(a.名, b.名));
-  return 矩形填空(组们, 宽, 尺寸.盒隙);
+  return 按系列填空(组们, 宽, 尺寸.盒隙);
 }

@@ -1587,7 +1587,7 @@ async function 自动排列(){
       if (![b.x,b.y,b.w,b.h].every(Number.isFinite) || b.w <= 0 || b.h <= 0) throw new Error('排列尺寸无效');
       新[b.id] = {...新[b.id], x:b.x, y:b.y, 排列:b.排列};
     }
-    if (JSON.stringify(旧) === JSON.stringify(新)) { 提示('已经排好了'); return; }
+    if (JSON.stringify(旧) === JSON.stringify(新)) { 回全局(); 提示('已经排好了'); return; }
     布局操作中 = true; 刷新排列按钮(); 刷新撤销按钮();
     const 有待存 = !!存计时;
     clearTimeout(存计时); 存计时 = null;
