@@ -81,12 +81,12 @@ class DiskUsageTests(unittest.TestCase):
                 cache.状态(更新=True)
                 self.assertEqual(scanner.call_count, 4)
 
-    def test_reveal_project_root_and_reject_outside(self):
+    def test_open_project_root_and_reject_outside(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder).resolve()
             with patch('serve.sys.platform', 'darwin'), patch('serve.subprocess.Popen') as launch:
-                系统打开(root, '.', True)
-                self.assertEqual(launch.call_args.args[0], ['open', '-R', str(root)])
+                系统打开(root, '.', False)
+                self.assertEqual(launch.call_args.args[0], ['open', str(root)])
                 with self.assertRaises(RuntimeError):
                     系统打开(root, '..', True)
                 self.assertEqual(launch.call_count, 1)

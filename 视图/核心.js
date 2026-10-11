@@ -317,7 +317,7 @@ async function 查空间(模式 = '缓存', 序号 = ++空间请求序号){
   }
 }
 setInterval(() => { if (!document.hidden && !空间进行中) 查空间('更新'); }, 300000);
-$('#项目位置').onclick = () => 系统打开('.', true);
+$('#项目位置').onclick = () => 系统打开('.', false);
 
 async function 读数据(自动 = false){
   const 文本 = await (await fetch('/数据')).text();
@@ -1376,9 +1376,9 @@ async function 系统打开(路径, 显示 = false){
     const r = await fetch('/系统打开', {method: 'POST', headers: 项目头(), body: JSON.stringify({路径, 显示})});
     const j = await r.json();
     if (!j.好) throw new Error(j.错误 || '打开失败');
-    提示(显示 ? '已在访达中显示' : '已用默认应用打开');
+    提示(显示 ? '已在访达中显示' : 路径 === '.' ? '已打开项目文件夹' : '已用默认应用打开');
   } catch (e) {
-    if (显示) 提示(e.message || '打开失败'); else window.open('/文件/' + encodeURI(路径), '_blank', 'noopener');
+    if (显示 || 路径 === '.') 提示(e.message || '打开失败'); else window.open('/文件/' + encodeURI(路径), '_blank', 'noopener');
   }
 }
 async function 抄(t){

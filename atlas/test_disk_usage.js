@@ -46,6 +46,6 @@ vm.runInContext(source.slice(manual, source.indexOf("$('#新路线').onclick", m
   assert.equal(requests.at(-1).url,'/空间?更新=1');
   $('#刷').onclick();await new Promise(setImmediate);
   assert.equal(requests.at(-1).options.method,'POST');assert.equal(scans,1);
-  $('#项目位置').onclick();assert.deepEqual(reveal,['.',true]);
+  $('#项目位置').onclick();assert.deepEqual(reveal,['.',false]);
   console.log('空间请求通过：M/G/T、后台轮询、五分钟更新、后台页面跳过、手动强刷、访达入口。');
 })().catch(e=>{console.error(e);process.exitCode=1;});
