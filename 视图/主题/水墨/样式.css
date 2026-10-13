@@ -46,7 +46,7 @@ kbd{font-family:var(--字体)}
 #顶:after{content:"";position:absolute;left:0;right:0;bottom:-3px;height:6px;background:var(--线墨) center/100% 100% no-repeat;pointer-events:none}
 .品牌{background:var(--面);box-shadow:0 0 0 1px var(--边);display:flex;align-items:center;gap:11px;min-width:0;height:48px;padding:0 12px 0 4px;border-radius:24px;cursor:pointer;transition:background-color .2s}
 .品牌:hover{background:color-mix(in srgb,var(--字) 5%,var(--面))}
-.品牌 svg{flex-shrink:0;width:34px;height:34px;box-sizing:border-box;padding:7px;border-radius:3px;background:var(--朱砂);color:var(--底)}
+.品牌 svg{flex-shrink:0;width:40px;height:40px;box-sizing:border-box;padding:10px;border-radius:50%;background:var(--朱砂);color:var(--底)}
 .品牌>span{display:flex;flex-direction:column;line-height:1.15;min-width:0}
 .品牌 small{order:2;font-size:11px;letter-spacing:.04em;color:var(--字3)}
 .品牌 #名{font-size:18px;font-weight:700}

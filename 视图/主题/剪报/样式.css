@@ -44,6 +44,7 @@ kbd{font-family:var(--窄)}
 .品牌{background:var(--面);box-shadow:0 0 0 1px var(--边);display:flex;align-items:center;gap:10px;min-width:0;padding:0;cursor:pointer}
 .品牌 svg{--标志点:var(--路线红);flex-shrink:0;width:38px;height:38px;box-sizing:border-box;padding:7px;background:var(--字);color:var(--马克)}
 .品牌:hover svg{box-shadow:3px 3px 0 var(--路线红)}
+html[data-外观="深"] .品牌 svg{background:var(--底)}
 .品牌>span{display:flex;align-items:baseline;gap:10px;min-width:0}
 .品牌 #名{order:1;padding:0 8px;background:var(--马克);color:var(--马克上);font:800 26px/34px var(--窄);letter-spacing:-.01em;white-space:nowrap}
 .品牌 small{order:2;font:13px var(--衬线);color:var(--字3);white-space:nowrap}
