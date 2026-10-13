@@ -1,12 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
   <title>Atlas</title>
   <rect width="64" height="64" rx="14" fill="#1F4A6E"/>
-  <path d="M34 21.5h4a6 6 0 0 1 6 6V34" stroke="#F2B544" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-  <rect x="10" y="13" width="24" height="17" rx="4.5" fill="#F7F4EC"/>
-  <rect x="14.5" y="17.5" width="11" height="3.2" rx="1.6" fill="#1F4A6E"/>
-  <rect x="14.5" y="23.5" width="15" height="2.2" rx="1.1" fill="#1F4A6E" fill-opacity=".3"/>
-  <rect x="30" y="34" width="24" height="17" rx="4.5" fill="#F7F4EC"/>
-  <rect x="34.5" y="41" width="15" height="2.2" rx="1.1" fill="#1F4A6E" fill-opacity=".3"/>
-  <rect x="34.5" y="45.3" width="10" height="2.2" rx="1.1" fill="#1F4A6E" fill-opacity=".3"/>
-  <circle cx="44" cy="34" r="3.2" fill="#F2B544" stroke="#F7F4EC" stroke-width="1.6"/>
+  <path d="M32 13h19v19a19 19 0 0 1-19 19H13V32a19 19 0 0 1 19-19Z" fill="#F7F4EC"/>
+  <circle cx="41.5" cy="22.5" r="5" fill="#F2B544"/>
 </svg>
