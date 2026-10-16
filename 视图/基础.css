@@ -225,3 +225,17 @@ body[data-启动中] > :not(#启动状态){visibility:hidden}
   .产出筛{margin:0 -12px 12px;padding:8px 12px;top:-14px}
   .产出墙{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
 }
+
+/* 数据表（CSV / TSV / Excel）预览：表格在自己的滚动框里横竖滚动，表头吸顶；单元格样式沿用主题的 .正文 table。
+   多张工作表的页签是 .数据表签 里的按钮，当前页 aria-selected="true"。配色取 --面 --字 --字3 --边 --主。 */
+.数据表注{margin:0 0 8px;font-size:12px;color:var(--字3)}
+.数据表格{overflow:auto;max-height:70vh;border:1px solid var(--边);border-radius:6px;overscroll-behavior:contain}
+.数据表格 table{width:max-content;min-width:100%;margin:0}
+.数据表格 th{position:sticky;top:0;z-index:1;background:var(--面);white-space:nowrap}
+.数据表格 :is(th,td){white-space:nowrap;overflow-wrap:normal;word-break:normal}
+.数据表格 td{vertical-align:top;font-variant-numeric:tabular-nums}
+.数据表格 td.长{white-space:normal;min-width:16em;max-width:28em}
+.数据表签{display:flex;flex-wrap:wrap;gap:4px;margin:0 0 10px}
+.数据表签 button{padding:4px 10px;border:1px solid var(--边);border-radius:6px;background:none;color:var(--字);font:inherit;font-size:12px;cursor:pointer}
+.数据表签 button[aria-selected="true"]{border-color:var(--主);color:var(--主);font-weight:600}
+.数据表页[hidden]{display:none}

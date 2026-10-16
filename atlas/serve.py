@@ -7,6 +7,7 @@
   GET  /空间             仅读缓存；?更新=1 允许后台刷新过期统计
   POST /空间             强制后台刷新磁盘占用（复用进行中的统计）
   GET  /文件/<路径>       读一个仓库里的文件（缩略图、原文预览）
+  GET  /表格/<路径>       把 CSV / TSV / xlsx 读成行列，给数据表卡片和预览排表格
   POST /布局             存卡片位置
   POST /认领             把资产或工具挂到某个条目的 frontmatter 上
   POST /路线             按固定模板重写一条路线的 yml
@@ -43,7 +44,8 @@ from disk_usage import 空间缓存
 import miniyaml as y
 from lint import 校验, 体检数
 from model import ATLAS
-from scan import 建索引, _走
+from scan import 建索引, _走, _库与分组
+from tables import 读表, 表格后缀
 
 页面 = ATLAS / "视图" / "画布.html"
 文本后缀 = {'.md', '.txt', '.srt', '.html', '.htm', '.css', '.scss', '.js', '.mjs', '.ts',
@@ -131,6 +133,35 @@ def 资产卡(idx) -> list:
             "关联": {}, "资产": {}, "资产展开": [a], "被引用": [n.路径 for n in 挂], "软引用": [], "路线": [],
             "工具": [], "数据": [], "代码": [], "标签": [后缀.lstrip(".")], "扩展": {}, "机制": [],
             "行数": None, "有frontmatter": False, "豁免": True, "资产文件": True,
+        })
+    return 出
+
+
+def 数据卡(idx) -> list:
+    """数据表卡片：标签目录下每个 CSV / TSV / Excel 文件一张，放在它所在的标签和分组里。
+    卡片带 数据文件=True，核心据此请求 /表格/ 排成表格；被引用 = 在 数据: 或 资产: 里写了它的条目。"""
+    主人: dict = {}
+    for n in idx.条目.values():
+        for a in list(n.数据) + n.资产展开:
+            主人.setdefault(str(a), []).append(n)
+    出 = []
+    for a in idx.数据:
+        rel = Path(a)
+        后缀 = rel.suffix.lower()
+        标签 = idx.cfg.按目录.get(rel.parts[0])
+        if 后缀 not in 表格后缀 or not 标签:
+            continue
+        if 标签["规则"] == "素材":
+            库, 分组 = 标签["名称"], " / ".join(rel.parts[1:-1]) or "（根目录）"
+        else:
+            库, 分组 = _库与分组(idx.cfg, rel)
+        挂 = list({n.路径: n for n in 主人.get(a, [])}.values())
+        出.append({
+            "路径": a, "名称": rel.stem, "标题": rel.name, "编号": "", "库": 库, "分组": 分组,
+            "类型": "数据表", "状态": "", "摘要": ("挂在：" + "、".join(n.标题 or n.名称 for n in 挂)) if 挂 else "没有文档引用",
+            "关联": {}, "资产": {}, "资产展开": [], "被引用": [n.路径 for n in 挂], "软引用": [], "路线": [],
+            "工具": [], "数据": [], "代码": [], "标签": [后缀.lstrip(".")], "扩展": {}, "机制": [],
+            "行数": None, "有frontmatter": False, "豁免": True, "数据文件": True,
         })
     return 出
 
@@ -308,7 +339,7 @@ def 打包(根: Path) -> dict:
     孤儿工具 = [f.位置 for f in 结果 if f.码 == 'W02']
     产出批次 = 产出池(根)
     搜索正文, 搜索遗漏 = 文档搜索正文(idx)
-    条目 = [n.to_dict() for n in idx.条目.values()] + 资产卡(idx)
+    条目 = [n.to_dict() for n in idx.条目.values()] + 资产卡(idx) + 数据卡(idx)
     for n in 条目:
         n["修改时间"] = 文件修改时间(根, n["路径"])
     return {
@@ -455,6 +486,20 @@ class 处理器(BaseHTTPRequestHandler):
                 self._json({"错误": str(e)}, 404)
             except (ValueError, OSError):
                 self._json({"错误": '无法预览：请确认文件是 UTF-8 文本，且不超过 1 MB。'}, 400)
+            return
+        if 路径.startswith("/表格/"):
+            try:
+                根 = self.根.resolve()
+                p = (根 / 路径[len("/表格/"):]).resolve()
+                if not p.is_relative_to(根) or not p.is_file():
+                    raise FileNotFoundError("文件不存在或不在当前项目内")
+                self._json({"路径": p.relative_to(根).as_posix(), **读表(p)})
+            except FileNotFoundError as e:
+                self._json({"错误": str(e)}, 404)
+            except ValueError as e:
+                self._json({"错误": str(e)}, 400)
+            except Exception as e:
+                self._json({"错误": f"表格读取失败：{e}"}, 400)
             return
         if 路径.startswith("/文件/"):
             rel = 路径[len("/文件/"):]

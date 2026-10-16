@@ -2,6 +2,7 @@
 const $ = s => document.querySelector(s);
 const 转义 = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const 图后缀 = /\.(png|jpg|jpeg|webp|gif|svg)$/i;
+const 表格后缀 = /\.(csv|tsv|xlsx|xlsm|xls)$/i;
 let 数据 = null, 视图 = '内容', 选中 = null, 布局 = {}, 选中步 = null;
 let 布局变更序号 = 0;
 let 缩 = 0.85, 位 = {x: 30, y: 24};
@@ -533,6 +534,11 @@ async function 预览文档(路径, 副 = ''){
   $('#文件预览路径').textContent = 路径;
   body.className = '正文'; body.textContent = '正在读取…'; body.scrollTop = 0;
   取消关闭(dialog); if (!dialog.open) dialog.showModal();
+  if (表格后缀.test(路径)) {
+    $('#文件预览标题').textContent = 路径.split('/').pop();
+    await 填表格(body, 路径, controller.signal);
+    return;
+  }
   try {
     const r = await fetch('/预览/' + encodeURIComponent(路径), {signal: controller.signal});
     const file = await r.json();
@@ -541,7 +547,7 @@ async function 预览文档(路径, 副 = ''){
     $('#文件预览标题').textContent = file.路径.split('/').pop();
     $('#文件预览路径').textContent = file.路径 + (file.格式 === 'code' ? ' · 源码预览' : '') + 副;
     if (file.格式 === 'markdown') {
-      body.innerHTML = 正文html(file.内容.replace(/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/, '')) || '<p>这篇文档还没有正文。</p>';
+      body.innerHTML = 正文html(file.内容.replace(/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/, ''), file.路径) || '<p>这篇文档还没有正文。</p>';
     } else { body.className = '源码'; body.textContent = file.内容 || '文件为空。'; }
   } catch (e) {
     if (e.name !== 'AbortError') body.textContent = '预览失败：' + e.message;
@@ -1157,6 +1163,7 @@ function 一跳(n){
   const s = new Set([n.路径]);
   Object.values(n.关联 || {}).flat().forEach(t => { const x = 解析(t); if (x) s.add(x.路径); });
   (n.被引用 || []).forEach(p => s.add(p));
+  (n.数据 || []).forEach(p => { if (按路径[p]) s.add(p); });
   (n.软引用 || []).forEach(t => { const x = 解析(t); if (x) s.add(x.路径); });
   return s;
 }
@@ -1197,11 +1204,27 @@ function 双链html(内){
     + (n ? ` data-关联="${转义(路径)}" style="--关联色:${转义(色(n.类型))}"` : '') + `>${转义(文)}</a>`;
 }
 // 先转义，再渲染常用 Markdown；原始 HTML 只作为文本显示。行内代码里的内容原样显示。
-function 正文html(文本){
+// 正文里 [文字](相对路径) 按所在文档的目录解析；落到画布上的某张卡片就渲染成双链。
+function 相对目标(基, 链){
+  if (!基 || /^[a-z][\w+.-]*:|^[\/#]/i.test(链)) return null;
+  const 井 = 链.indexOf('#'), 段们 = 基.split('/').slice(0, -1);
+  let 路 = 井 < 0 ? 链 : 链.slice(0, 井);
+  try { 路 = decodeURIComponent(路); } catch {}
+  for (const 段 of 路.split('/')) {
+    if (段 === '..') 段们.pop(); else if (段 && 段 !== '.') 段们.push(段);
+  }
+  const p = 段们.join('/'), n = 按路径[p] || 按路径[p + '.md'];
+  return n ? {n, 锚: 井 < 0 ? '' : 链.slice(井 + 1)} : null;
+}
+function 正文html(文本, 基 = ''){
+  const 反转义 = x => x.replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
   const 行内 = t => t.split(/(`[^`]+`|\[\[[^\]\n]+?\]\])/).map((段, i) => {
     if (i % 2) return 段[0] === '`' ? '<code>' + 转义(段.slice(1, -1)) + '</code>' : 双链html(段.slice(2, -2));
     return 转义(段).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
       .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (原, 文, 链) => {
+        const 内 = 相对目标(基, 反转义(链));
+        if (内) return `<a class="双链" href="/文件/${转义(encodeURI(内.n.路径))}" data-双链="${转义(内.n.路径)}" data-锚="${转义(内.锚)}"`
+          + ` data-关联="${转义(内.n.路径)}" style="--关联色:${转义(色(内.n.类型))}">${文}</a>`;
         if (!/^https?:\/\//i.test(链)) return 文;
         return `<a href="${链}" target="_blank" rel="noopener noreferrer">${文}</a>`;
       });
@@ -1401,6 +1424,38 @@ function 资产预览html(路径){
   return `<p class="读取">这个文件不能在这里预览，<a href="${转义(址)}" target="_blank" rel="noopener">在新标签页打开 ↗</a>。</p>`;
 }
 
+// 数据表（CSV / TSV / Excel）：请求 /表格/ 排成表格；多张工作表用页签切换，首行当表头。
+async function 填表格(容器, 路径, signal){
+  容器.className = '正文'; 容器.innerHTML = '<p class="读取">正在读取表格…</p>';
+  const 址 = '/文件/' + encodeURI(路径);
+  try {
+    const r = await fetch('/表格/' + encodeURIComponent(路径), {signal});
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.错误 || '读取失败');
+    if (signal?.aborted || !容器.isConnected) return;
+    const 页 = (t, i) => {
+      const [头 = [], ...体] = t.行;
+      const 表 = t.行.length
+        ? `<table><thead><tr>${头.map(v => `<th>${转义(v)}</th>`).join('')}</tr></thead>`
+          + `<tbody>${体.map(r => `<tr>${r.map(v => `<td${v.length > 24 ? ' class="长"' : ''}>${转义(v)}</td>`).join('')}</tr>`).join('')}</tbody></table>`
+        : '<p class="读取">这张表是空的。</p>';
+      const 注 = `${t.总行} 行 × ${t.总列} 列` + (t.截断 ? `，只显示前 ${t.行.length} 行、${头.length} 列` : '');
+      return `<section class="数据表页" data-表页="${i}"${i ? ' hidden' : ''}><p class="数据表注">${注}</p><div class="数据表格">${表}</div></section>`;
+    };
+    const 签 = j.表.length > 1 ? `<div class="数据表签" role="tablist">${j.表.map((t, i) =>
+      `<button type="button" role="tab" data-表签="${i}" aria-selected="${!i}">${转义(t.名称 || `表 ${i + 1}`)}</button>`).join('')}</div>` : '';
+    容器.innerHTML = 签 + j.表.map(页).join('');
+    容器.querySelectorAll('[data-表签]').forEach(b => b.onclick = e => {
+      e.stopPropagation();
+      容器.querySelectorAll('[data-表签]').forEach(x => x.setAttribute('aria-selected', x === b));
+      容器.querySelectorAll('[data-表页]').forEach(x => x.hidden = x.dataset.表页 !== b.dataset.表签);
+    });
+  } catch (e) {
+    if (e.name === 'AbortError' || !容器.isConnected) return;
+    容器.innerHTML = `<p class="读取">${转义(e.message)}。<a href="#" onclick="${转义(`event.preventDefault();event.stopPropagation();系统打开(${JSON.stringify(路径)})`)}">用系统应用打开</a> · <a href="${转义(址)}" download>下载原文件</a></p>`;
+  }
+}
+
 function 开抽屉(n){
   const card = $('#世界').querySelector(`.卡[data-路径="${CSS.escape(n.路径)}"]`);
   if (!card) return;
@@ -1409,6 +1464,11 @@ function 开抽屉(n){
   const 正文 = $('#原');
   if (!正文) { 阅读完成 = Promise.resolve(); 提示('主题条目详情缺少 #原 正文插槽'); return; }
   // 资产卡不是文档：直接内嵌预览，不把图片、视频当文本读
+  if (n.数据文件) {
+    正文请求 = new AbortController();
+    阅读完成 = 填表格(正文, n.路径, 正文请求.signal).then(() => { if (正文.isConnected) { 建大纲($('#屉')); 定位展开(); } });
+    return;
+  }
   const 文本资产 = n.资产文件 && /\.(srt|txt)$/i.test(n.路径);
   if (n.资产文件 && !文本资产) { 正文.innerHTML = 资产预览html(n.路径); 阅读完成 = Promise.resolve(); 建大纲($('#屉')); 定位展开(); return; }
   正文请求 = new AbortController();
@@ -1418,7 +1478,7 @@ function 开抽屉(n){
   }).then(t => {
     if (controller.signal.aborted || !正文.isConnected) return;
     正文.innerHTML = 文本资产 ? `<pre><code>${转义(t.内容 || '文件为空。')}</code></pre>`
-      : 正文html(t.replace(/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/, '')) || '<p class="读取">这篇文档还没有正文。</p>';
+      : 正文html(t.replace(/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/, ''), n.路径) || '<p class="读取">这篇文档还没有正文。</p>';
     绑关联(正文); 建大纲($('#屉')); 定位展开();
   }).catch(e => { if (e.name !== 'AbortError' && 正文.isConnected) 正文.innerHTML = '<p>正文读取失败，请收起卡片后重新打开，或点击「打开原文」。</p>'; });
 }
@@ -1783,7 +1843,7 @@ function 画产出批(){
   const 手 = 产出开合.get(j.目录) || new Map(); 产出开合.set(j.目录, 手);
   const 开 = new Set(组们.filter(([目, fs], i) => 手.has(目) ? 手.get(目) : 可见.length <= 200 || (i < 3 && fs.length <= 120)).map(([目]) => 目));
   const 说明 = j.说明.map((n, i) => `<details class="产出说明"${i ? '' : ' open'}><summary><b>${转义(n.路径.split('/').pop())}</b><small>${多久前(n.时间)}</small></summary>`
-    + `<div class="正文">${n.格式 === 'markdown' ? 正文html(n.内容.replace(/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/, '')) : `<pre>${转义(n.内容)}</pre>`}</div></details>`).join('');
+    + `<div class="正文">${n.格式 === 'markdown' ? 正文html(n.内容.replace(/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/, ''), n.路径) : `<pre>${转义(n.内容)}</pre>`}</div></details>`).join('');
   const 片 = k => `<button type="button" data-产出种="${k}" aria-pressed="${产出筛.种类 === k}">${k} <small>${数(k)}</small></button>`;
   区.innerHTML = `<div class="产出批头"><div><h3>${转义(产出名(j.目录))}</h3><small>${j.总数} 件 · 最近改动 ${多久前(j.文件[0]?.时间 || 0)}</small></div>`
     + `<div class="产出批钮"><button type="button" data-产出动作="访达" data-路径="${转义(j.目录)}">在访达中显示</button>`

@@ -12,7 +12,7 @@ ATLAS = Path(sys._MEIPASS) if getattr(sys, 'frozen', False) else Path(__file__).
 
 TOOL_EXT = {".py", ".js", ".mjs", ".ts", ".css", ".sh", ".ps1", ".cmd", ".bat", ".html", ".ipynb"}
 ASSET_EXT = {".png", ".jpg", ".jpeg", ".webp", ".psd", ".svg", ".gif", ".mp4", ".wav", ".mp3", ".srt", ".txt"}
-DATA_EXT = {".csv", ".tsv", ".json", ".xlsx"}
+DATA_EXT = {".csv", ".tsv", ".json", ".xlsx", ".xlsm", ".xls"}
 SKIP_EXT = {".yml", ".yaml", ".lock", ".gitignore", ".gitattributes", ".lfsconfig"}
 SKIP_NAME = {".DS_Store", "package.json", "package-lock.json", "tsconfig.json"}
 
