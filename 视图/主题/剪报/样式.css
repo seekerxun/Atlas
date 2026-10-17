@@ -78,12 +78,13 @@ html[data-外观="深"] .品牌 svg{background:var(--底)}
 .搜索副文{display:block;margin-top:1px;font:12px var(--等宽);font-weight:400;opacity:.75;overflow-wrap:anywhere}
 
 /* 主题选择：基础.css 统一成小图标，这里只给方钮外观。 */
-#主题控件,#运行控件,#产出控件{--主题钮:38px;border:2px solid var(--字);background:var(--面);color:var(--字)}
-#主题控件:hover,#运行控件:hover,#产出控件:hover{background:var(--马克);color:var(--马克上)}
-#主题面板,#运行面板{border:2px solid var(--字);border-radius:0;background:var(--面) var(--纸纹);box-shadow:5px 6px 0 var(--影)}
-#主题面板:popover-open,#运行面板:popover-open{animation:剪报贴入 .25s steps(1,end)}
+#主题控件,#运行控件,#产出控件,#计划控件{--主题钮:38px;border:2px solid var(--字);background:var(--面);color:var(--字)}
+#主题控件:hover,#运行控件:hover,#产出控件:hover,#计划控件:hover{background:var(--马克);color:var(--马克上)}
+#主题面板,#运行面板,#计划面板{border:2px solid var(--字);border-radius:0;background:var(--面) var(--纸纹);box-shadow:5px 6px 0 var(--影)}
+#主题面板:popover-open,#运行面板:popover-open,#计划面板:popover-open{animation:剪报贴入 .25s steps(1,end)}
 #运行控件{--运行色:var(--青绿);--运行错色:var(--路线红)}
-#运行面板 .运行项,#运行面板 .运行钮 button{border-radius:0}
+#计划控件{--计划提醒色:var(--路线红)}
+#运行面板 .运行项,#计划面板 .计划项,#运行面板 .运行钮 button{border-radius:0}
 #运行面板 .运行钮 button{border:2px solid var(--字);font-weight:800}
 #运行面板 .运行钮 button:hover:not(:disabled){background:var(--马克);color:var(--马克上)}
 #主题面板 .主题模式{border:2px solid var(--字);border-radius:0}
@@ -527,6 +528,7 @@ html[data-外观="深"] .正文 pre{background:#0C0B0A}
   #体检{grid-row:1;grid-column:4;margin:0}
   #产出控件{grid-row:1;grid-column:2;justify-self:end}
   #运行控件{grid-row:1;grid-column:3}
+  #顶 > #计划控件{display:none!important}
   #新路线{grid-row:1;grid-column:5}
   #搜{grid-row:1;grid-column:6;width:180px}
   #主题控件{grid-row:1;grid-column:7}
@@ -538,6 +540,7 @@ html[data-外观="深"] .正文 pre{background:#0C0B0A}
   .品牌{grid-row:1;grid-column:1}
   #产出控件{grid-row:1;grid-column:2;--主题钮:34px}
   #运行控件{grid-row:1;grid-column:3;--主题钮:34px}
+  #顶 > #计划控件{display:none!important}
   .品牌 #名{font-size:22px;line-height:30px}
   #体检{grid-row:1;grid-column:4;margin:0;height:34px}
   #新路线{display:none!important}

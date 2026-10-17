@@ -145,6 +145,7 @@ function 定位面板(面, 钮){
 function 定位主题面板(){
   定位面板($('#主题面板'), $('#主题选择'));
   定位面板($('#运行面板'), $('#运行选择'));
+  定位面板($('#计划面板'), $('#计划选择'));
 }
 async function 应用主题选择(s){
   const 本次 = ++选择序号, 旧 = 主题选择;
@@ -360,7 +361,7 @@ async function 读数据(自动 = false){
   const 首条 = (数据.发现 || [])[0];
   签.title = 首条 ? `${首条.位置}：${首条.信息}\n点击查看详情与处理建议` : '项目检查通过，点击查看详情';
   签.dataset.状态 = t.错误 ? '错误' : t.警告 ? '警告' : '正常';
-  画签(); 画未认领(); 画产出入口(); 画(); if (初次) 阅读视野();
+  画签(); 画未认领(); 画产出入口(); 画计划(); 画(); if (初次) 阅读视野();
   if (搜框.value.trim()) { const display = 搜果.style.display; 搜框.oninput(); 搜果.style.display = display; }
 }
 
@@ -437,6 +438,48 @@ $('#运行面板').onclick = async e => {
 // 运行点要大致准：启动时查一次，回到窗口时再查（DevDock 那边可能起停过），两次之间至少隔 3 秒。
 addEventListener('focus', () => { if (Date.now() - 上次运行查询 > 3000) 查运行(); });
 document.addEventListener('visibilitychange', () => { if (!document.hidden && Date.now() - 上次运行查询 > 3000) 查运行(); });
+
+// ---------------------------------------------------------------- 计划
+// 根目录 计划.yml 的只读展示：按状态分组，挂上计划相关的检查结果。没有 计划.yml（数据.计划 为 null）就不显示入口。
+// 修改走命令行 atlas plan，画布不写。产出能对上画布卡片时可点，跳过去。
+const 计划组序 = ['进行中', '待办', '搁置', '完成'];
+const 计划提醒 = () => (数据?.发现 || []).filter(f => f.位置 === '计划.yml' || f.位置.startsWith('计划.yml#'));
+const 计划卡 = o => 按路径[o] ? o : 按路径[o + '.md'] ? o + '.md' : null;
+function 画计划(){
+  const 控 = $('#计划控件'), 面 = $('#计划面板'), 计划 = 数据?.计划;
+  控.hidden = !Array.isArray(计划);
+  if (控.hidden) { if (面.matches(':popover-open')) 面.hidePopover(); return; }
+  const 提醒 = 计划提醒(), 全局 = 提醒.filter(f => !f.位置.startsWith('计划.yml#'));
+  if (提醒.length) 控.dataset.提醒 = 提醒.length; else delete 控.dataset.提醒;
+  const 进行中 = 计划.filter(p => p.status === '进行中');
+  $('#计划选择').title = 提醒.length ? `计划：${提醒.length} 条提醒，点开查看`
+    : 进行中.length ? `计划：进行中 ${进行中.map(p => p.id).join('、')}` : `计划：${计划.length} 条，没有进行中的`;
+  $('#计划选择').setAttribute('aria-label', 提醒.length ? `计划，${提醒.length} 条提醒` : '计划');
+  const 警 = l => l.length ? `<ul class="计划提醒">${l.map(f => `<li>${转义(f.码)} ${转义(f.信息)}</li>`).join('')}</ul>` : '';
+  const 产出 = o => 计划卡(o) ? `<a href="#" data-路径="${转义(计划卡(o))}">${转义(o)}</a>` : 转义(o);
+  const 项 = p => `<li class="计划项" data-状态="${转义(p.status)}">`
+    + `<div class="计划名"><b>${转义(p.id)}</b><span title="${转义(p.title)}">${转义(p.title)}</span><small class="计划日期">${转义(p.updated)}</small></div>`
+    + (p.done_when && p.status !== '完成' ? `<div class="计划验收">验收：${转义(p.done_when)}</div>` : '')
+    + (p.outputs?.length ? `<div class="计划产出">产出：${p.outputs.map(产出).join('、')}</div>` : '')
+    + 警(提醒.filter(f => f.位置 === `计划.yml#${p.id}`)) + '</li>';
+  const 状态们 = [...计划组序, ...new Set(计划.map(p => p.status).filter(s => !计划组序.includes(s)))];
+  const 组 = 状态们.map(s => [s, 计划.filter(p => p.status === s)]).filter(([, l]) => l.length);
+  面.innerHTML = `<div class="计划头"><b>计划</b><small>计划.yml · ${计划.length} 条</small></div>` + 警(全局)
+    + (组.length ? 组.map(([s, l]) => `<section class="计划组"><span class="计划组名">${转义(s || '未写状态')} · ${l.length}</span>`
+        + `<ul class="计划列表">${l.map(项).join('')}</ul></section>`).join('')
+      : '<p class="计划空">计划.yml 里还没有条目。</p>')
+    + '<p class="计划脚">只读。修改用 <code>atlas plan add / start / done / drop</code></p>';
+  定位面板(面, $('#计划选择'));
+}
+$('#计划面板').addEventListener('beforetoggle', e => { if (e.newState === 'open') e.target.setAttribute('data-定位中', ''); });
+$('#计划面板').addEventListener('toggle', e => {
+  if (e.newState !== 'open') return;
+  画计划(); e.target.removeAttribute('data-定位中');
+});
+$('#计划面板').onclick = e => {
+  const a = e.target.closest('a[data-路径]'); if (!a) return;
+  e.preventDefault(); $('#计划面板').hidePopover(); 跳(a.dataset.路径);
+};
 
 // ---------------------------------------------------------------- 项目
 // 一个服务只管一个项目。打开或新建别的项目：服务端保证那个项目的画布在它自己的端口（.devdock.json）上运行，
