@@ -16,23 +16,29 @@
   atlas 钩子                装 git pre-commit
   atlas serve [--端口 7391] [--不开浏览器]   起本地画布
   atlas 运行 [目标] [--停止]  列出 .devdock.json 里的运行目标及状态；带目标名就启动（或停止）它
+  atlas 计划                 列出 计划.yml，进行中的在前
+  atlas 计划 加 <id> <标题> [--涉及 a,b] [--验收 …]   加一条待办（没有 计划.yml 就新建）
+  atlas 计划 开始|完成|搁置 <id> [--产出 a,b]          改状态，顺手写 updated；完成必须带产出
+  atlas 待定 [--行内]        汇总各文档「## 待定」小节；--行内 再列出正文里散落的「待定」
 
 英文别名（与中文等价，可混用）：
   scan 扫描 · check 检查 · route 路线 · find 找 · migrate 迁移 · claim 认领
-  new 新建 · rename 改名 · hook 钩子 · run 运行
+  new 新建 · rename 改名 · hook 钩子 · run 运行 · plan 计划 · pending 待定
+  plan 的动作：add 加 · start 开始 · done 完成 · drop 搁置
+  --touches 涉及 · --done-when 验收 · --outputs 产出 · --inline 行内
   --errors-only 只看错误 · --strict 严格 · --list 列表 · --add-field 加字段 · --rename 改名
   --filter 筛选 · --dry-run 演习 · --category 分类 · --name 名称 · --type 类型
   --entry 条目 · --vocab 词表 · --field 字段 · --port 端口 · --no-browser 不开浏览器 · --stop 停止
 """
 from __future__ import annotations
-import json, os, shutil, sys
+import datetime, json, os, shutil, sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from model import 找根, ATLAS, 发现        # noqa: E402
 from scan import 建索引, 解析目标          # noqa: E402
-from lint import 校验, 体检数              # noqa: E402
+from lint import 校验, 体检数, _存在       # noqa: E402
 import edit                                # noqa: E402
 
 C = {"红": "\033[31m", "黄": "\033[33m", "绿": "\033[32m", "蓝": "\033[34m",
@@ -72,6 +78,7 @@ def 命令_扫描(args):
         "词表值": {k: sorted(v) for k, v in idx.词表值.items()},
         "路线": [{"名称": r.名称, "路径": r.路径, "说明": r.说明, "入口": r.入口,
                  "步骤": [s.__dict__ for s in r.步骤]} for r in idx.路线],
+        "计划": [p.__dict__ for p in idx.计划] if idx.有计划 else None,
         "统计": idx.统计(),
     }
     out.write_text(json.dumps(数据, ensure_ascii=False, indent=1), encoding="utf-8")
@@ -87,6 +94,13 @@ def 命令_检查(args):
     根 = 根目录()
     idx = 建索引(根)
     结果 = 校验(idx, 严格=bool(args.严格))
+    if args.只看计划:
+        # 给 pre-commit 用的提醒：只打计划相关的警告，安静、不改退出码
+        for f in 结果:
+            if f.级别 == "警告" and f.位置.startswith("计划.yml"):
+                print(f"{C['黄']}! {f.码}{C['_']} {f.位置}  {f.信息}"
+                      + (f"\n    {C['蓝']}→ {f.提示}{C['_']}" if f.提示 else ""))
+        return
     if args.只看错误:
         结果 = [f for f in 结果 if f.级别 == "错误"]
     当前 = None
@@ -139,7 +153,7 @@ def 命令_路线(args):
     r = 命中[0]
 
     文件, 行数 = {}, 0   # 文件 → 首次出现的步骤号；同一篇在多步出现只算一次
-    out = [f"# 路线：{r.名称}"] + ([f"# {r.说明}"] if r.说明 else []) + [""]
+    out = [f"# 路线：{r.名称}"] + ([f"# {r.说明}"] if r.说明 else []) + [""] + 计划头(idx)
     for i, s in enumerate(r.步骤, 1):
         out.append(f"## 步骤 {i} — {s.title}")
         if s.note:
@@ -181,6 +195,175 @@ def 命令_路线(args):
     out.append("─" * 56)
     out.append(f"共 {len(文件)} 个文件 / 约 {行数} 行。**只读这些，不要额外浏览目录。**")
     print("\n".join(out))
+
+
+# ---------------------------------------------------------------- 计划
+计划动作 = {"加": "加", "add": "加", "开始": "开始", "start": "开始",
+          "完成": "完成", "done": "完成", "搁置": "搁置", "drop": "搁置"}
+动作到状态 = {"开始": "进行中", "完成": "完成", "搁置": "搁置"}
+状态序 = {"进行中": 0, "待办": 1, "搁置": 2, "完成": 3}
+
+
+def 计划头(idx) -> list[str]:
+    """开工跑路线时顺带看到计划：进行中的条目列出来，不用多读一个文件。"""
+    if not idx.有计划:
+        return []
+    进行中 = [p for p in idx.计划 if p.status == "进行中"]
+    待办 = sum(1 for p in idx.计划 if p.status == "待办")
+    if not 进行中:
+        return [f"# 计划：没有进行中的条目，待办 {待办} 条（atlas plan 查看）", ""]
+    out = ["# 计划 · 进行中"]
+    for p in 进行中:
+        out.append(f"#   {p.id}  {p.title}" + (f"  （验收：{p.done_when}）" if p.done_when else ""))
+    out += ["# 这次做的事属于哪条就更新哪条：atlas plan done <id> --产出 a,b", ""]
+    return out
+
+
+def _切(s) -> list[str]:
+    return [x.strip() for x in str(s or "").split(",") if x.strip()]
+
+
+def 命令_计划(args):
+    根 = 根目录()
+    p = 根 / "计划.yml"
+    动作 = 计划动作.get(args.动作 or "", None) if args.动作 else None
+    if args.动作 and 动作 is None:
+        sys.exit(f"不认识的动作 `{args.动作}`。可用：加 / 开始 / 完成 / 搁置（add / start / done / drop）")
+
+    if 动作 is None:
+        idx = 建索引(根)
+        if not idx.有计划:
+            print("还没有 计划.yml。用 `atlas plan add <id> <标题>` 加第一条。")
+            return
+        for 位置, err in idx.解析错误:
+            if 位置.startswith("计划.yml"):
+                print(f"{C['红']}✗{C['_']} {位置}  {err}")
+        for it in sorted(idx.计划, key=lambda x: 状态序.get(x.status, 9)):
+            色 = {"进行中": C["绿"], "完成": C["淡"], "搁置": C["淡"]}.get(it.status, "")
+            print(f"{色}{垫(it.status, 8)}{C['_']}{C['粗']}{垫(it.id, 14)}{C['_']}{it.title}"
+                  f"  {C['淡']}{it.updated}{C['_']}")
+            if it.done_when and it.status != "完成":
+                print(f"{'':8}{C['淡']}验收：{it.done_when}{C['_']}")
+            if it.outputs:
+                print(f"{'':8}{C['淡']}产出：{'、'.join(it.outputs)}{C['_']}")
+        return
+
+    if not args.id:
+        sys.exit("要带条目 id，例如 atlas plan start 回放器")
+    import miniyaml as y
+    原mtime = p.stat().st_mtime if p.exists() else None
+    try:
+        raw = (y.parse(p.read_text(encoding="utf-8")) or {}) if p.exists() else {}
+    except y.YamlError as e:
+        sys.exit(f"{C['红']}✗{C['_']} 计划.yml 解析失败：{e}。先手动修好再用命令。")
+    项们 = [dict(x) for x in (raw.get("items") or []) if isinstance(x, dict)]
+    今天 = datetime.date.today().isoformat()
+    目标 = next((x for x in 项们 if str(x.get("id")) == args.id), None)
+
+    if 动作 == "加":
+        if 目标 is not None:
+            sys.exit(f"已经有 `{args.id}` 了。")
+        if not args.标题:
+            sys.exit("加一条要写标题：atlas plan add <id> <标题>")
+        项们.append({"id": args.id, "title": args.标题, "status": "待办",
+                   "touches": _切(args.涉及), "done_when": args.验收 or "",
+                   "outputs": [], "updated": 今天})
+        说 = f"加了 `{args.id}`（待办）"
+    else:
+        if 目标 is None:
+            sys.exit(f"计划里没有 `{args.id}`。现有：" + "、".join(str(x.get("id")) for x in 项们))
+        if 动作 == "完成":
+            产出 = list(目标.get("outputs") or []) + [o for o in _切(args.产出) if o not in (目标.get("outputs") or [])]
+            if not 产出:
+                sys.exit("完成要带产出：atlas plan done <id> --产出 a,b（可以是改过的文档）")
+            缺 = [o for o in 产出 if not (_存在(根, o) or _存在(根, f"{o}.md"))]
+            if 缺:
+                sys.exit(f"产出不存在：{'、'.join(缺)}")
+            目标["outputs"] = 产出
+        elif args.产出:
+            目标["outputs"] = list(目标.get("outputs") or []) + _切(args.产出)
+        if args.涉及:
+            目标["touches"] = list(dict.fromkeys(list(目标.get("touches") or []) + _切(args.涉及)))
+        if args.验收:
+            目标["done_when"] = args.验收
+        目标["status"] = 动作到状态[动作]
+        目标["updated"] = 今天
+        说 = f"`{args.id}` → {目标['status']}"
+    for x in 项们:
+        for k in ("touches", "outputs"):
+            v = x.get(k)
+            x[k] = v if isinstance(v, list) else ([v] if v else [])
+    try:
+        edit.写计划(p, 项们, 原mtime)
+    except RuntimeError as e:
+        sys.exit(f"{C['红']}✗{C['_']} {e}")
+    print(f"{C['绿']}✓{C['_']} {说}")
+    进行中 = sum(1 for x in 项们 if x.get("status") == "进行中")
+    上限 = int(建索引(根).cfg.上限.get("计划进行中") or 3)
+    if 进行中 > 上限:
+        print(f"  {C['黄']}进行中已经 {进行中} 条，超过 {上限}，先收尾几条{C['_']}")
+
+
+# ---------------------------------------------------------------- 待定
+def 待定条目(正文: str) -> tuple[list[str], list[str]]:
+    """返回（「## 待定」小节里的行, 小节外正文里提到“待定”的行）。代码块里的不算。"""
+    import re
+    节内, 行内 = [], []
+    在节 = None          # 当前待定小节的标题级别
+    围栏 = False
+    for ln in 正文.split("\n"):
+        if ln.lstrip().startswith("```"):
+            围栏 = not 围栏
+            continue
+        if 围栏:
+            continue
+        m = re.match(r"^(#{1,6})\s+(.+?)\s*$", ln)
+        if m:
+            级 = len(m.group(1))
+            if 在节 is not None and 级 <= 在节:
+                在节 = None
+            if m.group(2) == "待定":
+                在节 = 级
+            continue
+        if 在节 is not None:
+            if ln.strip():
+                节内.append(ln.rstrip())
+        elif "待定" in ln and ln.strip():
+            行内.append(ln.strip())
+    return 节内, 行内
+
+
+def 命令_待定(args):
+    根 = 根目录()
+    idx = 建索引(根)
+    import miniyaml as y
+    篇, 条 = 0, 0
+    for s, n in sorted(idx.条目.items()):
+        if n.豁免:
+            continue
+        try:
+            _, 正文 = y.split_frontmatter((根 / s).read_text(encoding="utf-8"))
+        except (OSError, UnicodeError):
+            continue
+        节内, 行内 = 待定条目(正文)
+        if not args.行内:
+            行内 = []
+        if not 节内 and not 行内:
+            continue
+        篇 += 1
+        顶层 = sum(1 for ln in 节内 if not ln.startswith((" ", "\t")))
+        条 += 顶层 + len(行内)
+        print(f"{C['粗']}{s}{C['_']}  {C['淡']}{顶层 + len(行内)} 条{C['_']}")
+        for ln in 节内:
+            print(f"  {ln}")
+        for ln in 行内:
+            print(f"  {C['淡']}正文：{C['_']}{ln}")
+        print()
+    if not 篇:
+        print("没有待定项。" + ("" if args.行内 else "加 --行内 再看正文里散落的“待定”。"))
+        return
+    print("─" * 56)
+    print(f"共 {篇} 篇文档 / {条} 条待定" + ("" if args.行内 else "。加 --行内 连正文里散落的一起看"))
 
 
 # ---------------------------------------------------------------- 找
@@ -385,6 +568,8 @@ python3 "{脚本}" 检查 --只看错误 || {{
   echo "导航体检没过。修掉错误，或者 git commit --no-verify 跳过。"
   exit 1
 }}
+# 计划提醒：只提示，不挡提交
+python3 "{脚本}" 检查 --只看计划 || true
 """
 
 
@@ -409,12 +594,18 @@ def main():
     sub = ap.add_subparsers(dest="命令")
     # 每个命令和选项都有英文别名，方便不切输入法；分派和 args 字段一律用中文名。
     英 = {"扫描": "scan", "检查": "check", "路线": "route", "找": "find", "迁移": "migrate",
-         "认领": "claim", "新建": "new", "改名": "rename", "钩子": "hook", "运行": "run"}
+         "认领": "claim", "新建": "new", "改名": "rename", "钩子": "hook", "运行": "run",
+         "计划": "plan", "待定": "pending"}
     def 命令(名): return sub.add_parser(名, aliases=[英[名]] if 名 in 英 else [])
     def 选项(q, 名, 英名, **kw): q.add_argument("--" + 名, "--" + 英名, dest=名, **kw)
     命令("扫描")
     q = 命令("检查"); 选项(q, "只看错误", "errors-only", action="store_true")
     选项(q, "严格", "strict", action="store_true")
+    选项(q, "只看计划", "plan-only", action="store_true")
+    q = 命令("计划"); q.add_argument("动作", nargs="?"); q.add_argument("id", nargs="?")
+    q.add_argument("标题", nargs="?")
+    选项(q, "涉及", "touches"); 选项(q, "验收", "done-when"); 选项(q, "产出", "outputs")
+    q = 命令("待定"); 选项(q, "行内", "inline", action="store_true")
     q = 命令("路线"); q.add_argument("名字", nargs="?"); 选项(q, "列表", "list", action="store_true")
     q = 命令("找"); q.add_argument("关键词")
     q = 命令("迁移")
@@ -439,12 +630,13 @@ def main():
         return
     args.命令 = {v: k for k, v in 英.items()}.get(args.命令, args.命令)
     for k in ("只看错误", "严格", "列表", "演习", "名字", "分类", "筛选", "加字段", "改名",
-              "端口", "不开浏览器", "类型", "条目", "词表", "停止"):
+              "端口", "不开浏览器", "类型", "条目", "词表", "停止", "只看计划", "行内"):
         if not hasattr(args, k):
             setattr(args, k, None)
     {"扫描": 命令_扫描, "检查": 命令_检查, "路线": 命令_路线, "找": 命令_找,
      "迁移": 命令_迁移, "认领": 命令_认领, "新建": 命令_新建, "钩子": 命令_钩子,
-     "serve": 命令_serve, "改名": 命令_改名, "运行": 命令_运行}[args.命令](args)
+     "serve": 命令_serve, "改名": 命令_改名, "运行": 命令_运行,
+     "计划": 命令_计划, "待定": 命令_待定}[args.命令](args)
 
 
 if __name__ == "__main__":

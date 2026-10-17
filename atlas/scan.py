@@ -4,8 +4,8 @@ import fnmatch, os, re
 from pathlib import Path
 
 import miniyaml as y
-from model import (Node, 步骤, 路线, 配置, TOOL_EXT, ASSET_EXT, DATA_EXT,
-                   SKIP_EXT, SKIP_NAME, 保留目录)
+from model import (Node, 步骤, 路线, 计划项, 配置, TOOL_EXT, ASSET_EXT, DATA_EXT,
+                   SKIP_EXT, SKIP_NAME, 保留目录, 计划文件)
 
 双链 = re.compile(r"\[\[([^\]|#\\]+)")  # 名字止于 | # 或表格里转义的 \|
 资产网页 = {".html", ".htm"}
@@ -25,6 +25,8 @@ class 索引:
         self.路线: list[路线] = []
         self.解析错误: list[tuple[str, str]] = []
         self.词表值: dict[str, set[str]] = {}
+        self.有计划 = False                    # 根目录有没有 计划.yml
+        self.计划: list[计划项] = []
 
     def 统计(self):
         return {
@@ -148,6 +150,43 @@ def 载入路线(cfg: 配置) -> tuple[list[路线], list[tuple[str, str]]]:
     return out, errs
 
 
+def 载入计划(cfg: 配置) -> tuple[bool, list[计划项], list[tuple[str, str]]]:
+    """读根目录的 计划.yml。没有这个文件就当功能不存在。结构问题一律报出来，不宽容。"""
+    p = cfg.根 / 计划文件
+    if not p.exists():
+        return False, [], []
+    try:
+        raw = y.parse(p.read_text(encoding="utf-8"))
+    except y.YamlError as e:
+        return True, [], [(计划文件, str(e))]
+    if raw is None:
+        return True, [], []
+    if not isinstance(raw, dict) or not isinstance(raw.get("items") or [], list):
+        return True, [], [(计划文件, "顶层要写成 items: 加块列表")]
+    out, errs, 见 = [], [], set()
+    for i, it in enumerate(raw.get("items") or []):
+        if not isinstance(it, dict):
+            errs.append((计划文件, f"items[{i}] 不是映射"))
+            continue
+        iid = str(it.get("id") or "").strip()
+        if not iid:
+            errs.append((计划文件, f"items[{i}] 缺 id"))
+            continue
+        if iid in 见:
+            errs.append((f"{计划文件}#{iid}", f"id `{iid}` 重复"))
+            continue
+        见.add(iid)
+        L = lambda k: [str(x) for x in (it.get(k) if isinstance(it.get(k), list) else ([it[k]] if it.get(k) else []))]
+        项 = 计划项(id=iid, title=str(it.get("title") or ""), status=str(it.get("status") or ""),
+                  touches=L("touches"), done_when=str(it.get("done_when") or ""),
+                  outputs=L("outputs"), updated=str(it.get("updated") or ""))
+        if 项.status not in cfg.计划状态:
+            errs.append((f"{计划文件}#{iid}",
+                         f"status `{项.status}` 不在计划状态里（{'/'.join(cfg.计划状态)}）"))
+        out.append(项)
+    return True, out, errs
+
+
 def 抽词表(cfg: 配置) -> dict[str, set[str]]:
     """把项目声明的每一份受控词表读成一个名字集合。"""
     出: dict[str, set[str]] = {}
@@ -215,6 +254,8 @@ def 建索引(根: Path) -> 索引:
 
     idx.路线, 路线错 = 载入路线(cfg)
     idx.解析错误 += 路线错
+    idx.有计划, idx.计划, 计划错 = 载入计划(cfg)
+    idx.解析错误 += 计划错
     idx.词表值 = 抽词表(cfg)
 
     # 资产展开 + 自动挂接

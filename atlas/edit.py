@@ -158,3 +158,48 @@ def 写路线(路径: Path, r: dict, 原mtime: float | None = None):
     临时 = 路径.with_suffix(路径.suffix + ".tmp")
     临时.write_text(内容, encoding="utf-8")
     临时.replace(路径)
+
+
+# ---------------------------------------------------------------- 计划写回
+计划头注释 = ("# 计划：里程碑级，五到十条。会话里的小步骤用 AI 自己的任务列表，不进这里。\n"
+            "# 用 atlas plan 更新（add / start / done / drop），命令会顺手写 updated。")
+
+
+def _计划串(s) -> str:
+    """计划表里的字符串：解析器不认转义，所以挑一个串里没有的引号包起来。"""
+    s = str(s)
+    要包 = (s == "" or s[0] in "[{#&*!|>%@`'\"-" or ": " in s or " #" in s
+            or s.endswith(":") or s.strip() != s)
+    if not 要包:
+        return s
+    if '"' not in s:
+        return f'"{s}"'
+    if "'" not in s:
+        return f"'{s}'"
+    return '"' + s.replace('"', "'") + '"'
+
+
+def 序列化计划(项们: list[dict], 头注释: str = "") -> str:
+    """按固定模板整篇重写，和路线一样不做 YAML 往返。"""
+    行 = [(头注释 or 计划头注释).rstrip(), "", "items:"]
+    for it in 项们:
+        行.append(f"  - id: {_计划串(it.get('id') or '')}")
+        行.append(f"    title: {_计划串(it.get('title') or '')}")
+        行.append(f"    status: {_计划串(it.get('status') or '')}")
+        行.append("    touches: [" + ", ".join(_计划串(x) for x in it.get("touches") or []) + "]")
+        if it.get("done_when"):
+            行.append(f"    done_when: {_计划串(it['done_when'])}")
+        行.append("    outputs: [" + ", ".join(_计划串(x) for x in it.get("outputs") or []) + "]")
+        行.append(f"    updated: {_计划串(it.get('updated') or '')}")
+        行.append("")
+    return "\n".join(行).rstrip() + "\n"
+
+
+def 写计划(路径: Path, 项们: list[dict], 原mtime: float | None = None):
+    if 原mtime is not None and 路径.exists():
+        if abs(路径.stat().st_mtime - 原mtime) > 1e-6:
+            raise RuntimeError(f"{路径.name} 在这期间被改过了，已中止。重新跑一次命令。")
+    内容 = 序列化计划(项们, 取头注释(路径))
+    临时 = 路径.with_suffix(路径.suffix + ".tmp")
+    临时.write_text(内容, encoding="utf-8")
+    临时.replace(路径)

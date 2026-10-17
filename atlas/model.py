@@ -75,6 +75,17 @@ class 路线:
 
 
 @dataclass
+class 计划项:
+    id: str
+    title: str = ""
+    status: str = ""
+    touches: list = field(default_factory=list)
+    done_when: str = ""
+    outputs: list = field(default_factory=list)
+    updated: str = ""
+
+
+@dataclass
 class 发现:
     级别: str      # 错误 | 警告
     码: str
@@ -87,6 +98,7 @@ class 发现:
 默认标签 = [{"名称": "策划", "规则": "文档"}, {"名称": "内容", "规则": "文档"},
           {"名称": "创意", "规则": "草稿"}, {"名称": "资产", "规则": "素材"}]
 保留目录 = {"路线", "工具", "产出"}
+计划文件 = "计划.yml"   # 项目根目录；有这个文件才启用计划表
 
 
 def 解析标签(原: Any) -> tuple[list[dict], list[str]]:
@@ -141,6 +153,7 @@ class 配置:
         self.可选字段 = set((字段.get("可选") or {}).keys())
         self.层级 = w.get("层级") or []
         self.上限 = w.get("上限") or {}
+        self.计划状态 = list(w.get("计划状态") or ["待办", "进行中", "完成", "搁置"])
         self.规则说明 = {}
         for 级, 组 in (w.get("校验") or {}).items():
             for k, v in (组 or {}).items():

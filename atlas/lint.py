@@ -1,9 +1,10 @@
 """校验：宁可误报，不可漏报。"""
 from __future__ import annotations
+import datetime as dt
 import fnmatch, os, subprocess
 from pathlib import Path
 
-from model import 发现, TOOL_EXT, ASSET_EXT
+from model import 发现, TOOL_EXT, ASSET_EXT, 计划文件
 from scan import 索引, 解析目标
 
 
@@ -39,7 +40,138 @@ def _被忽略(根: Path, rel: str) -> bool:
     return r.returncode == 0
 
 
-def 校验(idx: 索引, 严格: bool = False) -> list[发现]:
+def _git(根: Path, *参数: str) -> str | None:
+    """在项目根跑一条 git 命令，拿不到结果（不是仓库、没装 git）就返回 None。"""
+    try:
+        # quotePath=false：不然中文路径会被转成 "\347\255\226…"，和扫描出来的路径对不上
+        r = subprocess.run(["git", "-c", "core.quotePath=false", "-C", str(根), *参数],
+                           capture_output=True, timeout=20)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if r.returncode != 0:
+        return None
+    return r.stdout.decode("utf-8", errors="replace")
+
+
+def 涉及(touches: list[str], 文件: str) -> bool:
+    """计划条目的 touches 能写文件、目录、glob，文档可以省掉 .md（和路线 docs 一样）。"""
+    for t in touches:
+        t = t.strip().strip("/")
+        if not t:
+            continue
+        if 文件 in (t, f"{t}.md") or 文件.startswith(t + "/") or fnmatch.fnmatch(文件, t):
+            return True
+    return False
+
+
+def 改动记录(根: Path, 起始: dt.date, 忽略: set[str]) -> tuple[str, dict[str, dt.date], set[str]]:
+    """返回（来源, 文件 → 最后改动日期, 未提交的文件）。
+
+    有 git：日期取提交日期，另外列出工作区里还没提交的改动——这才是"真改过"。
+    没有 git：退回文件修改时间，复制、检出也会碰到它，所以只能当提示。
+    """
+    前缀 = _git(根, "rev-parse", "--show-prefix")
+    if 前缀 is not None:
+        前缀 = 前缀.strip()
+        def 本项目(p: str) -> str | None:
+            return p[len(前缀):] if p.startswith(前缀) else None
+        日期: dict[str, dt.date] = {}
+        log = _git(根, "log", f"--since={起始.isoformat()}T00:00:00", "--format=%x00%cs",
+                   "--name-only", "--", ".") or ""
+        当天 = None
+        for ln in log.split("\n"):
+            if ln.startswith("\x00"):
+                try:
+                    当天 = dt.date.fromisoformat(ln[1:].strip())
+                except ValueError:
+                    当天 = None
+            elif ln.strip() and 当天:
+                p = 本项目(ln.strip())
+                if p and 当天 > 日期.get(p, dt.date.min):
+                    日期[p] = 当天
+        未提交: set[str] = set()
+        st = _git(根, "status", "--porcelain", "-z", "--untracked-files=all", "--", ".") or ""
+        段 = st.split("\x00")
+        i = 0
+        while i < len(段):
+            e = 段[i]
+            i += 1
+            if len(e) < 4:
+                continue
+            p = 本项目(e[3:])
+            if p:
+                未提交.add(p)
+            if e[0] in "RC":
+                i += 1        # 重命名后面跟着原路径
+        return "git", 日期, 未提交
+    日期 = {}
+    for dp, dn, fn in os.walk(根):
+        dn[:] = [d for d in dn if d not in 忽略]
+        for f in fn:
+            p = Path(dp) / f
+            try:
+                d = dt.date.fromtimestamp(p.stat().st_mtime)
+            except OSError:
+                continue
+            if d >= 起始:
+                日期[str(p.relative_to(根)).replace(os.sep, "/")] = d
+    return "修改时间", 日期, set()
+
+
+def _计划校验(idx: 索引, 加, 缺文件, 今天: dt.date):
+    cfg, 根 = idx.cfg, idx.根
+    上限 = int(cfg.上限.get("计划进行中") or 3)
+    停滞 = int(cfg.上限.get("计划停滞天数") or 14)
+    日期表: dict[str, dt.date] = {}
+    for 项 in idx.计划:
+        位置 = f"{计划文件}#{项.id}"
+        if 项.updated:
+            try:
+                日期表[项.id] = dt.date.fromisoformat(项.updated)
+            except ValueError:
+                加(发现("错误", "E09", 位置, f"updated `{项.updated}` 不是 YYYY-MM-DD"))
+
+        if 项.status == "完成":
+            if not 项.outputs:
+                加(发现("错误", "E11", 位置, "标了完成，但没写产出",
+                        "atlas plan done <id> --产出 a,b；产出可以是改过的文档"))
+            for o in 项.outputs:
+                if not (_存在(根, o) or _存在(根, f"{o}.md")):
+                    if _被忽略(根, o):
+                        缺文件(位置, "计划产出", o)
+                    else:
+                        加(发现("错误", "E11", 位置, f"产出不存在: {o}"))
+
+        if 项.status == "进行中":
+            d = 日期表.get(项.id)
+            if d is None:
+                加(发现("警告", "W15", 位置, "进行中，但没有 updated",
+                        "用 atlas plan start 标记，会自动写日期"))
+            elif (今天 - d).days > 停滞:
+                加(发现("警告", "W15", 位置, f"进行中，{(今天 - d).days} 天没更新",
+                        "做完了就 atlas plan done，卡住了就 atlas plan drop"))
+
+    进行中 = [项.id for 项 in idx.计划 if 项.status == "进行中"]
+    if len(进行中) > 上限:
+        加(发现("警告", "W16", 计划文件, f"进行中 {len(进行中)} 条，超过 {上限}：{'、'.join(进行中)}",
+                "先收尾几条，再开新的"))
+
+    待查 = [项 for 项 in idx.计划 if 项.status == "待办" and 项.touches and 项.id in 日期表]
+    if not 待查:
+        return
+    来源, 改动, 未提交 = 改动记录(根, min(日期表[项.id] for 项 in 待查), cfg.忽略)
+    for 项 in 待查:
+        起 = 日期表[项.id]
+        命中 = sorted(f for f, d in 改动.items() if d > 起 and 涉及(项.touches, f))
+        命中 += sorted(f for f in 未提交 if f not in 命中 and 涉及(项.touches, f))
+        if 命中:
+            尾 = f" 等 {len(命中)} 个" if len(命中) > 3 else ""
+            加(发现("警告", "W17", f"{计划文件}#{项.id}",
+                    f"还是待办，但涉及的文件改过了（按{来源}）: {'、'.join(命中[:3])}{尾}",
+                    "开始做了就 atlas plan start，做完了就 atlas plan done"))
+
+
+def 校验(idx: 索引, 严格: bool = False, 今天: dt.date | None = None) -> list[发现]:
     """严格=True 时，被 git 忽略、本机又不存在的文件也按 E06 报错（在应当有全部文件的机器上用）。"""
     cfg, 根 = idx.cfg, idx.根
     出: list[发现] = []
@@ -198,6 +330,9 @@ def 校验(idx: 索引, 严格: bool = False) -> list[发现]:
                     "在对应条目 资产: 里挂上，或者退回 产出/"))
     for u in idx.未归类:
         加(发现("警告", "W05", u, "未归类文件：任何规则都没匹配上"))
+
+    if idx.有计划:
+        _计划校验(idx, 加, 缺文件, 今天 or dt.date.today())
 
     for t, 域 in 被声明工具.items():
         实域 = {d for d in 域 if not d.startswith("路线:")}
