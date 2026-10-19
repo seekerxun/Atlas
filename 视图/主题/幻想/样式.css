@@ -143,6 +143,11 @@ kbd{font-family:var(--拉丁)}
 .头饰{flex-shrink:0;width:7px;height:7px;background:var(--组色,var(--金));transform:rotate(45deg)}
 .盒>.头 b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:700 1em var(--衬线)}
 .盒>.头 span{flex-shrink:0;font:700 .8125em var(--拉丁);color:var(--强)}
+.盒>.头 .分组开合{flex-shrink:0;display:grid;place-items:center;width:1.5em;height:1.5em;margin-right:-6px;padding:.25em;color:var(--强);transition:color .2s,background-color .2s}
+.盒>.头 .分组开合[hidden]{display:none}
+.分组开合:hover{background:var(--行底)}
+.分组开合 svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transform:rotate(90deg);transition:transform .25s}
+.分组开合[aria-expanded="false"] svg{transform:none}
 .盒>.类标{position:absolute;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--字2);white-space:nowrap}
 
 .小章{display:inline-block;flex-shrink:0;width:12px;height:12px;fill:var(--章色,var(--字3))}
@@ -507,6 +512,7 @@ body.幻想阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
 #角 button:not(:disabled):hover{background:var(--行底);color:var(--强)}
 #缩{min-width:50px;text-align:center;font:600 13px var(--拉丁)}
 #角 .分隔{width:1px;height:22px;margin:0 4px;background:var(--边)}
+#角 #自动排列{padding:0 12px;font-size:13px;font-weight:700;color:var(--强)}
 #角 #回{margin-left:4px;padding:0 16px;background:var(--主钮底);color:var(--主钮字);font-size:13px;font-weight:700}
 #角 #回:hover{background:var(--主钮底);color:var(--主钮字)}
 

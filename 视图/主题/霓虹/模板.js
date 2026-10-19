@@ -133,7 +133,7 @@ function 步骤卡({s, i, 路线文件}){
       <div class="柄" title="拖到另一张卡上连线"></div>`;
 }
 
-function 分组头({b}){ return `<div class="头"><b>${转义(b.名)}</b><span>${b.数} 条</span></div>`; }
+function 分组头({b}){ return `<div class="头"><b>${转义(b.名)}</b><span>${b.数} 条</span><button type="button" class="分组开合" data-分组开合 aria-expanded="true" aria-label="折叠分组 ${转义(b.名)}" title="折叠分组"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 7 7-7 7"/></svg></button></div>`; }
 
 function 路线标题({r}){ return `<span class="路线码">ROUTE //${r.入口 ? ' 入口' : ''}</span>
         <span class="路线名">${r.入口 ? '★ ' : ''}${转义(r.名称)}</span>

@@ -112,6 +112,11 @@ html[data-外观="深"] .签块{background:#42413D}
 .盒>.头{position:absolute;top:18px;left:20px;max-width:calc(100% - 40px);display:flex;align-items:baseline;gap:8px;font-size:15px;font-weight:600}
 .盒>.头 b{min-width:0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .盒>.头 span{flex-shrink:0;font-size:.87em;font-weight:400;color:var(--字3);font-variant-numeric:tabular-nums}
+.盒>.头 .分组开合{align-self:center;flex-shrink:0;display:grid;place-items:center;width:1.75em;height:1.75em;margin-left:2px;padding:.3em;border-radius:7px;color:var(--字2);transition:background-color .15s,color .15s}
+.盒>.头 .分组开合[hidden]{display:none}
+.分组开合:hover{background:var(--浅);color:var(--字)}
+.分组开合 svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;transform:rotate(90deg);transition:transform .2s}
+.分组开合[aria-expanded="false"] svg{transform:none}
 .盒>.类标{position:absolute;display:flex;align-items:center;gap:7px;font-size:12px;font-weight:500;color:var(--字2);white-space:nowrap}
 
 .小形{display:inline-block;flex-shrink:0;width:7px;height:7px;border-radius:50%;background:var(--形色,var(--字3))}
@@ -457,6 +462,7 @@ body.素净阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
 #角 button:not(:disabled):hover{background:var(--浅);color:var(--字)}
 #缩{min-width:44px;text-align:center;font-size:13px;font-variant-numeric:tabular-nums}
 #角 .分隔{width:1px;height:18px;margin:0 4px;background:var(--边)}
+#角 #自动排列{padding:0 10px;font-size:13px;font-weight:500;color:var(--字)}
 #角 #回{padding:0 10px;font-size:13px;font-weight:500;color:var(--字)}
 
 #提示{position:fixed;left:50%;bottom:76px;z-index:99;transform:translateX(-50%);translate:0 6px;padding:8px 14px;border-radius:8px;background:var(--字);color:var(--面);font-size:13px;opacity:0;transition:opacity .18s ease-out,translate .22s var(--缓);pointer-events:none;box-shadow:var(--浮影)}

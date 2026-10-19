@@ -116,6 +116,13 @@ kbd{font-family:var(--等宽)}
 .盒>.头 b{min-width:0;font-size:19px;font-weight:600;letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .盒>.头 b:before{content:"//";margin-right:10px;font:12px var(--等宽);color:var(--副)}
 .盒>.头 span{flex-shrink:0;font:12px var(--等宽);color:var(--字3)}
+.盒>.头 span{margin-left:auto}
+.盒>.头 .分组开合{align-self:center;flex-shrink:0;display:grid;place-items:center;width:26px;height:26px;margin-left:-4px;padding:5px;color:var(--主);border:1px solid color-mix(in srgb,var(--主) 45%,transparent);transition:background-color .18s,box-shadow .18s}
+.盒>.头 .分组开合[hidden]{display:none}
+.分组开合:hover{background:color-mix(in srgb,var(--主) 14%,transparent);box-shadow:0 0 10px color-mix(in srgb,var(--主) 45%,transparent)}
+.分组开合 svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;transform:rotate(90deg);transition:transform .2s}
+.分组开合[aria-expanded="false"] svg{transform:none}
+body.远 .盒>.头 .分组开合{width:clamp(26px,calc(26px / var(--缩,1)),60px);height:clamp(26px,calc(26px / var(--缩,1)),60px)}
 .盒>.类标{position:absolute;right:22px;display:flex;align-items:center;gap:10px;font:12px var(--等宽);letter-spacing:.08em;white-space:nowrap;text-shadow:0 0 8px currentColor}
 .盒>.类标:after{content:"";flex:1;height:1px;background:currentColor;opacity:.25}
 
@@ -447,6 +454,7 @@ body.霓虹阅读 .盒.聚起>.卡:not(.展开),body.霓虹阅读 .盒.聚起>.�
 #角 button:not(:disabled):hover{color:var(--主);background:color-mix(in srgb,var(--主) 10%,transparent)}
 #缩{min-width:48px;text-align:center;font:12px var(--等宽);color:var(--主);font-variant-numeric:tabular-nums}
 #角 .分隔{width:1px;height:20px;margin:0 6px;background:var(--边)}
+#角 #自动排列{height:30px;margin-right:4px;font-size:12px;color:var(--副);border:1px solid color-mix(in srgb,var(--副) 40%,transparent)}
 #角 #回{height:30px;font-size:12px;color:var(--主);border:1px solid color-mix(in srgb,var(--主) 50%,transparent);background:color-mix(in srgb,var(--主) 12%,transparent)}
 
 .霓虹读数{position:fixed;left:50%;bottom:30px;transform:translateX(-50%);z-index:15;display:flex;gap:18px;padding:6px 14px;font:11px var(--等宽);letter-spacing:.12em;color:var(--字3);background:#0b0918d9;border:1px solid var(--边);pointer-events:none;white-space:nowrap}

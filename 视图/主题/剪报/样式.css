@@ -123,6 +123,11 @@ html[data-外观="深"] .品牌 svg{background:var(--底)}
 .盒>.头{position:absolute;top:18px;left:22px;max-width:calc(100% - 44px);box-sizing:border-box;display:inline-flex;align-items:baseline;gap:10px;font-size:22px;font-weight:900;letter-spacing:-.01em}
 .盒>.头 b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .盒>.头 span{flex-shrink:0;padding:0 6px;background:var(--字);color:var(--马克);font:800 .68em/1.5 var(--窄)}
+.盒>.头 .分组开合{align-self:center;flex-shrink:0;display:grid;place-items:center;width:1.3em;height:1.3em;padding:.2em;border:2px solid var(--字);background:var(--面);color:var(--字)}
+.盒>.头 .分组开合[hidden]{display:none}
+.分组开合:hover{background:var(--马克);color:var(--马克上)}
+.分组开合 svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:square;transform:rotate(90deg)}
+.分组开合[aria-expanded="false"] svg{transform:none}
 .盒>.类标{position:absolute;display:flex;align-items:center;gap:8px;font:800 13px var(--窄);letter-spacing:.14em;color:var(--字2);white-space:nowrap}
 
 .小形{display:inline-block;flex-shrink:0;width:10px;height:10px;background:var(--形色,var(--字3))}
@@ -500,6 +505,7 @@ html[data-外观="深"] .正文 pre{background:#0C0B0A}
 #角 button:not(:disabled):hover{background:var(--马克);color:var(--马克上)}
 #缩{min-width:54px;display:flex;align-items:center;justify-content:center;font:800 16px var(--窄)}
 #角 .分隔{width:2px;background:var(--字)}
+#角 #自动排列{padding:0 12px;font-size:14px;font-weight:800}
 #角 #回{padding:0 14px;background:var(--字);color:var(--底);font-size:14px;font-weight:700}
 #角 #回:hover{background:var(--字);color:var(--马克)}
 

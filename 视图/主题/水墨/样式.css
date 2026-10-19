@@ -115,6 +115,11 @@ kbd{font-family:var(--字体)}
 .盒>.头{position:absolute;top:22px;left:28px;max-width:calc(100% - 56px);display:flex;align-items:baseline;gap:12px;padding-bottom:14px;background:var(--题墨) left bottom/200px 8px no-repeat}
 .盒>.头 b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:400 32px/1.05 var(--行楷);color:var(--字)}
 .盒>.头 span{flex-shrink:0;font-size:13px;color:var(--字3)}
+.盒>.头 .分组开合{align-self:center;flex-shrink:0;display:grid;place-items:center;width:30px;height:30px;padding:6px;border-radius:50%;color:var(--字2);transition:background-color .2s,color .2s}
+.盒>.头 .分组开合[hidden]{display:none}
+.分组开合:hover{background:color-mix(in srgb,var(--字) 8%,transparent);color:var(--字)}
+.分组开合 svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transform:rotate(90deg);transition:transform .3s}
+.分组开合[aria-expanded="false"] svg{transform:none}
 .盒>.类标{position:absolute;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;letter-spacing:.06em;color:var(--字2);white-space:nowrap}
 .盒>.类标 .印{width:18px;height:18px}
 
@@ -197,6 +202,7 @@ body.远 .卡:not(.展开) .印{width:var(--远印);height:var(--远印)}
 body.远 .卡:not(.展开) .类型名{font-size:calc(var(--远印) * .55)}
 body.远 .卡:not(.展开) h4{font-size:var(--远字);line-height:1.2;white-space:normal;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
 body.远 .盒>.头 b{font-size:clamp(32px,calc(20px / var(--缩,1)),64px)}
+body.远 .盒>.头 .分组开合{width:clamp(30px,calc(20px / var(--缩,1)),60px);height:clamp(30px,calc(20px / var(--缩,1)),60px)}
 body.远 .盒>.头{background-size:clamp(200px,calc(130px / var(--缩,1)),400px) 8px}
 body.远 .路线名{font-size:clamp(38px,calc(24px / var(--缩,1)),72px)}
 body.远 .步:not(.展开){background:none;border-color:transparent;box-shadow:none}
@@ -485,6 +491,7 @@ body.水墨阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.1}
 #角 button:not(:disabled):hover{background:var(--底);color:var(--字)}
 #缩{min-width:48px;text-align:center;font-size:13px;color:var(--字2);font-variant-numeric:tabular-nums}
 #角 .分隔{width:1px;height:20px;margin:0 4px;background:color-mix(in srgb,var(--字) 14%,transparent)}
+#角 #自动排列{padding:0 12px;font-size:14px}
 #角 #回{padding:0 14px;font-size:14px}
 
 #提示{position:fixed;left:50%;bottom:84px;z-index:99;transform:translateX(-50%);padding:10px 20px;border-radius:20px;background:var(--字);color:var(--底);font-size:13px;opacity:0;filter:blur(4px);transition:opacity .25s,filter .25s;pointer-events:none}

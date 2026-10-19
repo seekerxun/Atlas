@@ -4,11 +4,11 @@ const 时间 = n => Number.isFinite(n.修改时间) ? n.修改时间 : 0;
 export const 按修改排序 = (a, b) => 时间(b) - 时间(a) || 自然序.compare(a.编号 || a.标题 || a.名称 || a.路径, b.编号 || b.标题 || b.名称 || b.路径) || 自然序.compare(a.路径, b.路径);
 
 export function 组内布局(条目, 列, 尺寸){
-  const {卡宽, 卡高, 隙, 内左, 内顶, 图后缀} = 尺寸;
+  const {卡宽, 卡高, 隙, 内左, 内顶, 图后缀, 图高 = 50} = 尺寸;
   const 卡们 = []; let y = 0;
   for (let i = 0; i < 条目.length; i += 列) {
     const 行 = 条目.slice(i, i + 列);
-    const h = 卡高 + (行.some(n => (n.资产展开 || []).some(a => 图后缀.test(a))) ? 50 : 0);
+    const h = 卡高 + (行.some(n => (n.资产展开 || []).some(a => 图后缀.test(a))) ? 图高 : 0);
     行.forEach((节, j) => 卡们.push({节, x:j * (卡宽 + 隙), y, h}));
     y += h + 隙;
   }
