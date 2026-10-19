@@ -170,14 +170,10 @@ function 算库布局(){
   Object.keys(盒).sort((a, b) => 盒[b].length - 盒[a].length).forEach(名 => {
     const id = `盒:${视图}:${名}`;
     const 已排 = 恢复组内布局(盒[名], 布局[id]?.排列, {卡宽, 卡高, 隙, 内左, 内顶, 图后缀, 图高:50});
+    // 点过「排列」的分组原样落在保存位置，不参与避让：排列按折叠后的实际高度紧排，
+    // 这里只知道展开高度，避让会把折叠组下方的分组挤到别处。
     if (已排) {
-      const p = {...(布局[id] || {x, y})};
-      for (let 次 = 0; 次 <= 结果.length; 次++) {
-        const 撞 = 结果.find(b => p.x < b.x+b.w+盒隙 && p.x+已排.w+盒隙 > b.x && p.y < b.y+b.h+盒隙 && p.y+已排.h+盒隙 > b.y);
-        if (!撞) break;
-        p.x = 撞.x + 撞.w + 盒隙;
-      }
-      结果.push({id, 名, 数:盒[名].length, ...已排, x:p.x, y:p.y});
+      结果.push({id, 名, 数:盒[名].length, ...已排, x:布局[id].x, y:布局[id].y, 已排:true});
       x += 已排.w + 盒隙; 行高 = Math.max(行高, 已排.h);
       return;
     }
@@ -199,23 +195,29 @@ function 算库布局(){
     });
     const w = 列 * (卡宽 + 隙) - 隙 + 内左 * 2, h = 内y + 内顶 + 6;
     if (x + w > 限宽 && x > 40) { x = 40; y += 行高 + 盒隙; 行高 = 0; }
-    const p = {...(布局[id] || {x, y})};
-    // 卡片尺寸与其他主题不同，旧布局可能相交；只调整显示位置，不覆盖用户保存的布局。
-    for (let 次 = 0; 次 <= 结果.length; 次++) {
-      const 撞 = 结果.find(b => p.x < b.x+b.w+盒隙 && p.x+w+盒隙 > b.x && p.y < b.y+b.h+盒隙 && p.y+h+盒隙 > b.y);
+    结果.push({id, 名, 数: ns.length, x: 布局[id]?.x ?? x, y: 布局[id]?.y ?? y, w, h, 卡们});
+    x += w + 盒隙; 行高 = Math.max(行高, h);
+  });
+  // 卡片尺寸与其他主题不同，旧布局可能相交；只调整显示位置，不覆盖用户保存的布局。
+  const 已放 = 结果.filter(b => b.已排);
+  结果.filter(b => !b.已排).forEach(p => {
+    for (let 次 = 0; 次 <= 已放.length; 次++) {
+      const 撞 = 已放.find(b => p.x < b.x+b.w+盒隙 && p.x+p.w+盒隙 > b.x && p.y < b.y+b.h+盒隙 && p.y+p.h+盒隙 > b.y);
       if (!撞) break;
       p.x = 撞.x + 撞.w + 盒隙;
     }
-    结果.push({id, 名, 数: ns.length, x: p.x, y: p.y, w, h, 卡们});
-    x += w + 盒隙; 行高 = Math.max(行高, h);
+    已放.push(p);
   });
+  结果.forEach(b => delete b.已排);
   return 结果;
 }
 
 function 算自动布局({折叠们}){
   const {视图} = api.读取状态();
   const 台宽 = $('#台').clientWidth, 可用高 = 阅读区域().高;
-  const 宽们 = 台宽 < 700 ? [3 * (卡宽 + 隙) - 隙 + 内左 * 2] : [2000, 2400, 2800, 3200];
+  // 候选宽度按单卡分组的占位与矢量（260+20×2+40）之比缩放，各主题排出相同的整体形状。
+  const 比 = (卡宽 + 内左 * 2 + 盒隙) / 340;
+  const 宽们 = 台宽 < 700 ? [3 * (卡宽 + 隙) - 隙 + 内左 * 2] : [2000, 2400, 2800, 3200].map(w => Math.round(w * 比));
   let 最好 = [], 最小 = Infinity;
   for (const 宽 of 宽们) {
     const 组们 = 自动分组布局(分组数据(), 视图, 宽, {卡宽, 卡高, 隙, 盒隙, 内左, 内顶, 图后缀, 图高:50}, 折叠们, 分组折叠高());
