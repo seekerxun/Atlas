@@ -1,14 +1,45 @@
 """扫描仓库：解析 frontmatter、归类文件、建反向关系。"""
 from __future__ import annotations
-import fnmatch, os, re
+import fnmatch, os, posixpath, re
 from pathlib import Path
+from urllib.parse import unquote
 
 import miniyaml as y
 from model import (Node, 步骤, 路线, 计划项, 配置, TOOL_EXT, ASSET_EXT, DATA_EXT,
                    SKIP_EXT, SKIP_NAME, 保留目录, 计划文件)
 
 双链 = re.compile(r"\[\[([^\]|#\\]+)")  # 名字止于 | # 或表格里转义的 \|
+md链接 = re.compile(r"\[[^\]]+\]\(([^)]+)\)")  # [文字](目标)，和画布 正文html 同一个写法
+行内代码 = re.compile(r"`[^`]+`")
+外链 = re.compile(r"^[a-z][\w+.-]*:|^[/#]", re.I)   # 网址、mailto:、根路径、本篇锚点都不算文件链接
 资产网页 = {".html", ".htm"}
+
+
+def 抽正文链接(正文: str, 本篇: str, 偏移: int = 0) -> list:
+    """正文里的 [文字](相对路径)，按本篇所在目录解析成仓库相对路径。
+
+    解析规则照搬画布的 相对目标()：去掉 #锚点、URL 解码、按 / 逐段走 . 和 ..。
+    围栏代码块和行内代码里的不算——那是在举例子。走出仓库根的保留 ../ 前缀。
+    """
+    出, 围栏 = [], ""
+    基 = posixpath.dirname(本篇)
+    for i, ln in enumerate(正文.split("\n"), 1):
+        头 = ln.lstrip()[:3]
+        if 头 in ("```", "~~~"):
+            围栏 = "" if 围栏 == 头 else (围栏 or 头)
+            continue
+        if 围栏:
+            continue
+        for m in md链接.finditer(行内代码.sub("_", ln)):
+            原 = m.group(1).strip()
+            原 = 原[1:原.find(">")] if 原.startswith("<") and ">" in 原 else 原.split()[0] if 原 else ""
+            if not 原 or 外链.match(原):
+                continue
+            路 = unquote(原.split("#", 1)[0])
+            if not 路:
+                continue
+            出.append([i + 偏移, 原, posixpath.normpath(posixpath.join(基, 路))])
+    return 出
 
 
 class 索引:
@@ -85,6 +116,8 @@ def 解析条目(cfg: 配置, rel: Path) -> tuple[Node | None, str | None]:
     n = Node(路径=str(rel).replace(os.sep, "/"), 编号=编号, 名称=名称,
              库=库, 分组=分组, 行数=text.count("\n") + 1)
     n.豁免 = rel.name in cfg.豁免 or str(rel) in cfg.豁免 or _在代码目录(cfg, n.路径)
+    # 没 frontmatter 的（AGENTS.md 这类骨架）也抽：它链到谁，谁就有人引用；改名时它也要跟着改
+    n.正文链接 = 抽正文链接(正文, n.路径, text.count("\n") - 正文.count("\n"))
     if fm原文 is None:
         n.有frontmatter = False
         return n, None
@@ -289,6 +322,10 @@ def 建索引(根: Path) -> 索引:
             节 = 解析双链(idx, 链)
             if 节 is not None and 节 is not n and n.路径 not in 节.被引用:
                 节.被引用.append(n.路径)
+        for _, _, 目标 in n.正文链接:
+            节 = 链接目标(idx, 目标)
+            if 节 is not None and 节 is not n and n.路径 not in 节.被引用:
+                节.被引用.append(n.路径)
     # 路线：docs 直接挂，outputs 的 glob 命中也算认领
     for r in idx.路线:
         for st in r.步骤:
@@ -313,6 +350,11 @@ def 解析双链(idx: 索引, 链: str) -> Node | None:
     if 尾 in idx.按名:
         return idx.按名[尾]
     return idx.按编号.get(尾.split()[0]) if 尾.split() else None
+
+
+def 链接目标(idx: 索引, 路径: str) -> Node | None:
+    """正文链接解析出的路径落在哪个条目上；和画布一样，省掉 .md 也认。"""
+    return idx.条目.get(路径) or idx.条目.get(f"{路径}.md")
 
 
 def 解析目标(idx: 索引, 目标: str) -> Node | None:

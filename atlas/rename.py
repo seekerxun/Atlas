@@ -2,8 +2,8 @@
 
 四种改名共用一套流程，差别只在影响面包含哪几类：
 
-    条目改名    文件名、别人 关联: 里的名字、正文 [[链接]]、路线 docs、资产目录
-    类型值改名  frontmatter 的 类型:、项目.yml 词表与编号前缀、目录名、模板文件、路线 docs
+    条目改名    文件名、别人 关联: 里的名字、正文 [[链接]] 和 [文字](路径)、路线 docs、资产目录
+    类型值改名  frontmatter 的 类型:、项目.yml 词表与编号前缀、目录名、经过该目录的正文链接、模板文件、路线 docs
     词表值改名  受控词表那份名单里的一行、frontmatter 的引用字段、正文锚点链接
     字段名改名  全库 frontmatter 的键
 
@@ -14,8 +14,10 @@ import os, re
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from urllib.parse import unquote
+
 import miniyaml as y
-from scan import 索引
+from scan import 索引, 链接目标
 
 
 @dataclass
@@ -115,6 +117,12 @@ def 算_类型(idx: 索引, 旧: str, 新: str) -> 影响面:
            and not any(x in d.parts for x in cfg.忽略)]
     面.组们.append(组("目录名", 目录))
 
+    # 目录改名会弄断经过它的正文链接；同目录里的相对链接写的不是目录名，不受影响
+    md = [处(f"{s}:{行}", f"({原})") for s, n in sorted(idx.条目.items())
+          for 行, 原, 目标 in n.正文链接
+          if 旧 in 目标.split("/")[:-1] and 旧 in unquote(原).split("/")[:-1]]
+    面.组们.append(组("正文 [文字](路径) 里的目录名", md))
+
     模板 = [处(s) for s in idx.条目 if s.startswith("内容/_模板/") and Path(s).stem == 旧]
     面.组们.append(组("模板文件", 模板))
 
@@ -207,6 +215,10 @@ def 算_条目(idx: 索引, 旧: str, 新: str) -> 影响面:
             if re.search(rf"\[\[[^\]]*{re.escape(老名)}", ln):
                 链接.append(处(f"{s}:{i}", ln.strip()[:70]))
     面.组们.append(组("正文 [[双链]]", 链接))
+
+    md = [处(f"{s}:{行}", f"({原})") for s, n in sorted(idx.条目.items())
+          for 行, 原, 目标 in n.正文链接 if 链接目标(idx, 目标) is 节]
+    面.组们.append(组("正文 [文字](路径) 链接", md))
 
     路线 = [处(f"{r.路径}#{st.id}", d) for r in idx.路线 for st in r.步骤
            for d in st.docs if Path(d).stem == 老名]

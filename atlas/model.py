@@ -37,6 +37,7 @@ class Node:
     标签: list = field(default_factory=list)
     扩展: dict = field(default_factory=dict)
     软引用: list = field(default_factory=list)
+    正文链接: list = field(default_factory=list)   # [行号, 原链接, 按本篇目录解析出的仓库相对路径]
     行数: int = 0
     有frontmatter: bool = True
     豁免: bool = False
