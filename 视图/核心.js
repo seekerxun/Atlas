@@ -339,6 +339,7 @@ async function 读数据(自动 = false){
   布局 = 数据.布局 || {};
   候选缓存 = null;
   $('#名').textContent = 数据.项目;
+  document.title = `${数据.项目}·Atlas 画布`;
   const 新视图们 = ['路线', ...(数据.标签 || []).map(t => t.名称)];
   if (新视图们.join('|') !== 视图们.join('|')) { 视图们 = 新视图们; $('#签').replaceChildren(); }
   if (首次) { let 存; try { 存 = localStorage.getItem(视图键()); } catch {} if (视图们.includes(存)) 视图 = 存; }
