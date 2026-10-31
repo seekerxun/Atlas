@@ -55,7 +55,7 @@ kbd{font-family:var(--数字)}
 #签:has(button.开[data-原型="内容"]) .签块{background:var(--橄榄)}
 #签:has(button.开[data-原型="创意"]) .签块{background:var(--赭黄)}
 #签:has(button.开[data-原型="资产"]) .签块{background:var(--烟粉)}
-#签 button{flex-shrink:0;height:36px;padding:0 11px;display:flex;align-items:center;gap:6px;border-radius:999px;font-size:14px;font-weight:500;white-space:nowrap;transition:color .25s .08s,background-color .2s}
+#签 button{flex-shrink:0;height:36px;padding:0 10px;display:flex;align-items:center;gap:6px;border-radius:999px;font-size:14px;font-weight:500;white-space:nowrap;transition:color .25s .08s,background-color .2s}
 #签 button:focus-visible{outline-offset:-3px}
 #签 button:not(.开):hover{background:color-mix(in srgb,var(--字) 6%,transparent)}
 #签 button.开{font-weight:700;color:var(--上-陶土)}
@@ -76,19 +76,19 @@ kbd{font-family:var(--数字)}
 #体检:hover{border-color:var(--字)}
 #新路线{height:40px;padding:0 16px;border-radius:999px;background:var(--字);color:var(--底);font-size:13px;font-weight:700;white-space:nowrap}
 
-/* 搜索入口始终占一个圆钮的位置；输入框向下展开，不推挤项目、导航和主题按钮。 */
-#搜{position:relative;width:38px;height:38px;border-radius:50%;background:var(--面) var(--搜图) no-repeat center/16px;box-shadow:inset 0 0 0 1px var(--边)}
+/* 搜索沿顶栏向左展开：先吃掉空白，再让左侧项目和导航收缩；右侧按钮不被覆盖。 */
+#搜{position:relative;width:38px;height:38px;transition:width .4s var(--顺)}
 #顶 > #搜{flex-shrink:0;min-width:38px}
-#搜:focus-within,#搜:has(input:not(:placeholder-shown)){box-shadow:inset 0 0 0 1px var(--字)}
-#搜 input{position:absolute;top:0;right:0;width:38px;height:38px;box-sizing:border-box;padding:0 0 0 36px;border:1px solid var(--边);border-radius:999px;background:var(--面) var(--搜图) no-repeat 10px center/16px;color:var(--字);font-size:13px;cursor:pointer;transition:border-color .2s,box-shadow .2s}
-#搜:focus-within input{width:360px;height:42px;translate:0 50px;padding:0 42px 0 36px;cursor:text}
-#搜:not(:focus-within) input,#搜:not(:focus-within) input::placeholder{color:transparent}
-#搜 input:focus{cursor:text}
+#搜:focus-within,#搜:has(input:not(:placeholder-shown)){width:260px;transition:width .5s var(--弹)}
+#搜 input{width:100%;height:38px;box-sizing:border-box;padding:0 0 0 36px;border:1px solid var(--边);border-radius:999px;background:var(--面) var(--搜图) no-repeat 10px center/16px;color:var(--字);font-size:13px;cursor:pointer;transition:border-color .2s,box-shadow .2s}
+/* 展开途中按当前宽度留右侧空白，避免内边距把尚未长开的输入框撑出容器。 */
+#搜:focus-within input,#搜:has(input:not(:placeholder-shown)) input{padding-right:clamp(0px,calc(100% - 80px),38px);cursor:text}
+#搜:not(:focus-within):not(:has(input:not(:placeholder-shown))) input::placeholder{color:transparent}
 #搜 input::placeholder{color:var(--字3)}
 #搜 input:focus{outline:none;border-color:var(--字);box-shadow:0 0 0 3px color-mix(in srgb,var(--赭黄) 45%,transparent)}
-#搜 kbd{position:absolute;right:12px;top:61px;padding:0 8px;border-radius:999px;background:var(--底);font-size:11px;line-height:20px;color:var(--字3);pointer-events:none;opacity:0;transition:opacity .2s}
+#搜 kbd{position:absolute;right:12px;top:9px;padding:0 8px;border-radius:999px;background:var(--底);font-size:11px;line-height:20px;color:var(--字3);pointer-events:none;opacity:0;transition:opacity .2s}
 #搜:focus-within kbd{opacity:1;transition-delay:.2s}
-#搜果{position:absolute;top:100px;right:0;transform-origin:top right;width:360px;max-width:calc(100vw - 24px);max-height:60vh;overflow:auto;display:none;padding:0 6px;border-radius:22px;background:var(--面);border:0;border-block:14px solid transparent;box-shadow:0 0 0 1px var(--边),0 24px 50px -24px color-mix(in srgb,var(--影) 60%,transparent)}
+#搜果{position:absolute;top:46px;right:0;transform-origin:top right;width:360px;max-width:calc(100vw - 24px);max-height:60vh;overflow:auto;display:none;padding:0 6px;border-radius:22px;background:var(--面);border:0;border-block:14px solid transparent;box-shadow:0 0 0 1px var(--边),0 24px 50px -24px color-mix(in srgb,var(--影) 60%,transparent)}
 #搜果[style*="block"]{animation:矢量下拉 .34s var(--弹)}
 #搜果>div{padding:10px 14px;border-radius:14px;cursor:pointer;font-size:13px}
 #搜果>div:hover{background:var(--底)}
@@ -529,10 +529,13 @@ body.矢量阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
 .矢量过渡片>span{position:absolute;left:0;top:0;width:76px;height:76px;background:var(--卡色)}
 
 /* ———— 响应式 ———— */
-/* 桌面保持一行：先收紧间距和次要信息，项目名仍可见；只有小屏才改分行。 */
+/* 桌面保持一行：搜索优先使用空白，空间不足才压缩左侧；只有小屏才改分行。 */
+@media(min-width:701px){#顶 > .品牌{flex-shrink:1;min-width:140px}}
+@media(max-width:1280px){#搜:focus-within,#搜:has(input:not(:placeholder-shown)){width:220px}}
+@media(max-width:900px){#搜:focus-within,#搜:has(input:not(:placeholder-shown)){width:176px}}
 @media(max-width:1200px) and (min-width:701px){
   #顶{left:16px;right:16px;gap:6px}
-  #顶 > .品牌{max-width:180px;flex-shrink:0}
+  #顶 > .品牌{max-width:180px;flex-shrink:1}
   .品牌{gap:6px;padding-right:10px}
   .品牌 small,.导航计数{display:none}
   #签 button{padding:0 9px;gap:5px}
@@ -541,6 +544,7 @@ body.矢量阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
   #新路线{padding:0 10px;font-size:12px}
 }
 @media(max-width:1000px) and (min-width:701px){
+  #顶 > .品牌{flex-shrink:0;min-width:44px}
   .品牌>span{display:none}
   .品牌{padding:0}
   #顶 > #计划控件{display:none!important}
@@ -556,10 +560,9 @@ body.矢量阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
   .品牌 svg{width:40px;height:40px;padding:7px}
   #体检{grid-row:1;grid-column:4;margin:0;height:36px}
   #新路线{display:none!important}
-  #搜,#搜:focus-within,#搜:has(input:not(:placeholder-shown)){grid-row:2;grid-column:1/3;width:100%;height:44px;background:none;box-shadow:none}
+  #搜,#搜:focus-within,#搜:has(input:not(:placeholder-shown)){grid-row:2;grid-column:1/3;width:100%;height:44px}
   #搜 input::placeholder{color:var(--字3)!important}
-  #搜:not(:focus-within) input{color:var(--字)}
-  #搜 input,#搜:focus-within input,#搜:has(input:not(:placeholder-shown)) input{position:relative;translate:none;animation:none;width:100%;height:44px;padding:0 16px 0 36px;font-size:14px}
+  #搜 input,#搜:focus-within input,#搜:has(input:not(:placeholder-shown)) input{width:100%;height:44px;padding:0 16px 0 36px;font-size:14px}
   #搜 kbd{display:none}
   #搜果{top:50px;left:0;right:auto;width:380px;max-width:calc(100vw - 20px);transform-origin:top left}
   #主题控件{grid-row:2;grid-column:3;--主题钮:44px}
