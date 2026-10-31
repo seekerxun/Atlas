@@ -39,13 +39,13 @@ button:disabled{opacity:.35;cursor:default}
 kbd{font-family:var(--数字)}
 
 /* ———— 顶栏：浮在画布上的几枚胶囊 ———— */
-#顶{position:fixed;top:18px;left:24px;right:24px;height:52px;display:flex;align-items:center;gap:16px;z-index:30;pointer-events:none}
+#顶{position:fixed;top:18px;left:24px;right:24px;height:46px;display:flex;align-items:center;gap:8px;z-index:30;pointer-events:none}
 #顶>*{pointer-events:auto}
 .品牌{background:var(--面);box-shadow:0 0 0 1px var(--边);display:flex;align-items:center;gap:12px;min-width:0}
 .品牌 svg{--标志点:var(--赭黄);flex-shrink:0;width:44px;height:44px;box-sizing:border-box;padding:8px;color:var(--字)}
 .品牌>span{display:flex;flex-direction:column;line-height:1.15;min-width:0}
 .品牌 small{order:2;font:500 11px var(--数字);letter-spacing:.06em;color:var(--字3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.品牌 #名{font-size:17px;font-weight:700}
+.品牌 #名{font-size:16px;font-weight:700}
 .品牌{padding:0 14px 0 0;border-radius:999px;cursor:pointer;transition:background-color .2s}
 .品牌:hover{background:color-mix(in srgb,var(--字) 6%,var(--面))}
 
@@ -55,7 +55,7 @@ kbd{font-family:var(--数字)}
 #签:has(button.开[data-原型="内容"]) .签块{background:var(--橄榄)}
 #签:has(button.开[data-原型="创意"]) .签块{background:var(--赭黄)}
 #签:has(button.开[data-原型="资产"]) .签块{background:var(--烟粉)}
-#签 button{flex-shrink:0;height:42px;padding:0 14px 0 12px;display:flex;align-items:center;gap:8px;border-radius:999px;font-size:14px;font-weight:500;white-space:nowrap;transition:color .25s .08s,background-color .2s}
+#签 button{flex-shrink:0;height:36px;padding:0 11px;display:flex;align-items:center;gap:6px;border-radius:999px;font-size:14px;font-weight:500;white-space:nowrap;transition:color .25s .08s,background-color .2s}
 #签 button:focus-visible{outline-offset:-3px}
 #签 button:not(.开):hover{background:color-mix(in srgb,var(--字) 6%,transparent)}
 #签 button.开{font-weight:700;color:var(--上-陶土)}
@@ -76,27 +76,27 @@ kbd{font-family:var(--数字)}
 #体检:hover{border-color:var(--字)}
 #新路线{height:40px;padding:0 16px;border-radius:999px;background:var(--字);color:var(--底);font-size:13px;font-weight:700;white-space:nowrap}
 
-/* 搜索平时是一枚圆钮，点开（或按 /）才展开成输入框；有内容时保持展开。
-   形状补间：横向拉长时 主题.js 让它先变扁再回弹，缩回圆时先鼓起再落定；这里只管宽度，收起不回弹以免圆被挤成竖椭圆。 */
-#搜{position:relative;width:42px;transition:width .4s var(--顺)}
-#顶 > #搜{flex-shrink:0;min-width:42px}
-#搜:focus-within,#搜:has(input:not(:placeholder-shown)){width:260px;transition:width .5s var(--弹)}
-#搜 input{width:100%;height:42px;box-sizing:border-box;padding:0 44px 0 42px;border:1px solid var(--边);border-radius:999px;background:var(--面) var(--搜图) no-repeat 13px center/16px;color:var(--字);font-size:13px;cursor:pointer;transition:border-color .2s,box-shadow .2s}
-#搜:not(:focus-within):not(:has(input:not(:placeholder-shown))) input{padding-right:0}
-#搜:not(:focus-within):not(:has(input:not(:placeholder-shown))) input::placeholder{color:transparent}
+/* 搜索入口始终占一个圆钮的位置；输入框向下展开，不推挤项目、导航和主题按钮。 */
+#搜{position:relative;width:38px;height:38px;border-radius:50%;background:var(--面) var(--搜图) no-repeat center/16px;box-shadow:inset 0 0 0 1px var(--边)}
+#顶 > #搜{flex-shrink:0;min-width:38px}
+#搜:focus-within,#搜:has(input:not(:placeholder-shown)){box-shadow:inset 0 0 0 1px var(--字)}
+#搜 input{position:absolute;top:0;right:0;width:38px;height:38px;box-sizing:border-box;padding:0 0 0 36px;border:1px solid var(--边);border-radius:999px;background:var(--面) var(--搜图) no-repeat 10px center/16px;color:var(--字);font-size:13px;cursor:pointer;transition:border-color .2s,box-shadow .2s}
+#搜:focus-within input{width:360px;height:42px;translate:0 50px;padding:0 42px 0 36px;cursor:text;animation:矢量搜索展开 .18s var(--顺)}
+@keyframes 矢量搜索展开{from{opacity:0;transform:translateY(-4px) scale(.98)}to{opacity:1;transform:none}}
+#搜:not(:focus-within) input,#搜:not(:focus-within) input::placeholder{color:transparent}
 #搜 input:focus{cursor:text}
 #搜 input::placeholder{color:var(--字3)}
 #搜 input:focus{outline:none;border-color:var(--字);box-shadow:0 0 0 3px color-mix(in srgb,var(--赭黄) 45%,transparent)}
-#搜 kbd{position:absolute;right:12px;top:11px;padding:0 8px;border-radius:999px;background:var(--底);font-size:11px;line-height:20px;color:var(--字3);pointer-events:none;opacity:0;transition:opacity .2s}
+#搜 kbd{position:absolute;right:12px;top:61px;padding:0 8px;border-radius:999px;background:var(--底);font-size:11px;line-height:20px;color:var(--字3);pointer-events:none;opacity:0;transition:opacity .2s}
 #搜:focus-within kbd{opacity:1;transition-delay:.2s}
-#搜果{position:absolute;top:50px;right:0;transform-origin:top right;width:380px;max-width:calc(100vw - 24px);max-height:60vh;overflow:auto;display:none;padding:0 6px;border-radius:22px;background:var(--面);border:0;border-block:14px solid transparent;box-shadow:0 0 0 1px var(--边),0 24px 50px -24px color-mix(in srgb,var(--影) 60%,transparent)}
+#搜果{position:absolute;top:100px;right:0;transform-origin:top right;width:360px;max-width:calc(100vw - 24px);max-height:60vh;overflow:auto;display:none;padding:0 6px;border-radius:22px;background:var(--面);border:0;border-block:14px solid transparent;box-shadow:0 0 0 1px var(--边),0 24px 50px -24px color-mix(in srgb,var(--影) 60%,transparent)}
 #搜果[style*="block"]{animation:矢量下拉 .34s var(--弹)}
 #搜果>div{padding:10px 14px;border-radius:14px;cursor:pointer;font-size:13px}
 #搜果>div:hover{background:var(--底)}
 .搜索副文{display:block;margin-top:2px;font-size:11.5px;color:var(--字3);overflow-wrap:anywhere}
 
 /* 主题选择：基础.css 统一成小图标，这里只给圆钮外观；半圆图标顺带示意深浅。 */
-#主题控件,#运行控件,#产出控件,#计划控件{--主题钮:42px;border-radius:50%;background:var(--面);border:1px solid var(--边);color:var(--字);transition:border-color .2s,rotate .45s var(--弹)}
+#主题控件,#运行控件,#产出控件,#计划控件{--主题钮:38px;border-radius:50%;background:var(--面);border:1px solid var(--边);color:var(--字);transition:border-color .2s,rotate .45s var(--弹)}
 #主题控件:hover{border-color:var(--字);rotate:180deg}
 #运行控件:hover,#产出控件:hover,#计划控件:hover{border-color:var(--字)}
 #主题面板,#运行面板,#计划面板{padding:14px;border:0;border-radius:22px;background:var(--面);box-shadow:0 30px 60px -24px color-mix(in srgb,var(--影) 60%,transparent)}
@@ -111,7 +111,7 @@ kbd{font-family:var(--数字)}
 #主题面板 .主题项{border-radius:14px}
 #主题面板 .主题项 img{border-radius:10px}
 #主题面板 .主题项[aria-pressed="true"]{border-color:var(--字)}
-#刷{flex-shrink:0;width:42px;height:42px;border-radius:50%;background:var(--字);color:var(--底);font-size:18px;font-weight:700;line-height:1;transition:transform .45s var(--弹)}
+#刷{flex-shrink:0;width:38px;height:38px;border-radius:50%;background:var(--字);color:var(--底);font-size:18px;font-weight:700;line-height:1;transition:transform .45s var(--弹)}
 #刷:hover{transform:rotate(-90deg)}
 #刷 svg{display:block;width:19px;height:19px;margin:auto;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
 
@@ -530,32 +530,22 @@ body.矢量阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
 .矢量过渡片>span{position:absolute;left:0;top:0;width:76px;height:76px;background:var(--卡色)}
 
 /* ———— 响应式 ———— */
-@media(max-width:1280px){#搜:focus-within,#搜:has(input:not(:placeholder-shown)){width:220px}}
-@media(max-width:1120px){
-  .品牌>span,.导航计数{display:none}
-  #签 button{padding:0 12px}
-  #顶{gap:12px}
+/* 桌面保持一行：先收紧间距和次要信息，项目名仍可见；只有小屏才改分行。 */
+@media(max-width:1200px) and (min-width:701px){
+  #顶{left:16px;right:16px;gap:6px}
+  #顶 > .品牌{max-width:180px;flex-shrink:0}
+  .品牌{gap:6px;padding-right:10px}
+  .品牌 small,.导航计数{display:none}
+  #签 button{padding:0 9px;gap:5px}
+  #体检{padding:0 10px;gap:6px;font-size:12px}
+  #体检:before{width:12px;height:12px}
+  #新路线{padding:0 10px;font-size:12px}
 }
-/* 中等窗口把导航单独排一行，给搜索展开预留空间；右侧按钮各占独立列。 */
-@media(max-width:1440px) and (min-width:701px){
-  #顶{height:auto;display:grid;grid-template-columns:minmax(0,1fr) auto auto auto auto auto auto auto auto;grid-template-rows:44px 52px;gap:10px}
-  #顶 > .品牌{grid-row:1;grid-column:1;justify-self:start;max-width:100%}
-  #计划控件{grid-row:1;grid-column:2}
-  #产出控件{grid-row:1;grid-column:3}
-  #运行控件{grid-row:1;grid-column:4}
-  #体检{grid-row:1;grid-column:5;margin:0}
-  #新路线{grid-row:1;grid-column:6}
-  #搜{grid-row:1;grid-column:7}
-  #主题控件{grid-row:1;grid-column:8}
-  #刷{grid-row:1;grid-column:9}
-  #签{grid-row:2;grid-column:1/-1;justify-self:start}
-}
-@media(max-width:1120px) and (min-width:701px){
-  #顶{grid-template-columns:minmax(58px,1fr) 0 auto auto auto auto auto auto auto;column-gap:8px}
+@media(max-width:1000px) and (min-width:701px){
+  .品牌>span{display:none}
+  .品牌{padding:0}
   #顶 > #计划控件{display:none!important}
-}
-@media(max-width:900px) and (min-width:701px){
-  #搜:focus-within,#搜:has(input:not(:placeholder-shown)){width:176px}
+  #顶 > #计划控件:not([hidden]) + #产出控件{margin-left:auto}
 }
 @media(max-width:700px){
   #顶{top:10px;left:10px;right:10px;height:auto;display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;grid-template-rows:44px 44px 50px;gap:8px}
@@ -567,11 +557,12 @@ body.矢量阅读 .盒.聚起>:is(.卡:not(.展开),.头,.类标){opacity:.12}
   .品牌 svg{width:40px;height:40px;padding:7px}
   #体检{grid-row:1;grid-column:4;margin:0;height:36px}
   #新路线{display:none!important}
-  #搜,#搜:focus-within,#搜:has(input:not(:placeholder-shown)){grid-row:2;grid-column:1/3;width:100%}
+  #搜,#搜:focus-within,#搜:has(input:not(:placeholder-shown)){grid-row:2;grid-column:1/3;width:100%;height:44px;background:none;box-shadow:none}
   #搜 input::placeholder{color:var(--字3)!important}
-  #搜 input{height:44px;padding-right:16px;font-size:14px}
+  #搜:not(:focus-within) input{color:var(--字)}
+  #搜 input,#搜:focus-within input,#搜:has(input:not(:placeholder-shown)) input{position:relative;translate:none;animation:none;width:100%;height:44px;padding:0 16px 0 36px;font-size:14px}
   #搜 kbd{display:none}
-  #搜果{left:0;right:auto;width:380px;max-width:calc(100vw - 20px);transform-origin:top left}
+  #搜果{top:50px;left:0;right:auto;width:380px;max-width:calc(100vw - 20px);transform-origin:top left}
   #主题控件{grid-row:2;grid-column:3;--主题钮:44px}
   #刷{grid-row:2;grid-column:4;width:44px;height:44px}
   #签{grid-row:3;grid-column:1/-1}

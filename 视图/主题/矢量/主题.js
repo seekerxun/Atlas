@@ -55,7 +55,7 @@ function 装配界面(){
     $('#文件预览').style.removeProperty('--预览顶'); $('#文件预览').style.removeProperty('--预览高');
   });
   装配检查形变();
-  装配搜索形变();
+  装配搜索入口();
   装配扫描转圈();
 }
 
@@ -78,21 +78,11 @@ function 装配扫描转圈(){
   api.清理(() => { 观.disconnect(); 转?.cancel(); 钮.textContent = 原文; });
 }
 
-// 搜索圆钮像一团软胶：拉成输入框时高度先被抻扁、再鼓一下回原高；缩回圆钮时反过来先鼓起再落定。
-function 装配搜索形变(){
+// 搜索向下展开后，原位的放大镜仍可点回输入框；输入和结果的状态交给核心。
+function 装配搜索入口(){
   const 搜 = $('#搜'), 框 = 搜?.querySelector('input');
   if (!框) return;
-  let 动 = null;
-  const 播 = 帧们 => {
-    // 窄屏的搜索框一直是展开的，没有圆钮可变。
-    if (!可动() || matchMedia('(max-width:700px)').matches) return;
-    动?.cancel();
-    const h = 框.offsetHeight;
-    动 = api.动画(框, 帧们.map(([比, 偏]) => ({height:h * 比 + 'px', offset:偏})), {duration:520, easing:'ease-in-out'});
-  };
-  // 有内容时圆钮不会收起，也就不需要形变。
-  api.监听(搜, 'focusin', () => { if (!框.value) 播([[1,0],[.76,.3],[1.08,.65],[1,1]]); });
-  api.监听(搜, 'focusout', e => { if (!框.value && !搜.contains(e.relatedTarget)) 播([[1,0],[1.12,.4],[.94,.75],[1,1]]); });
+  api.监听(搜, 'click', e => { if (e.target === 搜) 框.focus(); });
 }
 
 // 检查弹窗由顶栏的检查胶囊长成：弹窗先平移到胶囊处、只露出胶囊大小的圆角区域，再连续撑开成面板；收起反向缩回胶囊。
