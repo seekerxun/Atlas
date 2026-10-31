@@ -81,8 +81,7 @@ kbd{font-family:var(--数字)}
 #顶 > #搜{flex-shrink:0;min-width:38px}
 #搜:focus-within,#搜:has(input:not(:placeholder-shown)){box-shadow:inset 0 0 0 1px var(--字)}
 #搜 input{position:absolute;top:0;right:0;width:38px;height:38px;box-sizing:border-box;padding:0 0 0 36px;border:1px solid var(--边);border-radius:999px;background:var(--面) var(--搜图) no-repeat 10px center/16px;color:var(--字);font-size:13px;cursor:pointer;transition:border-color .2s,box-shadow .2s}
-#搜:focus-within input{width:360px;height:42px;translate:0 50px;padding:0 42px 0 36px;cursor:text;animation:矢量搜索展开 .18s var(--顺)}
-@keyframes 矢量搜索展开{from{opacity:0;transform:translateY(-4px) scale(.98)}to{opacity:1;transform:none}}
+#搜:focus-within input{width:360px;height:42px;translate:0 50px;padding:0 42px 0 36px;cursor:text}
 #搜:not(:focus-within) input,#搜:not(:focus-within) input::placeholder{color:transparent}
 #搜 input:focus{cursor:text}
 #搜 input::placeholder{color:var(--字3)}

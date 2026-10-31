@@ -78,11 +78,37 @@ function 装配扫描转圈(){
   api.清理(() => { 观.disconnect(); 转?.cancel(); 钮.textContent = 原文; });
 }
 
-// 搜索向下展开后，原位的放大镜仍可点回输入框；输入和结果的状态交给核心。
+// 圆钮先落到顶栏下，再拉长、压扁、回弹；收起先缩成圆再回位，途中也不扫过其他按钮。
 function 装配搜索入口(){
   const 搜 = $('#搜'), 框 = 搜?.querySelector('input');
   if (!框) return;
   api.监听(搜, 'click', e => { if (e.target === 搜) 框.focus(); });
+  let 展 = 搜.matches(':focus-within'), 动 = null, 已卸载 = false;
+  const 帧 = (宽, 高, 下, 右 = 0, 色 = 'transparent') =>
+    ({width:宽+'px',height:高+'px',translate:`0px ${下}px`,paddingRight:右+'px',color:色});
+  const 更新 = () => {
+    if (已卸载) return;
+    const 新 = 搜.matches(':focus-within');
+    if (新 === 展) return;
+    const 色 = getComputedStyle(搜).color;
+    const 样 = getComputedStyle(框);
+    const 起 = 动 ? Object.fromEntries(['width','height','translate','paddingRight','color'].map(k => [k, 样[k]]))
+      : 展 ? 帧(360,42,50,42,色) : 帧(38,38,0);
+    动?.cancel(); 动 = null; 展 = 新;
+    if (!可动() || matchMedia('(max-width:700px)').matches) return;
+    const 帧们 = 新
+      ? [起, {...帧(38,38,50),offset:.25}, {...帧(270,32,50,32),offset:.55},
+          {...帧(370,45,50,42,色),offset:.8}, 帧(360,42,50,42,色)]
+      : parseFloat(起.width) <= 40 ? [起, 帧(38,38,0)]
+      : [起, {...帧(280,46,50,28),offset:.22}, {...帧(38,38,50),offset:.65}, 帧(38,38,0)];
+    const 本次 = 动 = api.动画(框, 帧们, {duration:新 ? 520 : 420,easing:'ease-in-out'});
+    本次.finished.then(() => { if (动 === 本次) 动 = null; }, () => {});
+  };
+  api.监听(搜, 'focusin', 更新);
+  // 等焦点落到结果或外部，再判定开合；在结果之间用键盘移动不重播。
+  api.监听(搜, 'focusout', () => queueMicrotask(更新));
+  api.监听(window, 'resize', () => { 动?.cancel(); 动 = null; });
+  api.清理(() => { 已卸载 = true; 动?.cancel(); });
 }
 
 // 检查弹窗由顶栏的检查胶囊长成：弹窗先平移到胶囊处、只露出胶囊大小的圆角区域，再连续撑开成面板；收起反向缩回胶囊。
