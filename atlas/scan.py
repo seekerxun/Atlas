@@ -277,7 +277,7 @@ def 建索引(根: Path) -> 索引:
             idx.数据.append(s)
         elif ext in SKIP_EXT or rel.name.startswith("."):
             pass
-        else:
+        elif not _在代码目录(cfg, s):      # 代码目录里的杂项文件（测试快照、配置）也是产品本身
             idx.未归类.append(s)
 
     for n in idx.条目.values():

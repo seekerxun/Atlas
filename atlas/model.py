@@ -10,7 +10,8 @@ import miniyaml as y
 ATLAS = Path(sys._MEIPASS) if getattr(sys, 'frozen', False) else Path(__file__).resolve().parent.parent
 词表路径 = ATLAS / "规范" / "词表.yml"
 
-TOOL_EXT = {".py", ".js", ".mjs", ".ts", ".css", ".sh", ".ps1", ".cmd", ".bat", ".html", ".ipynb"}
+TOOL_EXT = {".py", ".js", ".mjs", ".cjs", ".ts", ".css", ".sh", ".command", ".ps1", ".cmd", ".bat", ".html",
+            ".ipynb"}
 ASSET_EXT = {".png", ".jpg", ".jpeg", ".webp", ".psd", ".svg", ".gif", ".mp4", ".wav", ".mp3", ".srt", ".txt"}
 DATA_EXT = {".csv", ".tsv", ".json", ".xlsx", ".xlsm", ".xls"}
 SKIP_EXT = {".yml", ".yaml", ".lock", ".gitignore", ".gitattributes", ".lfsconfig"}

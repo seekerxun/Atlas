@@ -5,7 +5,7 @@ import fnmatch, os, subprocess
 from pathlib import Path
 
 from model import 发现, TOOL_EXT, ASSET_EXT, 计划文件
-from scan import 索引, 解析目标
+from scan import 索引, 解析目标, _在代码目录
 
 
 def _存在(根: Path, rel: str) -> bool:
@@ -314,10 +314,9 @@ def 校验(idx: 索引, 严格: bool = False, 今天: dt.date | None = None) -> 
                 if nx not in ids:
                     加(发现("错误", "E08", f"{r.路径}#{st.id}", f"next → `{nx}` 不存在"))
 
-    # 孤儿工具 / 放错位置。代码目录是产品本身，不按"工具"要求
-    代码 = tuple(d + "/" for d in cfg.代码目录)
+    # 孤儿工具 / 放错位置。代码目录是产品本身，不按"工具"要求；代码目录也可以写单个文件
     for t in idx.工具:
-        if 代码 and t.startswith(代码):
+        if _在代码目录(cfg, t):
             continue
         认领 = [k for k in 被声明工具 if t == k or t.startswith(k.rstrip("/") + "/")]
         if not 认领:
@@ -328,7 +327,7 @@ def 校验(idx: 索引, 严格: bool = False, 今天: dt.date | None = None) -> 
     素材 = cfg.素材目录
     素材处 = "、".join(f"{d}/" for d in (*素材, "产出"))
     for a in idx.资产:
-        if 代码 and a.startswith(代码):
+        if _在代码目录(cfg, a):
             continue
         顶 = a.split("/")[0]
         if 顶 not in (*素材, "产出"):
