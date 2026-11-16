@@ -126,7 +126,7 @@ class PlanTests(unittest.TestCase):
     def test_cli_add_start_done(self):
         造项目(self.根)
         跑 = lambda *a: subprocess.run([sys.executable, str(CLI), *a], cwd=self.根,
-                                      capture_output=True, text=True)
+                                      capture_output=True, encoding="utf-8")  # atlas 一律 UTF-8 输出
         self.assertEqual(跑("plan", "add", "回放器", "浏览器回放器", "--涉及", "策划/总览",
                            "--验收", "能回放").returncode, 0)
         self.assertEqual(跑("计划", "开始", "回放器").returncode, 0)

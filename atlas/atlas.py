@@ -41,6 +41,15 @@ from scan import 建索引, 解析目标          # noqa: E402
 from lint import 校验, 体检数, _存在       # noqa: E402
 import edit                                # noqa: E402
 
+# 中文 Windows 上输出被管道接走（SSH、git 钩子、AI 工具）时默认是 GBK，打印 ✓ ✗ 会崩。统一按 UTF-8 输出。
+for _流 in (sys.stdout, sys.stderr):
+    if _流 is not None and hasattr(_流, "reconfigure") and \
+            (_流.encoding or "").lower().replace("-", "").replace("_", "") != "utf8":
+        try:
+            _流.reconfigure(encoding="utf-8", errors="replace")
+        except (ValueError, OSError):
+            pass
+
 C = {"红": "\033[31m", "黄": "\033[33m", "绿": "\033[32m", "蓝": "\033[34m",
      "淡": "\033[2m", "粗": "\033[1m", "_": "\033[0m"}
 if not sys.stdout.isatty() or os.environ.get("NO_COLOR"):
@@ -562,15 +571,35 @@ def 命令_运行(args):
 
 # ---------------------------------------------------------------- 钩子
 钩子内容 = """#!/bin/sh
-# atlas pre-commit
-python3 "{脚本}" 检查 --只看错误 || {{
+# atlas pre-commit（atlas 钩子 生成）。换了 Python 或挪了 Atlas，重跑一次 atlas 钩子。
+# 优先用装钩子时的解释器；它不在了再依次找 python3、py -3、python（Windows 常没有 python3）。
+export PYTHONUTF8=1 PYTHONIOENCODING=utf-8
+atlas() {{
+  if [ -f {解释器} ]; then {命令} "$@"
+  elif command -v python3 >/dev/null 2>&1; then python3 {脚本} "$@"
+  elif command -v py >/dev/null 2>&1; then py -3 {脚本} "$@"
+  else python {脚本} "$@"
+  fi
+}}
+atlas 检查 --只看错误 || {{
   echo ""
   echo "导航体检没过。修掉错误，或者 git commit --no-verify 跳过。"
   exit 1
 }}
 # 计划提醒：只提示，不挡提交
-python3 "{脚本}" 检查 --只看计划 || true
+atlas 检查 --只看计划 || true
 """
+
+
+def 钩子文本() -> str:
+    """路径一律用正斜杠并加引号：Git for Windows 的 sh 认 C:/...，不认未转义的反斜杠。"""
+    import shlex
+    from projects import CLI命令
+    def 引(s): return shlex.quote(Path(s).as_posix())
+    命令行 = CLI命令()
+    return 钩子内容.format(解释器=引(命令行[0]),
+                       命令=" ".join([引(命令行[0])] + [引(a) if a.endswith(".py") else a for a in 命令行[1:]]),
+                       脚本=引(Path(__file__).resolve()))
 
 
 def 命令_钩子(args):
@@ -579,7 +608,7 @@ def 命令_钩子(args):
     if not d.is_dir():
         sys.exit("这里没有 .git/hooks")
     p = d / "pre-commit"
-    p.write_text(钩子内容.format(脚本=Path(__file__).resolve()), encoding="utf-8")
+    p.write_text(钩子文本(), encoding="utf-8", newline="\n")
     p.chmod(0o755)
     print(f"{C['绿']}✓{C['_']} 已装 {p}")
     print("  这一条比其它所有功能加起来都重要：缺 frontmatter 直接挡住提交。")

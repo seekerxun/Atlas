@@ -19,6 +19,7 @@ class DiskUsageTests(unittest.TestCase):
             time.sleep(.005)
         return cache.状态()
 
+    @unittest.skipUnless(hasattr(os.stat_result, 'st_blocks'), 'Windows 没有 st_blocks，分配空间口径尚未适配')
     def test_allocated_blocks_hidden_sparse_hardlinks_and_symlinks(self):
         with tempfile.TemporaryDirectory() as folder, tempfile.TemporaryDirectory() as outside:
             root = Path(folder)
