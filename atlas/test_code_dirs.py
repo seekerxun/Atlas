@@ -46,5 +46,24 @@ class 代码目录(unittest.TestCase):
         self.assertIn(("W02", "游离.command"), 位置)
 
 
+class 忽略路径(unittest.TestCase):
+    def test_相对路径只忽略那一处(self):
+        根 = Path(tempfile.mkdtemp())
+        try:
+            (根 / "项目.yml").write_text("名称: 测试\n主分组: 模块\n内容类型: [条目]\n忽略: [docs/history, 草稿]\n",
+                                      encoding="utf-8")
+            for p in ("docs/history/a.md", "docs/v1/history/b.md", "docs/c.md", "x/草稿/d.md"):
+                f = 根 / p
+                f.parent.mkdir(parents=True, exist_ok=True)
+                f.write_text("# 无 frontmatter\n", encoding="utf-8")
+            idx = 建索引(根)
+            self.assertNotIn("docs/history/a.md", idx.条目)
+            self.assertIn("docs/v1/history/b.md", idx.条目)     # 同名但路径不同，不跳过
+            self.assertIn("docs/c.md", idx.条目)
+            self.assertNotIn("x/草稿/d.md", idx.条目)            # 目录名照旧任意层跳过
+        finally:
+            shutil.rmtree(根, ignore_errors=True)
+
+
 if __name__ == "__main__":
     unittest.main()

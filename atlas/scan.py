@@ -68,9 +68,13 @@ class 索引:
 
 
 def _走(根: Path, 忽略: set[str]):
+    """忽略里写目录名（任意层同名都跳过），或相对根目录的路径（如 docs/history，只跳过这一处）。"""
+    路径们 = {p.strip("/") for p in 忽略 if "/" in p}
     for dp, dn, fn in os.walk(根):
-        dn[:] = [d for d in dn if d not in 忽略]
         d = Path(dp)
+        相对 = d.relative_to(根).as_posix()
+        前缀 = "" if 相对 == "." else 相对 + "/"
+        dn[:] = [x for x in dn if x not in 忽略 and 前缀 + x not in 路径们]
         if any(part in 忽略 for part in d.relative_to(根).parts):
             continue
         for f in sorted(fn):
